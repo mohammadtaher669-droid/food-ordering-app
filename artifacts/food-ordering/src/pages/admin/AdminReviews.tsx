@@ -1,32 +1,19 @@
-import { useState, useEffect } from "react";
+import { useCallback } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { reviewStore } from "@/lib/store";
+import { useStore } from "@/hooks/useStore";
 import StarRating from "@/components/StarRating";
 import { CheckCircle, Trash2 } from "lucide-react";
 
-interface Review {
-  id: string;
-  name: string;
-  rating: number;
-  comment: string;
-  approved: boolean;
-  timestamp: string;
-}
-
 export default function AdminReviews() {
   const { t } = useLanguage();
-  const [reviews, setReviews] = useState<Review[]>([]);
+  const reviews = useStore(useCallback(() => reviewStore.getAll(), []));
 
-  useEffect(() => {
-    setReviews(JSON.parse(localStorage.getItem("admin_reviews") || "[]"));
-  }, []);
-
-  const save = (updated: Review[]) => {
-    setReviews(updated);
-    localStorage.setItem("admin_reviews", JSON.stringify(updated));
+  const approve = (id: string) => {
+    const r = reviews.find((x) => x.id === id);
+    if (r) reviewStore.save({ ...r, approved: true });
   };
-
-  const approve = (id: string) => save(reviews.map((r) => r.id === id ? { ...r, approved: true } : r));
-  const remove = (id: string) => save(reviews.filter((r) => r.id !== id));
+  const remove = (id: string) => reviewStore.delete(id);
 
   return (
     <div>

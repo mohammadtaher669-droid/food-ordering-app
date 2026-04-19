@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import { motion } from "framer-motion";
 import { useCart } from "@/contexts/CartContext";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { restaurants } from "@/data/restaurants";
+import { restaurantStore, branchStore } from "@/lib/store";
 import { MapPin, User, Phone, MessageSquare, Send } from "lucide-react";
 
 function generateOrderId(): string {
@@ -28,8 +28,8 @@ export default function CheckoutPage() {
   const [agreeOffers, setAgreeOffers] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const restaurant = restaurants.find((r) => r.id === selectedRestaurantId);
-  const branch = restaurant?.branches.find((b) => b.id === selectedBranchId);
+  const restaurant = restaurantStore.getAll().find((r) => r.id === selectedRestaurantId);
+  const branch = branchStore.getAll().find((b) => b.id === selectedBranchId);
 
   if (!restaurant || !branch || cartItems.length === 0) {
     return (
@@ -83,7 +83,9 @@ export default function CheckoutPage() {
 
           {/* Order Type Badge */}
           <div className="bg-card border border-white/5 rounded-xl p-3 mb-5 flex items-center gap-3">
-            <span className="text-2xl">{restaurant.logo}</span>
+            {restaurant.logoType === "image" && restaurant.logo
+              ? <img src={restaurant.logo} alt="" className="w-9 h-9 rounded-lg object-cover" />
+              : <span className="text-2xl">{restaurant.logo}</span>}
             <div>
               <p className="text-sm font-medium">{t(restaurant.name_en, restaurant.name_ar)} · {t(branch.name_en, branch.name_ar)}</p>
               <p className="text-xs text-muted-foreground">{orderType === "delivery" ? t("Delivery", "توصيل") : t("Pickup", "استلام")}</p>

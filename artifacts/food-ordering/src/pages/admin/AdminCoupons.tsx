@@ -1,39 +1,31 @@
-import { useState, useEffect } from "react";
+import { useState, useCallback } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { coupons as defaultCoupons } from "@/data/restaurants";
+import { couponStore } from "@/lib/store";
+import type { Coupon } from "@/lib/store";
+import { useStore } from "@/hooks/useStore";
 import { Plus, Trash2, ToggleLeft, ToggleRight } from "lucide-react";
-
-interface Coupon {
-  code: string;
-  type: "percentage" | "fixed" | "free_delivery";
-  value: number;
-  active: boolean;
-  description_en: string;
-  description_ar: string;
-}
+import { useToast } from "@/hooks/use-toast";
 
 export default function AdminCoupons() {
   const { t } = useLanguage();
-  const [coupons, setCoupons] = useState<Coupon[]>([]);
+  const { toast } = useToast();
+  const coupons = useStore(useCallback(() => couponStore.getAll(), []));
   const [showAdd, setShowAdd] = useState(false);
   const [form, setForm] = useState({ code: "", type: "percentage" as Coupon["type"], value: 0, description_en: "", description_ar: "" });
 
-  useEffect(() => {
-    const stored = localStorage.getItem("admin_coupons");
-    setCoupons(stored ? JSON.parse(stored) : defaultCoupons);
-  }, []);
-
-  const save = (updated: Coupon[]) => {
-    setCoupons(updated);
-    localStorage.setItem("admin_coupons", JSON.stringify(updated));
+  const toggle = (code: string) => {
+    const c = coupons.find((x) => x.code === code);
+    if (c) couponStore.save({ ...c, active: !c.active });
   };
-
-  const toggle = (code: string) => save(coupons.map((c) => c.code === code ? { ...c, active: !c.active } : c));
-  const remove = (code: string) => save(coupons.filter((c) => c.code !== code));
-
+  const remove = (code: string) => {
+    if (!confirm(t("Delete this coupon?", "حذف هذا الكود؟"))) return;
+    couponStore.delete(code);
+    toast({ title: t("Deleted", "تم الحذف") });
+  };
   const handleAdd = () => {
-    if (!form.code.trim()) return;
-    save([...coupons, { ...form, code: form.code.toUpperCase(), active: true }]);
+    if (!form.code.trim()) { toast({ title: t("Code required", "الكود مطلوب"), variant: "destructive" }); return; }
+    couponStore.save({ ...form, code: form.code.toUpperCase(), active: true });
+    toast({ title: t("Coupon added!", "تمت إضافة الكود!") });
     setForm({ code: "", type: "percentage", value: 0, description_en: "", description_ar: "" });
     setShowAdd(false);
   };
@@ -53,14 +45,14 @@ export default function AdminCoupons() {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="text-xs text-muted-foreground mb-1 block">{t("Code", "الكود")}</label>
-              <input value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value.toUpperCase() })} className="w-full bg-background border border-white/10 rounded-xl px-3 py-2 text-sm text-foreground focus:outline-none focus:border-primary/50" data-testid="input-coupon-code" />
+              <input value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value.toUpperCase() })} className="w-full bg-background border border-white/10 rounded-xl px-3 py-2 text-sm text-foreground focus:outline-none focus:border-primary/50 uppercase font-mono" data-testid="input-coupon-code" placeholder="e.g. SAVE10" />
             </div>
             <div>
               <label className="text-xs text-muted-foreground mb-1 block">{t("Type", "النوع")}</label>
               <select value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value as Coupon["type"] })} className="w-full bg-background border border-white/10 rounded-xl px-3 py-2 text-sm text-foreground focus:outline-none">
-                <option value="percentage">Percentage %</option>
-                <option value="fixed">Fixed SAR</option>
-                <option value="free_delivery">Free Delivery</option>
+                <option value="percentage">{t("Percentage %", "نسبة مئوية %")}</option>
+                <option value="fixed">{t("Fixed SAR", "مبلغ ثابت ريال")}</option>
+                <option value="free_delivery">{t("Free Delivery", "توصيل مجاني")}</option>
               </select>
             </div>
             {form.type !== "free_delivery" && (
@@ -86,19 +78,21 @@ export default function AdminCoupons() {
       )}
 
       <div className="space-y-3">
+        {coupons.length === 0 && <p className="text-center text-muted-foreground py-8">{t("No coupons yet", "لا توجد أكواد بعد")}</p>}
         {coupons.map((coupon) => (
           <div key={coupon.code} className="bg-card border border-white/5 rounded-2xl p-4 flex items-center justify-between" data-testid={`coupon-${coupon.code}`}>
             <div>
               <div className="flex items-center gap-2">
-                <span className="font-bold text-primary font-mono">{coupon.code}</span>
+                <span className="font-bold text-primary font-mono tracking-wide">{coupon.code}</span>
                 <span className={`text-xs px-2 py-0.5 rounded-full ${coupon.active ? "bg-green-500/10 text-green-400" : "bg-white/5 text-muted-foreground"}`}>
                   {coupon.active ? t("Active", "نشط") : t("Inactive", "غير نشط")}
                 </span>
               </div>
               <p className="text-xs text-muted-foreground mt-1">
-                {coupon.type === "percentage" && `${coupon.value}% off`}
-                {coupon.type === "fixed" && `${coupon.value} SAR off`}
-                {coupon.type === "free_delivery" && "Free delivery"}
+                {coupon.type === "percentage" && `${coupon.value}% ${t("off", "خصم")}`}
+                {coupon.type === "fixed" && `${coupon.value} SAR ${t("off", "خصم")}`}
+                {coupon.type === "free_delivery" && t("Free delivery", "توصيل مجاني")}
+                {coupon.description_en && ` — ${t(coupon.description_en, coupon.description_ar)}`}
               </p>
             </div>
             <div className="flex items-center gap-3">

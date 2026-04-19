@@ -1,39 +1,54 @@
 import { useParams, Link } from "wouter";
+import { useCallback } from "react";
 import { motion } from "framer-motion";
-import { restaurants, menuItems } from "@/data/restaurants";
+import { restaurantStore, branchStore, menuStore } from "@/lib/store";
+import { useStore } from "@/hooks/useStore";
 import { useLanguage } from "@/contexts/LanguageContext";
 import WorkingHoursStatus, { isBranchOpen } from "@/components/WorkingHoursStatus";
-import { ChevronRight, ChevronLeft, MapPin, Star } from "lucide-react";
+import { ChevronRight, ChevronLeft, MapPin, Star, Sparkles } from "lucide-react";
 
 export default function RestaurantPage() {
   const params = useParams<{ restaurantId: string }>();
   const { t, isRTL } = useLanguage();
   const ChevronIcon = isRTL ? ChevronLeft : ChevronRight;
 
+  const restaurants = useStore(useCallback(() => restaurantStore.getAll(), []));
+  const allBranches = useStore(useCallback(() => branchStore.getAll(), []));
+
   const restaurant = restaurants.find((r) => r.id === params.restaurantId);
+
+  const popularItems = useStore(useCallback(
+    () => restaurant ? menuStore.getPopular(restaurant.id) : [],
+    [restaurant?.id]
+  ));
+  const newItems = useStore(useCallback(
+    () => restaurant ? menuStore.getNew(restaurant.id) : [],
+    [restaurant?.id]
+  ));
+
   if (!restaurant) return <div className="pt-24 text-center text-muted-foreground">{t("Restaurant not found", "المطعم غير موجود")}</div>;
 
-  const popularItems = menuItems.filter((m) => m.restaurant_id === restaurant.id && m.popular);
+  const branches = allBranches.filter((b) => b.restaurant_id === restaurant.id);
 
   return (
     <div className="min-h-screen bg-background pt-20 pb-12">
       <div className="max-w-5xl mx-auto px-4">
         {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-10"
-        >
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-10">
           <div
             className="rounded-2xl p-8 mb-6 relative overflow-hidden"
             style={{ background: `linear-gradient(135deg, ${restaurant.color}20, ${restaurant.color}05)`, border: `1px solid ${restaurant.color}30` }}
           >
             <div className="flex items-center gap-5">
               <div
-                className="w-20 h-20 rounded-2xl flex items-center justify-center text-4xl"
+                className="w-20 h-20 rounded-2xl flex items-center justify-center overflow-hidden flex-shrink-0"
                 style={{ background: `${restaurant.color}30` }}
               >
-                {restaurant.logo}
+                {restaurant.logoType === "image" && restaurant.logo ? (
+                  <img src={restaurant.logo} alt={restaurant.name_en} className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-4xl">{restaurant.logo}</span>
+                )}
               </div>
               <div>
                 <h1 className="text-3xl font-bold text-foreground">{t(restaurant.name_en, restaurant.name_ar)}</h1>
@@ -42,6 +57,33 @@ export default function RestaurantPage() {
             </div>
           </div>
         </motion.div>
+
+        {/* New Items */}
+        {newItems.length > 0 && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.05 }} className="mb-8">
+            <div className="flex items-center gap-2 mb-4">
+              <Sparkles size={16} className="text-yellow-400" />
+              <h2 className="text-lg font-bold text-foreground">{t("New Items", "جديدنا")}</h2>
+            </div>
+            <div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar">
+              {newItems.map((item) => (
+                <div
+                  key={item.id}
+                  className="flex-shrink-0 bg-card border border-yellow-400/20 rounded-xl p-4 w-48"
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="w-8 h-8 rounded-lg flex items-center justify-center overflow-hidden" style={{ background: `${restaurant.color}20` }}>
+                      {item.image ? <img src={item.image} alt="" className="w-full h-full object-cover rounded-lg" /> : <span className="text-base">🍽️</span>}
+                    </div>
+                    <span className="text-xs bg-yellow-400/15 text-yellow-400 px-1.5 py-0.5 rounded-full font-medium">{t("New", "جديد")}</span>
+                  </div>
+                  <p className="text-sm font-medium text-foreground line-clamp-2">{t(item.name_en, item.name_ar)}</p>
+                  <p className="text-sm font-bold mt-1" style={{ color: restaurant.color }}>{item.price} {t("SAR", "ريال")}</p>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        )}
 
         {/* Most Ordered */}
         {popularItems.length > 0 && (
@@ -58,10 +100,10 @@ export default function RestaurantPage() {
                   data-testid={`card-popular-${item.id}`}
                 >
                   <div
-                    className="w-10 h-10 rounded-lg flex items-center justify-center text-lg mb-3"
+                    className="w-10 h-10 rounded-lg flex items-center justify-center text-lg mb-3 overflow-hidden"
                     style={{ background: `${restaurant.color}20` }}
                   >
-                    🍽️
+                    {item.image ? <img src={item.image} alt="" className="w-full h-full object-cover rounded-lg" /> : "🍽️"}
                   </div>
                   <p className="text-sm font-medium text-foreground line-clamp-2">{t(item.name_en, item.name_ar)}</p>
                   <p className="text-sm font-bold mt-1" style={{ color: restaurant.color }}>{item.price} {t("SAR", "ريال")}</p>
@@ -75,7 +117,7 @@ export default function RestaurantPage() {
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}>
           <h2 className="text-lg font-bold text-foreground mb-4">{t("Select a Branch", "اختر الفرع")}</h2>
           <div className="grid gap-4 md:grid-cols-2">
-            {restaurant.branches.map((branch, i) => {
+            {branches.map((branch, i) => {
               const isOpen = isBranchOpen(branch);
               return (
                 <Link key={branch.id} href={`/restaurant/${restaurant.id}/branch/${branch.id}`}>

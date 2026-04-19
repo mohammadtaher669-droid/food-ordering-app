@@ -3,15 +3,11 @@ import { Link, useLocation } from "wouter";
 import { motion } from "framer-motion";
 import { useCart } from "@/contexts/CartContext";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { restaurants, coupons } from "@/data/restaurants";
+import { restaurantStore, branchStore, couponStore } from "@/lib/store";
 import { Trash2, Plus, Minus, ShoppingCart, Tag, ChevronRight, ChevronLeft } from "lucide-react";
 
 export function calculateDiscounts(subtotal: number, deliveryFee: number, orderType: "delivery" | "pickup", couponCode: string) {
-  const activeCoupons = [...coupons];
-  try {
-    const stored = JSON.parse(localStorage.getItem("admin_coupons") || "[]");
-    if (stored.length > 0) activeCoupons.splice(0, activeCoupons.length, ...stored);
-  } catch {}
+  const activeCoupons = couponStore.getAll();
 
   let couponDiscount = 0;
   let couponError = "";
@@ -48,8 +44,8 @@ export default function CartPage() {
   const [orderType, setOrderType] = useState<"delivery" | "pickup">("delivery");
   const ChevronIcon = isRTL ? ChevronLeft : ChevronRight;
 
-  const restaurant = restaurants.find((r) => r.id === selectedRestaurantId);
-  const branch = restaurant?.branches.find((b) => b.id === selectedBranchId);
+  const restaurant = restaurantStore.getAll().find((r) => r.id === selectedRestaurantId);
+  const branch = branchStore.getAll().find((b) => b.id === selectedBranchId);
 
   const deliveryFee = orderType === "delivery" ? (branch?.delivery_fee || 0) : 0;
   const { couponDiscount, autoDiscount, totalDiscount, finalTotal, couponError, appliedCoupon } = calculateDiscounts(
@@ -98,7 +94,9 @@ export default function CartPage() {
           {/* Restaurant info */}
           {restaurant && branch && (
             <div className="bg-card border border-white/5 rounded-xl p-3 mb-5 flex items-center gap-3">
-              <span className="text-xl">{restaurant.logo}</span>
+              {restaurant.logoType === "image" && restaurant.logo
+                ? <img src={restaurant.logo} alt="" className="w-7 h-7 rounded-lg object-cover" />
+                : <span className="text-xl">{restaurant.logo}</span>}
               <div>
                 <p className="text-sm font-medium text-foreground">{t(restaurant.name_en, restaurant.name_ar)}</p>
                 <p className="text-xs text-muted-foreground">{t(branch.name_en, branch.name_ar)}</p>

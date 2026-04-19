@@ -1,10 +1,11 @@
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { Switch, Route, Router as WouterRouter } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { CartProvider } from "@/contexts/CartContext";
+import { initializeStore } from "@/lib/initStore";
 import NavBar from "@/components/NavBar";
 import ClearCartDialog from "@/components/ClearCartDialog";
 import Home from "@/pages/Home";
@@ -22,7 +23,9 @@ import AdminBranches from "@/pages/admin/AdminBranches";
 import AdminMenu from "@/pages/admin/AdminMenu";
 import AdminCoupons from "@/pages/admin/AdminCoupons";
 import AdminReviews from "@/pages/admin/AdminReviews";
+import AdminOffers from "@/pages/admin/AdminOffers";
 import NotFound from "@/pages/not-found";
+import { useState } from "react";
 
 const queryClient = new QueryClient();
 
@@ -33,10 +36,11 @@ function AdminGuard({ children }: { children: React.ReactNode }) {
 }
 
 function AppRoutes() {
+  useEffect(() => { initializeStore(); }, []);
+
   return (
     <>
       <Switch>
-        {/* Admin routes - no NavBar */}
         <Route path="/admin">
           <AdminGuard><AdminDashboard /></AdminGuard>
         </Route>
@@ -49,6 +53,9 @@ function AppRoutes() {
         <Route path="/admin/menu">
           <AdminGuard><AdminMenu /></AdminGuard>
         </Route>
+        <Route path="/admin/offers">
+          <AdminGuard><AdminOffers /></AdminGuard>
+        </Route>
         <Route path="/admin/coupons">
           <AdminGuard><AdminCoupons /></AdminGuard>
         </Route>
@@ -56,7 +63,6 @@ function AppRoutes() {
           <AdminGuard><AdminReviews /></AdminGuard>
         </Route>
 
-        {/* Public routes - with NavBar */}
         <Route>
           <NavBar />
           <Switch>

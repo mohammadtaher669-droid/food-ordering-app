@@ -3,6 +3,7 @@ import { ShoppingCart, ChevronLeft, ChevronRight } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { motion } from "framer-motion";
+import matAmiLogo from "@assets/لوجو_الموقع_مطعمي_1776635393637.png";
 
 export default function NavBar() {
   const { cartCount } = useCart();
@@ -15,9 +16,12 @@ export default function NavBar() {
     <nav className="fixed top-0 left-0 right-0 z-50 bg-[#0F0F0F]/95 backdrop-blur-md border-b border-white/5">
       <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
         <Link href="/">
-          <span className="text-xl font-bold text-primary cursor-pointer tracking-tight" data-testid="nav-logo">
-            {t("OrderNow", "اطلب الآن")}
-          </span>
+          <div className="flex items-center gap-2 cursor-pointer" data-testid="nav-logo">
+            <img src={matAmiLogo} alt="Mat'ami" className="h-10 w-10 object-contain rounded-full" />
+            <span className="text-lg font-bold text-primary tracking-tight hidden sm:block">
+              {t("Mat'ami", "مطعمي")}
+            </span>
+          </div>
         </Link>
 
         <div className="flex items-center gap-3">

@@ -1,0 +1,323 @@
+ENHANCE AND UPGRADE THE EXISTING MULTI-RESTAURANT FOOD ORDERING WEB APP INTO A FULLY DYNAMIC, ADMIN-CONTROLLED, SCALABLE SYSTEM WITH COMPLETE CONTENT MANAGEMENT.
+
+---
+
+MAIN GOAL:
+Allow full control of restaurants, menus, images, offers, and settings directly from admin panel WITHOUT editing code.
+
+---
+
+ADMIN PANEL (/admin):
+
+1. FULL CONTROL DASHBOARD:
+
+Create a modern dashboard with sections:
+
+* Restaurants
+* Branches
+* Menu Builder
+* Offers & Promotions
+* Coupons
+* Reviews
+* Settings
+
+---
+
+2. RESTAURANT MANAGEMENT:
+
+Admin can:
+
+* Add/Edit/Delete restaurant
+
+* Fields:
+
+  * name_en
+  * name_ar
+  * logo (upload/change)
+  * color_theme
+
+* Upload logo with preview
+
+* Save logo as base64 or local storage
+
+---
+
+3. BRANCH MANAGEMENT:
+
+* Add/Edit/Delete branch
+* Assign to restaurant
+* Fields:
+
+  * branch_name
+  * whatsapp_number
+  * working_hours (open/close)
+  * delivery_fee
+
+---
+
+4. ADVANCED MENU BUILDER:
+
+Create dynamic structure:
+
+Category:
+
+* id
+* name_en
+* name_ar
+* restaurant_id
+
+Item:
+
+* id
+* name_en
+* name_ar
+* price
+* image
+* category_id
+* branch_id (optional or all branches)
+* is_available (true/false)
+* is_most_ordered (true/false)
+* is_new (true/false)
+
+---
+
+ADMIN FEATURES:
+
+* Add category
+
+* Edit category
+
+* Delete category
+
+* Reorder categories
+
+* Add item
+
+* Edit item
+
+* Delete item
+
+* Move item between categories
+
+* Upload item image
+
+* Preview before save
+
+---
+
+5. IMAGE UPLOAD SYSTEM:
+
+* Upload from device
+* Convert to base64
+* Store in localStorage
+* Preview before saving
+
+---
+
+6. OFFERS & PROMOTIONS SYSTEM:
+
+Create section:
+
+Offer:
+
+* id
+* title_en
+* title_ar
+* description
+* image/banner
+* type:
+
+  * percentage
+  * fixed
+  * free_delivery
+* value
+* restaurant_id OR global
+* active (true/false)
+
+---
+
+FRONTEND DISPLAY:
+
+HOMEPAGE:
+
+* "🔥 Offers & Discounts"
+* Slider / carousel
+* Click opens restaurant or offer
+
+RESTAURANT PAGE:
+
+* Show "Special Offers / العروض الخاصة" on top
+* Filter offers per restaurant
+
+---
+
+7. COUPON SYSTEM:
+
+* Add/edit/delete coupon
+* Fields:
+
+  * code
+  * type
+  * value
+  * active
+
+---
+
+8. DISCOUNT ENGINE:
+
+Apply in order:
+
+1. Coupon
+2. Auto discount:
+
+   * subtotal > 50 → 10%
+   * pickup → -2 SAR
+3. Offer discount (if applied)
+
+FINAL:
+subtotal + delivery fee - discounts = total
+
+---
+
+9. REVIEW SYSTEM:
+
+* Submit review page (/review)
+* Save as pending
+* Admin approve/reject
+
+---
+
+10. WHATSAPP INTEGRATION:
+
+Generate message with:
+
+* Restaurant name
+* Branch
+* Order type
+* Items list
+* Subtotal
+* Delivery fee
+* Discount details
+* Final total
+* Customer info
+
+Send to branch WhatsApp number
+
+---
+
+11. WORKING HOURS LOGIC:
+
+* If closed:
+  Show:
+  "Closed Now / مغلق حالياً"
+* Disable ordering
+
+---
+
+12. LANGUAGE SYSTEM:
+
+* Toggle Arabic / English
+* RTL / LTR support
+* Save in localStorage
+
+---
+
+13. USER EXPERIENCE:
+
+* Mobile-first design
+
+* Dark theme:
+  #0F0F0F background
+  #1A1A1A cards
+  #FF7A00 primary
+
+* Restaurant colors:
+  Sabah Al Lail → #6A0DAD
+  Asad Al Hamra → #C1121F
+  Chickens Bar → #FF3D00
+
+* Smooth animations
+
+* Toast notifications
+
+* Loading skeleton
+
+---
+
+14. EXTRA FEATURES:
+
+* Save cart in localStorage
+* Generate unique Order ID
+* Confirmation page
+* "Most Ordered" section
+* "New Items" badge
+
+Checkbox:
+"Agree to receive offers"
+
+---
+
+15. DATA IMPORT TOOL:
+
+Create feature:
+
+* Admin can paste JSON or structured text
+* System auto creates:
+
+  * categories
+  * items
+
+---
+
+16. ADMIN LOGIN (SIMULATION):
+
+* Simple login page
+* Store session in localStorage
+
+---
+
+17. VALIDATION:
+
+* Prevent empty fields
+* Validate prices
+* Validate images
+
+---
+
+18. SCALABLE STRUCTURE:
+
+Separate data:
+
+* restaurants
+* branches
+* categories
+* menu items
+* offers
+* coupons
+* reviews
+
+---
+
+IMPORTANT:
+
+* NO backend
+* Use localStorage / JSON
+* Code must be clean and scalable
+* UI must be premium and modern
+
+---
+
+FINAL RESULT:
+
+A fully dynamic SaaS-style food ordering system where admin can:
+
+* Edit everything
+* Upload images
+* Manage menus easily
+* Create offers
+* Control restaurants professionally
+* Receive orders via WhatsApp
+
+---
+
+MAKE SURE EVERYTHING IS EDITABLE FROM ADMIN PANEL ONLY.

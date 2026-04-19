@@ -1,27 +1,66 @@
-# Workspace
+# Mat'ami — Multi-Restaurant Food Ordering Platform
 
 ## Overview
 
-pnpm workspace monorepo using TypeScript. Each package manages its own dependencies.
+Premium multi-restaurant food ordering web app with WhatsApp order routing, bilingual Arabic/English support, and a full admin panel. Frontend-only, no backend — all data persisted via localStorage.
 
 ## Stack
 
-- **Monorepo tool**: pnpm workspaces
-- **Node.js version**: 24
-- **Package manager**: pnpm
-- **TypeScript version**: 5.9
-- **API framework**: Express 5
-- **Database**: PostgreSQL + Drizzle ORM
-- **Validation**: Zod (`zod/v4`), `drizzle-zod`
-- **API codegen**: Orval (from OpenAPI spec)
-- **Build**: esbuild (CJS bundle)
+- **Framework**: React + Vite + TypeScript (`@workspace/food-ordering`)
+- **Monorepo**: pnpm workspaces
+- **Routing**: Wouter
+- **Styling**: Tailwind CSS + shadcn/ui, dark premium theme (#0F0F0F bg, #FF7A00 primary)
+- **Animations**: Framer Motion
+- **State**: localStorage-based reactive store (`src/lib/store.ts`)
 
-## Key Commands
+## Key Files
 
-- `pnpm run typecheck` — full typecheck across all packages
-- `pnpm run build` — typecheck + build all packages
-- `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from OpenAPI spec
-- `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- `pnpm --filter @workspace/api-server run dev` — run API server locally
+- `src/lib/store.ts` — Central typed CRUD store for all entities (Restaurant, Branch, Category, MenuItem, Offer, Coupon, Review). Dispatches `store-updated` events for reactivity.
+- `src/lib/initStore.ts` — Seeds default data on first load.
+- `src/data/seedData.ts` — Real restaurant data + 100+ menu items extracted from menu images.
+- `src/hooks/useStore.ts` — React hook for reactive store subscriptions.
+- `src/contexts/CartContext.tsx` — Cart state with localStorage persistence.
+- `src/contexts/LanguageContext.tsx` — Bilingual AR/EN + RTL support.
 
-See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details.
+## Restaurants
+
+1. **Sabah Al Lail** (صباح الليل) — Breakfast, BBQ, late-night. Color: #6A9B3B
+2. **Asad Al Hamra Al-Bukhari** (أسد الحمراء البخاري) — Bukhari rice, grills, Saudi cuisine. Color: #C1121F
+3. **Chickens Bar** — Shawarma, Broasted, Burgers. Color: #FF5722
+
+Each has 2 branches (Riyadh + Jeddah) with WhatsApp numbers, delivery fees, and working hours.
+
+## Features
+
+### Customer Side
+- Home with offers carousel and restaurant cards
+- Restaurant page: popular items strip, new items, branch selection with open/closed status
+- Branch page: category tabs, menu items with Add to Cart
+- Cart: quantity control, promo codes, auto-discount (10% over 50 SAR + 2 SAR pickup)
+- Checkout: customer details form, WhatsApp order routing
+- Confirmation + review submission
+
+### Admin Panel (`/admin`, password: `admin123`)
+- **Dashboard**: stats overview + JSON export/import + reset
+- **Restaurants**: full CRUD — name, logo (emoji or image upload), color theme, description
+- **Branches**: full CRUD — name, WhatsApp, open/close hours, delivery fee, address
+- **Menu Builder**: category + item CRUD with image upload, popular/new/available toggles
+- **Offers**: create/toggle/delete promotional offers (%, fixed, free delivery) with carousel display
+- **Coupons**: create/toggle/delete coupon codes
+- **Reviews**: approve or delete customer reviews
+
+## Assets
+
+Logos at `attached_assets/`:
+- `لوجو_الموقع_مطعمي_1776635393637.png` — Mat'ami platform logo
+- `صباح_الليل_1776635384733.png` — Sabah Al Lail
+- `اسد_الحمرا_1776635384732.png` — Asad Al Hamra
+- `chickens_bar_1776635384731.png` — Chickens Bar
+
+## Dev Commands
+
+```bash
+pnpm --filter @workspace/food-ordering run dev   # start dev server
+```
+
+The app auto-initializes store data from seedData.ts on first load. Reset via Admin > Dashboard > Reset.
