@@ -30,6 +30,15 @@ Premium multi-restaurant food ordering web app with WhatsApp order routing, bili
 
 Each has 2 branches (Riyadh + Jeddah) with WhatsApp numbers, delivery fees, and working hours.
 
+## UI Design System
+
+- **Hero section**: Full-screen parallax with floating food icons, radial gradient glow, animated CTA
+- **Restaurant cards**: Cover image (uploadable) + logo overlap + glow on hover, brand color accents
+- **Restaurant page**: Full-width cover image hero with gradient overlay + restaurant name overlay
+- **WhatsApp sticky**: Green floating button on branch pages — direct link to branch WhatsApp
+- **Floating cart bar**: Appears at bottom when cart has items, shows count + total
+- **Offers carousel**: Auto-rotating with slide animation
+
 ## Features
 
 ### Customer Side

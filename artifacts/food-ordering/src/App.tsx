@@ -8,6 +8,7 @@ import { CartProvider } from "@/contexts/CartContext";
 import { initializeStore } from "@/lib/initStore";
 import NavBar from "@/components/NavBar";
 import ClearCartDialog from "@/components/ClearCartDialog";
+import FloatingCart from "@/components/FloatingCart";
 import Home from "@/pages/Home";
 import RestaurantPage from "@/pages/RestaurantPage";
 import BranchPage from "@/pages/BranchPage";
@@ -76,6 +77,7 @@ function AppRoutes() {
             <Route component={NotFound} />
           </Switch>
           <ClearCartDialog />
+          <FloatingCart />
         </Route>
       </Switch>
     </>

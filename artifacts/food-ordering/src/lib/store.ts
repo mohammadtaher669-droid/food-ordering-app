@@ -12,6 +12,9 @@ export interface Restaurant {
   color: string;
   description_en: string;
   description_ar: string;
+  cover_image?: string; // base64 cover photo
+  tagline_en?: string;
+  tagline_ar?: string;
 }
 
 export interface Branch {

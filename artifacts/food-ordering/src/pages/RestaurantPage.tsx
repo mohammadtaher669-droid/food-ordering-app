@@ -5,12 +5,13 @@ import { restaurantStore, branchStore, menuStore } from "@/lib/store";
 import { useStore } from "@/hooks/useStore";
 import { useLanguage } from "@/contexts/LanguageContext";
 import WorkingHoursStatus, { isBranchOpen } from "@/components/WorkingHoursStatus";
-import { ChevronRight, ChevronLeft, MapPin, Star, Sparkles } from "lucide-react";
+import { ChevronRight, ChevronLeft, MapPin, Star, Sparkles, ArrowLeft, ArrowRight } from "lucide-react";
 
 export default function RestaurantPage() {
   const params = useParams<{ restaurantId: string }>();
   const { t, isRTL } = useLanguage();
   const ChevronIcon = isRTL ? ChevronLeft : ChevronRight;
+  const ArrowIcon = isRTL ? ArrowRight : ArrowLeft;
 
   const restaurants = useStore(useCallback(() => restaurantStore.getAll(), []));
   const allBranches = useStore(useCallback(() => branchStore.getAll(), []));
@@ -26,38 +27,81 @@ export default function RestaurantPage() {
     [restaurant?.id]
   ));
 
-  if (!restaurant) return <div className="pt-24 text-center text-muted-foreground">{t("Restaurant not found", "المطعم غير موجود")}</div>;
+  if (!restaurant) return (
+    <div className="pt-24 text-center text-muted-foreground">
+      {t("Restaurant not found", "المطعم غير موجود")}
+    </div>
+  );
 
   const branches = allBranches.filter((b) => b.restaurant_id === restaurant.id);
 
   return (
-    <div className="min-h-screen bg-background pt-20 pb-12">
-      <div className="max-w-5xl mx-auto px-4">
-        {/* Header */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-10">
+    <div className="min-h-screen bg-[#0F0F0F]">
+      {/* Hero Cover */}
+      <div className="relative h-64 md:h-80 overflow-hidden">
+        {restaurant.cover_image ? (
+          <img
+            src={restaurant.cover_image}
+            alt={restaurant.name_en}
+            className="w-full h-full object-cover"
+          />
+        ) : (
           <div
-            className="rounded-2xl p-8 mb-6 relative overflow-hidden"
-            style={{ background: `linear-gradient(135deg, ${restaurant.color}20, ${restaurant.color}05)`, border: `1px solid ${restaurant.color}30` }}
+            className="w-full h-full"
+            style={{
+              background: `linear-gradient(135deg, ${restaurant.color}30 0%, ${restaurant.color}10 40%, #0F0F0F 100%)`,
+            }}
           >
-            <div className="flex items-center gap-5">
-              <div
-                className="w-20 h-20 rounded-2xl flex items-center justify-center overflow-hidden flex-shrink-0"
-                style={{ background: `${restaurant.color}30` }}
-              >
-                {restaurant.logoType === "image" && restaurant.logo ? (
-                  <img src={restaurant.logo} alt={restaurant.name_en} className="w-full h-full object-cover" />
-                ) : (
-                  <span className="text-4xl">{restaurant.logo}</span>
-                )}
-              </div>
-              <div>
-                <h1 className="text-3xl font-bold text-foreground">{t(restaurant.name_en, restaurant.name_ar)}</h1>
-                <p className="text-muted-foreground mt-1">{t(restaurant.description_en, restaurant.description_ar)}</p>
-              </div>
+            <div
+              className="absolute inset-0 opacity-5"
+              style={{
+                backgroundImage: `radial-gradient(circle at 25% 50%, ${restaurant.color} 1px, transparent 1px)`,
+                backgroundSize: "32px 32px",
+              }}
+            />
+          </div>
+        )}
+        {/* Gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-[#0F0F0F] via-[#0F0F0F]/40 to-transparent" />
+        {/* Color stripe */}
+        <div className="absolute bottom-0 left-0 right-0 h-0.5" style={{ background: restaurant.color }} />
+
+        {/* Back button */}
+        <div className="absolute top-20 left-4">
+          <Link href="/">
+            <button className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-black/40 backdrop-blur-sm border border-white/10 text-sm text-foreground hover:bg-black/60 transition">
+              <ArrowIcon size={14} />
+              {t("Back", "رجوع")}
+            </button>
+          </Link>
+        </div>
+
+        {/* Restaurant Identity */}
+        <div className="absolute bottom-6 left-0 right-0 px-4 max-w-5xl mx-auto">
+          <div className="flex items-end gap-4">
+            <div
+              className="w-16 h-16 md:w-20 md:h-20 rounded-2xl border-2 flex-shrink-0 overflow-hidden flex items-center justify-center shadow-xl"
+              style={{ borderColor: `${restaurant.color}60`, background: `${restaurant.color}20` }}
+            >
+              {restaurant.logoType === "image" && restaurant.logo ? (
+                <img src={restaurant.logo} alt={restaurant.name_en} className="w-full h-full object-cover" />
+              ) : (
+                <span className="text-3xl">{restaurant.logo}</span>
+              )}
+            </div>
+            <div className="pb-1">
+              <h1 className="text-2xl md:text-3xl font-black text-foreground drop-shadow-lg">
+                {t(restaurant.name_en, restaurant.name_ar)}
+              </h1>
+              <p className="text-sm text-white/70 mt-0.5">
+                {t(restaurant.tagline_en || restaurant.description_en, restaurant.tagline_ar || restaurant.description_ar)}
+              </p>
             </div>
           </div>
-        </motion.div>
+        </div>
+      </div>
 
+      <div className="max-w-5xl mx-auto px-4 pt-8 pb-12">
         {/* New Items */}
         {newItems.length > 0 && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.05 }} className="mb-8">
@@ -69,16 +113,21 @@ export default function RestaurantPage() {
               {newItems.map((item) => (
                 <div
                   key={item.id}
-                  className="flex-shrink-0 bg-card border border-yellow-400/20 rounded-xl p-4 w-48"
+                  className="flex-shrink-0 rounded-xl border border-yellow-400/15 overflow-hidden w-44"
+                  style={{ background: "#1A1A1A" }}
                 >
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="w-8 h-8 rounded-lg flex items-center justify-center overflow-hidden" style={{ background: `${restaurant.color}20` }}>
-                      {item.image ? <img src={item.image} alt="" className="w-full h-full object-cover rounded-lg" /> : <span className="text-base">🍽️</span>}
+                  {item.image ? (
+                    <img src={item.image} alt="" className="w-full h-24 object-cover" />
+                  ) : (
+                    <div className="w-full h-24 flex items-center justify-center text-3xl" style={{ background: `${restaurant.color}10` }}>🍽️</div>
+                  )}
+                  <div className="p-3">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-[10px] bg-yellow-400/15 text-yellow-400 px-1.5 py-0.5 rounded-full font-medium">{t("New", "جديد")}</span>
                     </div>
-                    <span className="text-xs bg-yellow-400/15 text-yellow-400 px-1.5 py-0.5 rounded-full font-medium">{t("New", "جديد")}</span>
+                    <p className="text-xs font-semibold text-foreground line-clamp-2 leading-snug">{t(item.name_en, item.name_ar)}</p>
+                    <p className="text-xs font-bold mt-1.5" style={{ color: restaurant.color }}>{item.price} {t("SAR", "ريال")}</p>
                   </div>
-                  <p className="text-sm font-medium text-foreground line-clamp-2">{t(item.name_en, item.name_ar)}</p>
-                  <p className="text-sm font-bold mt-1" style={{ color: restaurant.color }}>{item.price} {t("SAR", "ريال")}</p>
                 </div>
               ))}
             </div>
@@ -96,17 +145,19 @@ export default function RestaurantPage() {
               {popularItems.map((item) => (
                 <div
                   key={item.id}
-                  className="flex-shrink-0 bg-card border border-white/5 rounded-xl p-4 w-48"
+                  className="flex-shrink-0 rounded-xl border border-white/5 overflow-hidden w-44"
+                  style={{ background: "#1A1A1A" }}
                   data-testid={`card-popular-${item.id}`}
                 >
-                  <div
-                    className="w-10 h-10 rounded-lg flex items-center justify-center text-lg mb-3 overflow-hidden"
-                    style={{ background: `${restaurant.color}20` }}
-                  >
-                    {item.image ? <img src={item.image} alt="" className="w-full h-full object-cover rounded-lg" /> : "🍽️"}
+                  {item.image ? (
+                    <img src={item.image} alt="" className="w-full h-24 object-cover" />
+                  ) : (
+                    <div className="w-full h-24 flex items-center justify-center text-3xl" style={{ background: `${restaurant.color}10` }}>🍽️</div>
+                  )}
+                  <div className="p-3">
+                    <p className="text-xs font-semibold text-foreground line-clamp-2 leading-snug">{t(item.name_en, item.name_ar)}</p>
+                    <p className="text-xs font-bold mt-1.5" style={{ color: restaurant.color }}>{item.price} {t("SAR", "ريال")}</p>
                   </div>
-                  <p className="text-sm font-medium text-foreground line-clamp-2">{t(item.name_en, item.name_ar)}</p>
-                  <p className="text-sm font-bold mt-1" style={{ color: restaurant.color }}>{item.price} {t("SAR", "ريال")}</p>
                 </div>
               ))}
             </div>
@@ -125,7 +176,17 @@ export default function RestaurantPage() {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.1 * i }}
-                    className={`bg-card border rounded-2xl p-5 cursor-pointer group transition-all hover:border-white/15 ${isOpen ? "border-white/5" : "border-white/5 opacity-70"}`}
+                    className="rounded-2xl p-5 cursor-pointer group transition-all duration-300"
+                    style={{
+                      background: "#1A1A1A",
+                      border: `1px solid ${isOpen ? `${restaurant.color}25` : "rgba(255,255,255,0.05)"}`,
+                    }}
+                    onMouseEnter={(e) => {
+                      (e.currentTarget as HTMLElement).style.boxShadow = `0 0 24px ${restaurant.color}20`;
+                    }}
+                    onMouseLeave={(e) => {
+                      (e.currentTarget as HTMLElement).style.boxShadow = "none";
+                    }}
                     data-testid={`card-branch-${branch.id}`}
                   >
                     <div className="flex items-start justify-between mb-3">
@@ -138,9 +199,12 @@ export default function RestaurantPage() {
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-xs text-muted-foreground">
-                        {t("Delivery fee:", "رسوم التوصيل:")} <span className="text-foreground font-medium">{branch.delivery_fee} {t("SAR", "ريال")}</span>
+                        {t("Delivery:", "التوصيل:")} <span className="text-foreground font-semibold">{branch.delivery_fee} {t("SAR", "ريال")}</span>
                       </span>
-                      <div className="flex items-center gap-1 text-sm font-medium transition-all group-hover:gap-2" style={{ color: restaurant.color }}>
+                      <div
+                        className="flex items-center gap-1 text-sm font-semibold transition-all group-hover:gap-2"
+                        style={{ color: restaurant.color }}
+                      >
                         <span>{t("Order Now", "اطلب الآن")}</span>
                         <ChevronIcon size={14} />
                       </div>

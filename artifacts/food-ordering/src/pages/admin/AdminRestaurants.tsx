@@ -3,14 +3,14 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { restaurantStore } from "@/lib/store";
 import type { Restaurant } from "@/lib/store";
 import { useStore } from "@/hooks/useStore";
-import { Plus, Trash2, Edit2, Check, X, Upload, Image } from "lucide-react";
+import { Plus, Trash2, Edit2, Check, X, Upload } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const COLOR_PRESETS = ["#6A9B3B", "#C1121F", "#FF5722", "#FF7A00", "#6A0DAD", "#0EA5E9", "#10B981", "#F59E0B"];
 
 const emptyForm: Partial<Restaurant> = {
   name_en: "", name_ar: "", logo: "", logoType: "emoji", color: "#FF7A00",
-  description_en: "", description_ar: "",
+  description_en: "", description_ar: "", tagline_en: "", tagline_ar: "", cover_image: undefined,
 };
 
 function LogoDisplay({ restaurant }: { restaurant: Restaurant }) {
@@ -28,6 +28,16 @@ export default function AdminRestaurants() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<Partial<Restaurant>>(emptyForm);
   const fileRef = useRef<HTMLInputElement>(null);
+  const coverRef = useRef<HTMLInputElement>(null);
+
+  const handleCoverUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 3 * 1024 * 1024) { toast({ title: t("File too large", "الملف كبير جداً"), description: t("Max 3MB", "الحد الأقصى 3MB"), variant: "destructive" }); return; }
+    const reader = new FileReader();
+    reader.onload = (ev) => setForm((f) => ({ ...f, cover_image: ev.target?.result as string }));
+    reader.readAsDataURL(file);
+  };
 
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -53,6 +63,9 @@ export default function AdminRestaurants() {
       color: form.color || "#FF7A00",
       description_en: form.description_en || "",
       description_ar: form.description_ar || "",
+      cover_image: form.cover_image,
+      tagline_en: form.tagline_en || "",
+      tagline_ar: form.tagline_ar || "",
     };
     restaurantStore.save(restaurant);
     toast({ title: editingId ? t("Updated!", "تم التحديث!") : t("Added!", "تمت الإضافة!") });
@@ -104,6 +117,33 @@ export default function AdminRestaurants() {
             </div>
             <div className="col-span-2">
               <Field label={t("Description (AR)", "الوصف (AR)")} value={form.description_ar || ""} onChange={(v) => setForm({ ...form, description_ar: v })} />
+            </div>
+            <Field label={t("Tagline (EN) — shown on card", "الشعار القصير (EN)")} value={form.tagline_en || ""} onChange={(v) => setForm({ ...form, tagline_en: v })} placeholder={t("e.g. Fresh & crispy everyday", "مثال: الأفضل دائماً")} />
+            <Field label={t("Tagline (AR) — shown on card", "الشعار القصير (AR)")} value={form.tagline_ar || ""} onChange={(v) => setForm({ ...form, tagline_ar: v })} placeholder="مثال: الأفضل دائماً" />
+          </div>
+
+          {/* Cover Image */}
+          <div>
+            <label className="text-xs text-muted-foreground mb-2 block">{t("Cover Image (shown on restaurant card & page)", "صورة الغلاف (تظهر على بطاقة المطعم والصفحة)")}</label>
+            <div className="flex items-center gap-3">
+              {form.cover_image && (
+                <img src={form.cover_image} alt="cover" className="h-20 w-36 rounded-xl object-cover flex-shrink-0 border border-white/10" />
+              )}
+              <div className="space-y-2">
+                <button
+                  onClick={() => coverRef.current?.click()}
+                  className="flex items-center gap-1.5 px-3 py-2 border border-white/10 rounded-xl text-sm text-muted-foreground hover:text-foreground transition"
+                >
+                  <Upload size={13} /> {t("Upload Cover Image", "رفع صورة الغلاف")}
+                </button>
+                {form.cover_image && (
+                  <button onClick={() => setForm({ ...form, cover_image: undefined })} className="text-xs text-destructive/70 hover:text-destructive block">
+                    {t("Remove cover", "إزالة الغلاف")}
+                  </button>
+                )}
+                <p className="text-xs text-muted-foreground/60">{t("Max 3MB. Will display as a banner.", "الحد الأقصى 3MB.")}</p>
+              </div>
+              <input ref={coverRef} type="file" accept="image/*" className="hidden" onChange={handleCoverUpload} />
             </div>
           </div>
 
@@ -180,19 +220,31 @@ export default function AdminRestaurants() {
       {/* List */}
       <div className="space-y-4">
         {restaurants.map((restaurant) => (
-          <div key={restaurant.id} className="bg-card border border-white/5 rounded-2xl p-5" data-testid={`admin-restaurant-${restaurant.id}`}>
-            <div className="flex items-start gap-4">
-              <div className="w-14 h-14 rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden" style={{ background: `${restaurant.color}20` }}>
+          <div key={restaurant.id} className="bg-card border border-white/5 rounded-2xl overflow-hidden" data-testid={`admin-restaurant-${restaurant.id}`}>
+            {/* Cover image strip */}
+            <div className="relative h-20 overflow-hidden">
+              {restaurant.cover_image ? (
+                <img src={restaurant.cover_image} alt="" className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full" style={{ background: `linear-gradient(135deg, ${restaurant.color}25, ${restaurant.color}08)` }} />
+              )}
+              <div className="absolute inset-0 bg-gradient-to-t from-[#1A1A1A]/80 to-transparent" />
+              <div className="absolute bottom-2 right-3 flex items-center gap-1.5">
+                <div className="w-3 h-3 rounded-full" style={{ background: restaurant.color }} />
+                <span className="text-xs text-white/60">{restaurant.color}</span>
+              </div>
+            </div>
+            <div className="p-4 flex items-start gap-3">
+              <div className="-mt-8 w-14 h-14 rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden border-2 border-[#1A1A1A] relative z-10" style={{ background: `${restaurant.color}20` }}>
                 <LogoDisplay restaurant={restaurant} />
               </div>
-              <div className="flex-1 min-w-0">
+              <div className="flex-1 min-w-0 pt-1">
                 <div className="flex items-start justify-between gap-2">
                   <div>
                     <h3 className="font-bold text-foreground">{t(restaurant.name_en, restaurant.name_ar)}</h3>
-                    <p className="text-sm text-muted-foreground mt-0.5 line-clamp-1">{t(restaurant.description_en, restaurant.description_ar)}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{t(restaurant.tagline_en || restaurant.description_en, restaurant.tagline_ar || restaurant.description_ar)}</p>
                   </div>
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    <div className="w-4 h-4 rounded-full" style={{ background: restaurant.color }} />
+                  <div className="flex items-center gap-1 flex-shrink-0">
                     <button onClick={() => handleEdit(restaurant)} className="p-1.5 rounded-lg hover:bg-white/5 text-muted-foreground hover:text-foreground transition" data-testid={`btn-edit-restaurant-${restaurant.id}`}>
                       <Edit2 size={14} />
                     </button>

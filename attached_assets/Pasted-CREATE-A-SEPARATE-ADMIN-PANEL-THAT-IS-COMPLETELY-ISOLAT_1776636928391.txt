@@ -1,0 +1,177 @@
+CREATE A SEPARATE ADMIN PANEL THAT IS COMPLETELY ISOLATED FROM THE CUSTOMER-FACING WEBSITE.
+
+---
+
+MAIN IDEA:
+
+The system must have TWO DIFFERENT INTERFACES:
+
+1. CUSTOMER WEBSITE (PUBLIC)
+2. ADMIN PANEL (PRIVATE - NOT VISIBLE TO USERS)
+
+---
+
+1. ROUTING STRUCTURE:
+
+* "/" → Customer Homepage
+
+* "/restaurant/:id" → Restaurant Page
+
+* "/checkout" → Checkout
+
+* "/admin-login" → Admin Login Page
+
+* "/admin" → Admin Dashboard (PROTECTED)
+
+---
+
+2. ADMIN AUTHENTICATION (IMPORTANT):
+
+Create login system:
+
+* Username: admin
+* Password: 123456
+
+Features:
+
+* If NOT logged in → cannot access /admin
+* Redirect to /admin-login
+* Save login session in localStorage
+
+---
+
+3. HIDE ADMIN FROM USERS:
+
+* DO NOT show admin link anywhere in customer UI
+* Only accessible via direct link:
+  example.com/admin
+
+---
+
+4. ADMIN DASHBOARD:
+
+Create clean sidebar layout:
+
+Sections:
+
+* Dashboard Overview
+* Restaurants
+* Branches
+* Menu Management
+* Offers & Discounts
+* Coupons
+* Reviews
+* Settings
+
+---
+
+5. FULL CONTROL FEATURES:
+
+Admin can:
+
+✅ Add/Edit/Delete Restaurants
+✅ Upload/change logos
+✅ Upload restaurant cover images
+
+✅ Add/Edit/Delete branches
+✅ Set WhatsApp number
+✅ Set working hours
+✅ Set delivery fees
+
+✅ FULL MENU CONTROL:
+
+* Add categories
+* Add items
+* Edit prices
+* Upload images
+* Move items between categories
+
+✅ OFFERS CONTROL:
+
+* Add offer banners
+* Add images
+* Activate/deactivate offers
+* Assign to restaurant
+
+✅ COUPONS:
+
+* Create codes
+* Control discounts
+
+✅ REVIEWS:
+
+* Approve or reject
+
+---
+
+6. LIVE DATA UPDATE:
+
+* Any change in admin panel → instantly reflects on website
+* Use shared state (localStorage)
+
+---
+
+7. CUSTOMER WEBSITE (PUBLIC):
+
+* Clean UI
+* No admin tools visible
+* Only browsing + ordering
+
+---
+
+8. SECURITY SIMULATION:
+
+* Block admin routes if not logged in
+* Logout button in admin panel
+
+---
+
+9. EDIT MODE (OPTIONAL ADVANCED):
+
+Inside admin:
+
+* Toggle "Edit Mode"
+* Click any item → edit popup
+
+---
+
+10. UX:
+
+ADMIN:
+
+* Simple
+* Fast
+* Clear
+
+CUSTOMER:
+
+* Beautiful
+* Attractive
+* Focused on ordering
+
+---
+
+11. FINAL STRUCTURE:
+
+* Admin system works like real SaaS dashboard
+* Customer sees only ordering experience
+* Admin controls EVERYTHING from private panel
+
+---
+
+IMPORTANT:
+
+* No backend required
+* Use localStorage
+* Keep data synced
+* Keep code clean
+
+---
+
+FINAL RESULT:
+
+A professional system with:
+
+* Hidden admin panel
+* Full business control
+* Clean customer experience

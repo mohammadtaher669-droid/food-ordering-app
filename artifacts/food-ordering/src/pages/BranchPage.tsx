@@ -2,6 +2,7 @@ import { useParams } from "wouter";
 import { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { restaurantStore, branchStore, categoryStore, menuStore } from "@/lib/store";
+import WhatsAppSticky from "@/components/WhatsAppSticky";
 import type { MenuItem } from "@/lib/store";
 import { useStore } from "@/hooks/useStore";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -181,6 +182,7 @@ export default function BranchPage() {
           </motion.div>
         </AnimatePresence>
       </div>
+      <WhatsAppSticky branchId={params.branchId} />
     </div>
   );
 }
