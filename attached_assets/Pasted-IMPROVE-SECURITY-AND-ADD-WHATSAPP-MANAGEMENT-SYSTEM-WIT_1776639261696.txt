@@ -1,0 +1,181 @@
+IMPROVE SECURITY AND ADD WHATSAPP MANAGEMENT SYSTEM WITH FULL ADMIN CONTROL.
+
+---
+
+1. REMOVE PASSWORD HINT (IMPORTANT):
+
+* REMOVE any visible password hints like:
+  "admin123"
+
+* DO NOT display password anywhere in UI
+
+* Replace with:
+  "Enter your password"
+
+---
+
+2. SECURE PASSWORD INPUT:
+
+* Make password field type="password"
+* Add show/hide toggle (eye icon)
+
+---
+
+3. ADMIN PASSWORD MANAGEMENT:
+
+Create section inside Admin Panel:
+
+"🔐 Change Password"
+
+Fields:
+
+* Current password
+* New password
+* Confirm new password
+
+Rules:
+
+* Validate current password
+* Save new password in localStorage securely
+* Show success message
+
+---
+
+4. WHATSAPP MANAGEMENT SYSTEM:
+
+Inside Admin Panel create:
+
+"📱 WhatsApp Settings"
+
+---
+
+A. PER RESTAURANT / BRANCH:
+
+Admin can:
+
+* Add WhatsApp number per branch
+* Edit number
+* Enable / Disable number
+
+Example structure:
+
+branch:
+
+* name
+* whatsapp_number
+* is_active
+
+---
+
+B. TEST WHATSAPP BUTTON:
+
+Add button:
+
+"Test WhatsApp"
+
+Action:
+
+* Opens WhatsApp link:
+  https://wa.me/{number}
+
+* Pre-filled message:
+  "Test message from system"
+
+---
+
+C. VALIDATION:
+
+* Only allow valid numbers
+* Format:
+  country code required (e.g. 966...)
+
+---
+
+5. GLOBAL WHATSAPP (IMPORTANT):
+
+Create global setting:
+
+"📞 Admin WhatsApp"
+
+This number will be used for:
+
+* Customer complaints
+* Contact us
+* Support button
+
+---
+
+FRONTEND:
+
+* Add floating button:
+  "Contact us on WhatsApp"
+
+* Opens admin WhatsApp number
+
+---
+
+6. WHATSAPP ORDER IMPROVEMENT:
+
+When sending order:
+
+* Use branch WhatsApp if available
+* If not → fallback to admin WhatsApp
+
+---
+
+7. DATA STORAGE:
+
+Store in localStorage:
+
+* admin_password
+* whatsapp_numbers
+* global_whatsapp
+
+---
+
+8. ADMIN CONTROL:
+
+Admin can:
+
+* Change password anytime
+* Control all WhatsApp numbers
+* Activate/deactivate per branch
+
+---
+
+9. SECURITY IMPROVEMENTS:
+
+* Prevent access to admin without login
+* Logout button
+* Session stored securely
+
+---
+
+10. UX IMPROVEMENTS:
+
+* Toast:
+  "Password changed successfully"
+
+* Toast:
+  "WhatsApp number saved"
+
+* Toast:
+  "Invalid number"
+
+---
+
+IMPORTANT:
+
+* DO NOT expose any sensitive data
+* KEEP UI clean and professional
+* ALL SETTINGS editable from admin panel
+
+---
+
+FINAL RESULT:
+
+* Secure admin login
+* No password leaks
+* Full WhatsApp control per restaurant
+* Global support WhatsApp
+* Professional system ready for real use

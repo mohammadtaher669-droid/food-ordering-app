@@ -9,6 +9,7 @@ import { initializeStore } from "@/lib/initStore";
 import NavBar from "@/components/NavBar";
 import ClearCartDialog from "@/components/ClearCartDialog";
 import BottomNav from "@/components/BottomNav";
+import GlobalWhatsAppButton from "@/components/GlobalWhatsAppButton";
 import Home from "@/pages/Home";
 import RestaurantPage from "@/pages/RestaurantPage";
 import BranchPage from "@/pages/BranchPage";
@@ -27,6 +28,7 @@ import AdminMenu from "@/pages/admin/AdminMenu";
 import AdminCoupons from "@/pages/admin/AdminCoupons";
 import AdminReviews from "@/pages/admin/AdminReviews";
 import AdminOffers from "@/pages/admin/AdminOffers";
+import AdminSettings from "@/pages/admin/AdminSettings";
 import NotFound from "@/pages/not-found";
 import { useState } from "react";
 
@@ -65,6 +67,9 @@ function AppRoutes() {
         <Route path="/admin/reviews">
           <AdminGuard><AdminReviews /></AdminGuard>
         </Route>
+        <Route path="/admin/settings">
+          <AdminGuard><AdminSettings /></AdminGuard>
+        </Route>
 
         <Route>
           <NavBar />
@@ -81,6 +86,7 @@ function AppRoutes() {
             <Route component={NotFound} />
           </Switch>
           <ClearCartDialog />
+          <GlobalWhatsAppButton />
           <BottomNav />
         </Route>
       </Switch>

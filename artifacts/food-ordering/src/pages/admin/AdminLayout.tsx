@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { LayoutDashboard, UtensilsCrossed, MapPin, BookOpen, Tag, Star, LogOut, Menu, X, Percent } from "lucide-react";
+import { LayoutDashboard, UtensilsCrossed, MapPin, BookOpen, Tag, Star, LogOut, Menu, X, Percent, Settings } from "lucide-react";
 import matAmiLogo from "@assets/لوجو_الموقع_مطعمي_1776635393637.png";
 
 const NAV = [
@@ -12,6 +12,7 @@ const NAV = [
   { path: "/admin/offers", label_en: "Offers", label_ar: "العروض", icon: Percent },
   { path: "/admin/coupons", label_en: "Coupons", label_ar: "الأكواد", icon: Tag },
   { path: "/admin/reviews", label_en: "Reviews", label_ar: "التقييمات", icon: Star },
+  { path: "/admin/settings", label_en: "Settings", label_ar: "الإعدادات", icon: Settings },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -28,8 +29,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     <div className="min-h-screen bg-background flex">
       {mobileOpen && <div className="fixed inset-0 bg-black/50 z-40 md:hidden" onClick={() => setMobileOpen(false)} />}
 
-      <aside className={`fixed left-0 top-0 h-full w-60 bg-sidebar border-r border-sidebar-border z-50 transition-transform md:translate-x-0 ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`}>
-        <div className="p-4 border-b border-white/5">
+      <aside className={`fixed left-0 top-0 h-full w-60 bg-sidebar border-r border-sidebar-border z-50 transition-transform md:translate-x-0 flex flex-col ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`}>
+        <div className="p-4 border-b border-white/5 flex-shrink-0">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <img src={matAmiLogo} alt="Mat'ami" className="h-9 w-9 object-contain rounded-full" />
@@ -38,7 +39,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <button onClick={() => setMobileOpen(false)} className="md:hidden text-muted-foreground"><X size={18} /></button>
           </div>
         </div>
-        <nav className="p-3 space-y-1">
+        <nav className="p-3 space-y-1 flex-1 overflow-y-auto">
           {NAV.map((item) => {
             const active = item.exact ? location === item.path : location.startsWith(item.path) && item.path !== "/admin";
             const Icon = item.icon;
@@ -55,7 +56,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             );
           })}
         </nav>
-        <div className="absolute bottom-5 left-0 right-0 px-3">
+        <div className="p-3 flex-shrink-0 border-t border-white/5">
           <button
             onClick={handleLogout}
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-muted-foreground hover:text-destructive hover:bg-destructive/5 transition"
