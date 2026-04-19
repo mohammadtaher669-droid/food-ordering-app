@@ -1,0 +1,200 @@
+ADD DELIVERY ZONE MANAGEMENT + IMAGE SIZE OPTIMIZATION + LARGE BANNER SYSTEM FOR OFFERS.
+
+---
+
+MAIN GOAL:
+
+1. Allow admin to define delivery areas per branch
+2. Improve menu item image sizes (medium, clear)
+3. Add large promotional banners (hero sliders) per restaurant and homepage
+
+---
+
+1. DELIVERY ZONE SYSTEM (IMPORTANT)
+
+FOR EACH BRANCH:
+
+Add fields:
+
+* delivery_type: ("radius" | "polygon")
+* center_lat
+* center_lng
+* delivery_radius_km
+* polygon_coordinates: [{lat, lng}]
+* delivery_fee_rules (optional tiers)
+* is_delivery_enabled (true/false)
+
+---
+
+ADMIN PANEL:
+
+Create section:
+
+"📍 Delivery Zones"
+
+FEATURES:
+
+A. MAP INTEGRATION:
+
+* Use Google Maps or Leaflet
+* Show branch location
+
+B. TWO MODES:
+
+1. RADIUS MODE:
+
+* Admin selects center point
+* Slider to choose radius (1km → 20km)
+* Draw circle on map
+
+2. POLYGON MODE:
+
+* Admin draws custom area on map
+* Save coordinates
+
+---
+
+C. VALIDATION:
+
+* Customer location must be inside zone
+* If outside:
+
+Show:
+"Delivery not available in your area / التوصيل غير متوفر في منطقتك"
+
+---
+
+D. CUSTOMER LOCATION:
+
+* Ask for location (GPS or manual pin)
+* Save temporarily
+
+---
+
+E. DELIVERY CHECK FUNCTION:
+
+Create function:
+
+isInsideZone(userLocation, branchZone)
+
+Return true/false
+
+---
+
+2. MENU IMAGE SIZE OPTIMIZATION
+
+GOAL: Make food clearly visible and attractive
+
+---
+
+CARD DESIGN:
+
+* Image height: 140px – 180px
+* Border radius: 16px
+* Object-fit: cover
+* Add slight zoom effect on hover
+
+---
+
+LIST STYLE:
+
+* Thumbnail: 80px – 100px
+* Rounded corners
+* Clean spacing
+
+---
+
+IMAGE QUALITY:
+
+* Auto compress large images
+* Maintain clarity
+
+---
+
+3. OFFERS BANNER SYSTEM (VERY IMPORTANT)
+
+CREATE HERO SLIDER:
+
+ON HOMEPAGE:
+
+* Full-width banner
+* Height: 200px–300px (mobile)
+* Auto sliding
+
+Each banner:
+
+* image (large)
+* title_ar / title_en
+* subtitle
+* button:
+  "Order Now"
+
+---
+
+PER RESTAURANT PAGE:
+
+Add:
+
+"🔥 Special Offers"
+
+* Banner per restaurant
+* Click → open menu or apply offer
+
+---
+
+ADMIN CONTROL:
+
+Admin can:
+
+* Upload banner image
+* Add text
+* Select restaurant OR global
+* Activate / deactivate
+
+---
+
+4. DATA STRUCTURE:
+
+delivery_zones[]
+banners[]
+menu_images[]
+
+---
+
+5. UX IMPROVEMENTS:
+
+* Smooth slider animation
+* Lazy loading images
+* Loading skeleton for banners
+
+---
+
+6. MOBILE FIRST:
+
+* Ensure banners scale properly
+* Images optimized for fast loading
+
+---
+
+7. FALLBACK LOGIC:
+
+* If no zone defined → allow delivery
+* If no banner → hide section
+
+---
+
+IMPORTANT:
+
+* All editable from admin panel
+* No hardcoding
+* Use localStorage or JSON
+
+---
+
+FINAL RESULT:
+
+* Admin defines delivery areas easily
+* Customer can order only within zone
+* Food images look attractive and clear
+* Offers displayed as premium banners
+* App looks like real delivery platform

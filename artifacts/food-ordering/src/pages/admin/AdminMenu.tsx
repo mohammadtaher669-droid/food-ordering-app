@@ -6,6 +6,15 @@ import { useStore } from "@/hooks/useStore";
 import { Plus, Trash2, Edit2, Check, X, Upload, FolderPlus, GripVertical, Star, Sparkles, Eye, EyeOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
+function F({ label, value, onChange, ...p }: { label: string; value: string | number; onChange: (v: string) => void; [k: string]: any }) {
+  return (
+    <div>
+      <label className="text-xs text-muted-foreground mb-1 block">{label}</label>
+      <input value={value} onChange={(e) => onChange(e.target.value)} className="w-full bg-background border border-white/10 rounded-xl px-3 py-2 text-sm text-foreground focus:outline-none focus:border-primary/50" {...p} />
+    </div>
+  );
+}
+
 export default function AdminMenu() {
   const { t } = useLanguage();
   const { toast } = useToast();
@@ -86,13 +95,6 @@ export default function AdminMenu() {
     menuStore.save({ ...item, [field]: !item[field] });
   };
 
-  const F = ({ label, value, onChange, ...p }: { label: string; value: string | number; onChange: (v: string) => void; [k: string]: any }) => (
-    <div>
-      <label className="text-xs text-muted-foreground mb-1 block">{label}</label>
-      <input value={value} onChange={(e) => onChange(e.target.value)} className="w-full bg-background border border-white/10 rounded-xl px-3 py-2 text-sm text-foreground focus:outline-none focus:border-primary/50" {...p} />
-    </div>
-  );
-
   return (
     <div>
       {/* Header */}
@@ -146,7 +148,7 @@ export default function AdminMenu() {
                 {categories.map((c) => <option key={c.id} value={c.id}>{t(c.name_en, c.name_ar)}</option>)}
               </select>
             </div>
-            <F label={t("Price (SAR)", "السعر (ريال)")} value={itemForm.price ?? ""} onChange={(v) => setItemForm({ ...itemForm, price: Number(v) })} type="number" step="0.5" />
+            <F label={t("Price (SAR)", "السعر (ريال)")} value={itemForm.price || ""} onChange={(v) => setItemForm({ ...itemForm, price: Number(v) })} type="number" step="0.5" min="0" />
             <F label={t("Name (EN)", "الاسم (EN)")} value={itemForm.name_en || ""} onChange={(v) => setItemForm({ ...itemForm, name_en: v })} data-testid="input-item-name-en" />
             <F label={t("Name (AR)", "الاسم (AR)")} value={itemForm.name_ar || ""} onChange={(v) => setItemForm({ ...itemForm, name_ar: v })} data-testid="input-item-name-ar" />
             <F label={t("Description (EN)", "الوصف (EN)")} value={itemForm.description_en || ""} onChange={(v) => setItemForm({ ...itemForm, description_en: v })} />

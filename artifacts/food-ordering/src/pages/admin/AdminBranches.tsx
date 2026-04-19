@@ -7,6 +7,15 @@ import WorkingHoursStatus from "@/components/WorkingHoursStatus";
 import { Phone, MapPin, DollarSign, Plus, Trash2, Edit2, Check, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
+function F({ label, value, onChange, ...p }: { label: string; value: string | number; onChange: (v: string) => void; [k: string]: any }) {
+  return (
+    <div>
+      <label className="text-xs text-muted-foreground mb-1 block">{label}</label>
+      <input value={value} onChange={(e) => onChange(e.target.value)} className="w-full bg-background border border-white/10 rounded-xl px-3 py-2 text-sm text-foreground focus:outline-none focus:border-primary/50" {...p} />
+    </div>
+  );
+}
+
 const emptyForm: Partial<Branch> = {
   restaurant_id: "", name_en: "", name_ar: "",
   whatsapp: "", open: "09:00", close: "00:00",
@@ -48,13 +57,6 @@ export default function AdminBranches() {
     toast({ title: t("Deleted", "تم الحذف") });
   };
 
-  const F = ({ label, value, onChange, ...p }: { label: string; value: string | number; onChange: (v: string) => void; [k: string]: any }) => (
-    <div>
-      <label className="text-xs text-muted-foreground mb-1 block">{label}</label>
-      <input value={value} onChange={(e) => onChange(e.target.value)} className="w-full bg-background border border-white/10 rounded-xl px-3 py-2 text-sm text-foreground focus:outline-none focus:border-primary/50" {...p} />
-    </div>
-  );
-
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
@@ -78,7 +80,7 @@ export default function AdminBranches() {
             <F label={t("Branch Name (EN)", "اسم الفرع (EN)")} value={form.name_en || ""} onChange={(v) => setForm({ ...form, name_en: v })} data-testid="input-branch-name-en" />
             <F label={t("Branch Name (AR)", "اسم الفرع (AR)")} value={form.name_ar || ""} onChange={(v) => setForm({ ...form, name_ar: v })} />
             <F label={t("WhatsApp Number", "رقم واتساب")} value={form.whatsapp || ""} onChange={(v) => setForm({ ...form, whatsapp: v })} placeholder="966XXXXXXXXX" />
-            <F label={t("Delivery Fee (SAR)", "رسوم التوصيل (ريال)")} value={form.delivery_fee ?? ""} onChange={(v) => setForm({ ...form, delivery_fee: Number(v) })} type="number" />
+            <F label={t("Delivery Fee (SAR)", "رسوم التوصيل (ريال)")} value={form.delivery_fee || ""} onChange={(v) => setForm({ ...form, delivery_fee: Number(v) })} type="number" min="0" />
             <div>
               <label className="text-xs text-muted-foreground mb-1 block">{t("Opens At", "يفتح الساعة")}</label>
               <input type="time" value={form.open || "09:00"} onChange={(e) => setForm({ ...form, open: e.target.value })} className="w-full bg-background border border-white/10 rounded-xl px-3 py-2 text-sm text-foreground focus:outline-none" />

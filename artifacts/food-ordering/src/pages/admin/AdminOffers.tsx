@@ -6,6 +6,15 @@ import { useStore } from "@/hooks/useStore";
 import { Plus, Trash2, Edit2, Check, X, ToggleLeft, ToggleRight, Upload, Percent, Truck, Banknote } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
+function F({ label, value, onChange, ...p }: { label: string; value: string | number; onChange: (v: string) => void; [k: string]: any }) {
+  return (
+    <div>
+      <label className="text-xs text-muted-foreground mb-1 block">{label}</label>
+      <input value={value} onChange={(e) => onChange(e.target.value)} className="w-full bg-background border border-white/10 rounded-xl px-3 py-2 text-sm text-foreground focus:outline-none focus:border-primary/50" {...p} />
+    </div>
+  );
+}
+
 const emptyForm: Partial<Offer> = {
   title_en: "", title_ar: "", description_en: "", description_ar: "",
   type: "percentage", value: 10, restaurant_id: "global", active: true, code: "",
@@ -63,13 +72,6 @@ export default function AdminOffers() {
   };
   const toggleActive = (o: Offer) => { offerStore.save({ ...o, active: !o.active }); };
 
-  const F = ({ label, value, onChange, ...p }: { label: string; value: string | number; onChange: (v: string) => void; [k: string]: any }) => (
-    <div>
-      <label className="text-xs text-muted-foreground mb-1 block">{label}</label>
-      <input value={value} onChange={(e) => onChange(e.target.value)} className="w-full bg-background border border-white/10 rounded-xl px-3 py-2 text-sm text-foreground focus:outline-none focus:border-primary/50" {...p} />
-    </div>
-  );
-
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
@@ -96,7 +98,7 @@ export default function AdminOffers() {
               </select>
             </div>
             {form.type !== "free_delivery" && (
-              <F label={t("Value", "القيمة")} value={form.value ?? ""} onChange={(v) => setForm({ ...form, value: Number(v) })} type="number" />
+              <F label={t("Value", "القيمة")} value={form.value || ""} onChange={(v) => setForm({ ...form, value: Number(v) })} type="number" min="0" />
             )}
             <div>
               <label className="text-xs text-muted-foreground mb-1 block">{t("Restaurant", "المطعم")}</label>

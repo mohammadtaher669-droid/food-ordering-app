@@ -6,6 +6,15 @@ import { useStore } from "@/hooks/useStore";
 import { Plus, Trash2, Edit2, Check, X, Upload } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
+function Field({ label, value, onChange, ...props }: { label: string; value: string; onChange: (v: string) => void; [k: string]: any }) {
+  return (
+    <div>
+      <label className="text-xs text-muted-foreground mb-1 block">{label}</label>
+      <input value={value} onChange={(e) => onChange(e.target.value)} className="w-full bg-background border border-white/10 rounded-xl px-3 py-2 text-sm text-foreground focus:outline-none focus:border-primary/50" {...props} />
+    </div>
+  );
+}
+
 const COLOR_PRESETS = ["#6A9B3B", "#C1121F", "#FF5722", "#FF7A00", "#6A0DAD", "#0EA5E9", "#10B981", "#F59E0B"];
 
 const emptyForm: Partial<Restaurant> = {
@@ -88,13 +97,6 @@ export default function AdminRestaurants() {
   };
 
   const handleCancel = () => { setShowAdd(false); setEditingId(null); setForm(emptyForm); };
-
-  const Field = ({ label, value, onChange, ...props }: { label: string; value: string; onChange: (v: string) => void; [k: string]: any }) => (
-    <div>
-      <label className="text-xs text-muted-foreground mb-1 block">{label}</label>
-      <input value={value} onChange={(e) => onChange(e.target.value)} className="w-full bg-background border border-white/10 rounded-xl px-3 py-2 text-sm text-foreground focus:outline-none focus:border-primary/50" {...props} />
-    </div>
-  );
 
   return (
     <div>
