@@ -33,7 +33,7 @@ export default function ReviewPage() {
 
   if (submitted) {
     return (
-      <div className="min-h-screen bg-background pt-20 flex items-center justify-center px-4">
+      <div className="min-h-screen bg-background pt-16 pb-28 flex items-center justify-center px-4">
         <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="text-center max-w-sm">
           <div className="w-16 h-16 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
             <CheckCircle size={32} className="text-green-400" />
@@ -46,7 +46,7 @@ export default function ReviewPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background pt-20 pb-12">
+    <div className="min-h-screen bg-background pt-16 pb-28">
       <div className="max-w-xl mx-auto px-4">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           <h1 className="text-2xl font-bold text-foreground mb-2">{t("Leave a Review", "اترك تقييمًا")}</h1>

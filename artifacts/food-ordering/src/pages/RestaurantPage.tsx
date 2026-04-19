@@ -28,7 +28,7 @@ export default function RestaurantPage() {
   ));
 
   if (!restaurant) return (
-    <div className="pt-24 text-center text-muted-foreground">
+    <div className="pt-16 text-center text-muted-foreground">
       {t("Restaurant not found", "المطعم غير موجود")}
     </div>
   );
@@ -67,7 +67,7 @@ export default function RestaurantPage() {
         <div className="absolute bottom-0 left-0 right-0 h-0.5" style={{ background: restaurant.color }} />
 
         {/* Back button */}
-        <div className="absolute top-20 left-4">
+        <div className="absolute top-16 left-4">
           <Link href="/">
             <button className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-black/40 backdrop-blur-sm border border-white/10 text-sm text-foreground hover:bg-black/60 transition">
               <ArrowIcon size={14} />
@@ -101,7 +101,7 @@ export default function RestaurantPage() {
         </div>
       </div>
 
-      <div className="max-w-5xl mx-auto px-4 pt-8 pb-12">
+      <div className="max-w-5xl mx-auto px-4 pt-8 pb-28">
         {/* New Items */}
         {newItems.length > 0 && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.05 }} className="mb-8">

@@ -34,7 +34,7 @@ export default function BranchPage() {
   const restaurant = restaurants.find((r) => r.id === params.restaurantId);
   const branch = allBranches.find((b) => b.id === params.branchId);
 
-  if (!restaurant || !branch) return <div className="pt-24 text-center text-muted-foreground">{t("Branch not found", "الفرع غير موجود")}</div>;
+  if (!restaurant || !branch) return <div className="pt-16 text-center text-muted-foreground">{t("Branch not found", "الفرع غير موجود")}</div>;
 
   const isOpen = isBranchOpen(branch);
   const displayCategory = activeCategory || (categories[0]?.id ?? null);
@@ -62,7 +62,7 @@ export default function BranchPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background pt-20 pb-24">
+    <div className="min-h-screen bg-background pt-16 pb-28">
       <div className="max-w-5xl mx-auto px-4">
         {/* Branch Header */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-8">

@@ -33,7 +33,7 @@ export default function CheckoutPage() {
 
   if (!restaurant || !branch || cartItems.length === 0) {
     return (
-      <div className="min-h-screen bg-background pt-24 flex items-center justify-center">
+      <div className="min-h-screen bg-background pt-16 flex items-center justify-center">
         <p className="text-muted-foreground">{t("No items in cart", "لا توجد عناصر في السلة")}</p>
       </div>
     );
@@ -76,7 +76,7 @@ export default function CheckoutPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background pt-20 pb-12">
+    <div className="min-h-screen bg-background pt-16 pb-28">
       <div className="max-w-xl mx-auto px-4">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           <h1 className="text-2xl font-bold text-foreground mb-6">{t("Checkout", "إتمام الطلب")}</h1>

@@ -13,7 +13,7 @@ export default function ConfirmationPage() {
   const branch = (() => { try { return JSON.parse(localStorage.getItem("last_order_branch") || "{}"); } catch { return {}; } })();
 
   return (
-    <div className="min-h-screen bg-background pt-20 flex items-center justify-center px-4">
+    <div className="min-h-screen bg-background pt-16 pb-28 flex items-center justify-center px-4">
       <motion.div
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}

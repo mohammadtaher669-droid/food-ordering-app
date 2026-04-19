@@ -1,0 +1,260 @@
+REDESIGN THE ENTIRE UI OF THE FOOD ORDERING APP TO MATCH A MODERN DARK MOBILE APP STYLE SIMILAR TO THE PROVIDED DESIGN (CARD-BASED, PREMIUM, SMOOTH, HIGH-CONVERSION).
+
+---
+
+MAIN DESIGN STYLE:
+
+* Dark UI
+* Rounded cards
+* Soft shadows
+* Orange accent color
+* Clean spacing
+* Mobile-first layout
+
+---
+
+1. GLOBAL UI STYLE:
+
+* Background: #0F0F0F
+* Cards: #1A1A1A
+* Primary color: #FF7A00
+* Border radius: 16px–24px
+* Soft shadow + glow effect
+
+---
+
+2. HOMEPAGE (LIKE IMAGE):
+
+TOP SECTION:
+
+* Greeting:
+  "Hello, [User]"
+  "What do you want today?"
+
+* Profile image (right)
+
+SEARCH BAR:
+
+* Rounded input
+* Placeholder:
+  "Search food..."
+
+---
+
+CATEGORIES SECTION:
+
+* Horizontal scroll
+* Icons + names
+* Active category highlighted in orange
+
+---
+
+POPULAR SECTION:
+
+* Horizontal cards
+* Each card includes:
+
+  * image
+  * item name
+  * price
+  * small rating icon
+
+---
+
+SPECIAL FOR YOU:
+
+* Bigger cards
+* Add (+) button
+
+---
+
+BOTTOM NAVBAR:
+
+* Home
+* Orders
+* Favorites
+* Profile
+
+Floating style with blur background
+
+---
+
+3. PRODUCT DETAILS PAGE:
+
+* Large image on top
+
+* Card overlay with:
+
+  * Name
+  * Price
+  * Likes
+  * Calories
+  * Time
+
+* Description section
+
+* Size selector (S / M / L)
+
+* Quantity selector
+
+* Button:
+  "Buy Now"
+
+---
+
+4. BACKGROUND SYSTEM:
+
+Use:
+
+* Dark gradient
+* Food images with overlay
+* Blur effect for depth
+
+---
+
+5. ANIMATIONS:
+
+* Smooth transitions
+* Hover effects
+* Button press animation
+* Card lift effect
+
+---
+
+6. ADMIN PANEL (PRIVATE SYSTEM):
+
+CREATE FULL ADMIN PANEL:
+
+ROUTES:
+
+* /admin-login
+* /admin-dashboard
+
+LOGIN:
+
+* Username: admin
+* Password: admin123
+
+---
+
+ADMIN FEATURES:
+
+Admin can:
+
+* Upload/change ALL images
+
+  * background
+  * food images
+  * banners
+  * logos
+
+* Add/Edit/Delete:
+
+  * restaurants
+  * categories
+  * menu items
+  * offers
+
+* Control:
+
+  * prices
+  * descriptions
+  * discounts
+
+---
+
+7. LIVE EDIT SYSTEM:
+
+Add "Edit Mode":
+
+* When ON:
+
+  * show edit icon on every element
+* Click → edit popup
+* Save → update instantly
+
+---
+
+8. OFFERS SECTION (IMPORTANT):
+
+Homepage must include:
+
+"🔥 Offers"
+
+* Slider banners
+* Image + text
+* Clickable
+
+Admin can fully control:
+
+* image
+* text
+* discount
+
+---
+
+9. MENU LAYOUT:
+
+* Categories tabs (top)
+* Items in cards:
+
+  * image
+  * name
+  * price
+  * add button
+
+---
+
+10. CART SYSTEM:
+
+* Slide-up cart
+* Show totals clearly
+* Smooth animation
+
+---
+
+11. WHATSAPP ORDER BUTTON:
+
+Sticky button:
+
+"Order via WhatsApp"
+
+---
+
+12. PERFORMANCE:
+
+* Fast loading
+* Optimized images
+* Mobile optimized
+
+---
+
+13. DATA SYSTEM:
+
+Use localStorage:
+
+* restaurants
+* menus
+* offers
+* images
+
+---
+
+IMPORTANT:
+
+* ALL content must be editable from admin
+* No hardcoded content
+* UI must look premium and modern
+* Match the style of the reference image
+
+---
+
+FINAL RESULT:
+
+A modern food ordering app that looks like a real mobile app with:
+
+* Beautiful UI
+* Smooth UX
+* Full admin control
+* Editable content
+* High conversion design

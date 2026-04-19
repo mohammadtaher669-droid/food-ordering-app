@@ -31,7 +31,7 @@ export default function WhatsAppSticky({ branchId }: WhatsAppStickyProps) {
       onClick={handleClick}
       className="fixed bottom-5 right-4 z-40 flex items-center gap-2 bg-[#25D366] text-white rounded-full px-4 py-3 shadow-lg shadow-[#25D366]/30 hover:bg-[#20BD5C] transition-colors"
       data-testid="btn-whatsapp-sticky"
-      style={{ bottom: "80px" }}
+      style={{ bottom: "96px" }}
     >
       <MessageCircle size={20} fill="white" />
       <span className="text-sm font-bold hidden sm:block">{t("Order via WhatsApp", "اطلب عبر واتساب")}</span>

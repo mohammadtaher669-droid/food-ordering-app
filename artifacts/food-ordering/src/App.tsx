@@ -8,7 +8,7 @@ import { CartProvider } from "@/contexts/CartContext";
 import { initializeStore } from "@/lib/initStore";
 import NavBar from "@/components/NavBar";
 import ClearCartDialog from "@/components/ClearCartDialog";
-import FloatingCart from "@/components/FloatingCart";
+import BottomNav from "@/components/BottomNav";
 import Home from "@/pages/Home";
 import RestaurantPage from "@/pages/RestaurantPage";
 import BranchPage from "@/pages/BranchPage";
@@ -16,6 +16,8 @@ import CartPage from "@/pages/CartPage";
 import CheckoutPage from "@/pages/CheckoutPage";
 import ConfirmationPage from "@/pages/ConfirmationPage";
 import ReviewPage from "@/pages/ReviewPage";
+import FavoritesPage from "@/pages/FavoritesPage";
+import ProfilePage from "@/pages/ProfilePage";
 import AdminLayout from "@/pages/admin/AdminLayout";
 import AdminAuth from "@/pages/admin/AdminAuth";
 import AdminDashboard from "@/pages/admin/AdminDashboard";
@@ -74,10 +76,12 @@ function AppRoutes() {
             <Route path="/checkout" component={CheckoutPage} />
             <Route path="/confirmation" component={ConfirmationPage} />
             <Route path="/review" component={ReviewPage} />
+            <Route path="/favorites" component={FavoritesPage} />
+            <Route path="/profile" component={ProfilePage} />
             <Route component={NotFound} />
           </Switch>
           <ClearCartDialog />
-          <FloatingCart />
+          <BottomNav />
         </Route>
       </Switch>
     </>

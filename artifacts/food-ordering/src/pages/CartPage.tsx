@@ -67,7 +67,7 @@ export default function CartPage() {
 
   if (cartItems.length === 0) {
     return (
-      <div className="min-h-screen bg-background pt-20 flex items-center justify-center">
+      <div className="min-h-screen bg-background pt-16 flex items-center justify-center">
         <div className="text-center">
           <ShoppingCart size={64} className="text-white/10 mx-auto mb-4" />
           <h2 className="text-xl font-bold text-foreground mb-2">{t("Your cart is empty", "سلتك فارغة")}</h2>
@@ -81,7 +81,7 @@ export default function CartPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background pt-20 pb-12">
+    <div className="min-h-screen bg-background pt-16 pb-28">
       <div className="max-w-2xl mx-auto px-4">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           <div className="flex items-center justify-between mb-6">
