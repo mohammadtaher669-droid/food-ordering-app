@@ -29,6 +29,7 @@ import AdminCoupons from "@/pages/admin/AdminCoupons";
 import AdminReviews from "@/pages/admin/AdminReviews";
 import AdminOffers from "@/pages/admin/AdminOffers";
 import AdminSettings from "@/pages/admin/AdminSettings";
+import AdminDeliveryZones from "@/pages/admin/AdminDeliveryZones";
 import NotFound from "@/pages/not-found";
 import { useState } from "react";
 
@@ -69,6 +70,9 @@ function AppRoutes() {
         </Route>
         <Route path="/admin/settings">
           <AdminGuard><AdminSettings /></AdminGuard>
+        </Route>
+        <Route path="/admin/delivery-zones">
+          <AdminGuard><AdminDeliveryZones /></AdminGuard>
         </Route>
 
         <Route>

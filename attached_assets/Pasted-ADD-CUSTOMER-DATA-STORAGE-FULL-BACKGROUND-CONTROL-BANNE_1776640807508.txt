@@ -1,0 +1,245 @@
+ADD CUSTOMER DATA STORAGE + FULL BACKGROUND CONTROL + BANNERS & MARKETING CONTENT MANAGEMENT SYSTEM.
+
+---
+
+MAIN GOAL:
+
+1. Store customer data (orders + profiles)
+2. Allow admin to fully control backgrounds per restaurant & homepage
+3. Add full banner / slogan / marketing system
+
+---
+
+1. CUSTOMER DATA STORAGE SYSTEM (IMPORTANT)
+
+CREATE:
+
+"👤 Customers"
+
+DATA STRUCTURE:
+
+customer:
+
+* id
+* name
+* phone
+* location
+* orders[]
+* total_orders
+* last_order_date
+* notes (optional)
+
+---
+
+AUTO SAVE CUSTOMER:
+
+When user places order:
+
+* If phone exists → update customer
+* If new → create new customer
+
+---
+
+ORDER HISTORY:
+
+order:
+
+* id
+* customer_id
+* restaurant
+* branch
+* items
+* total
+* date
+
+---
+
+ADMIN PANEL:
+
+SECTION: "Customers"
+
+Admin can:
+
+* View all customers
+* Search by phone or name
+* View order history
+* Add notes
+
+---
+
+2. BACKGROUND MANAGEMENT SYSTEM (VERY IMPORTANT)
+
+CREATE SECTION:
+
+"🎨 Design & Backgrounds"
+
+---
+
+A. HOMEPAGE BACKGROUND:
+
+Admin can:
+
+* Upload background image
+* Choose overlay:
+
+  * dark
+  * gradient
+* Adjust opacity
+
+---
+
+B. PER RESTAURANT BACKGROUND:
+
+Each restaurant has:
+
+* cover_image
+* background_image
+* overlay_color
+
+Used in:
+
+* restaurant page
+* menu page
+
+---
+
+C. PREVIEW SYSTEM:
+
+* Show preview before saving
+* Apply instantly
+
+---
+
+3. BANNER & MARKETING SYSTEM
+
+CREATE SECTION:
+
+"📢 Marketing & Banners"
+
+---
+
+BANNER STRUCTURE:
+
+banner:
+
+* id
+* image
+* title_ar
+* title_en
+* subtitle
+* button_text
+* link (restaurant or page)
+* active
+
+---
+
+TYPES:
+
+* homepage banners
+* restaurant banners
+* offer banners
+
+---
+
+ADMIN FEATURES:
+
+* Add banner
+* Upload image
+* Edit text
+* Reorder banners
+* Activate / deactivate
+
+---
+
+4. SLOGAN SYSTEM:
+
+Add fields:
+
+GLOBAL:
+
+* slogan_ar
+* slogan_en
+
+PER RESTAURANT:
+
+* tagline_ar
+* tagline_en
+
+---
+
+DISPLAY:
+
+* Homepage hero section
+* Restaurant page header
+
+---
+
+5. RESTAURANT VISUAL CONTROL:
+
+Admin can:
+
+* Upload logo
+* Upload cover image
+* Upload background
+* Set theme color
+
+---
+
+6. FRONTEND DISPLAY:
+
+HOMEPAGE:
+
+* Hero background (editable)
+* Slogan text
+* Banner slider
+
+RESTAURANT PAGE:
+
+* Cover image
+* Special offers banner
+* Custom background
+
+---
+
+7. DATA STORAGE:
+
+Use localStorage:
+
+* customers[]
+* orders[]
+* banners[]
+* backgrounds[]
+* settings[]
+
+---
+
+8. UX IMPROVEMENTS:
+
+* Smooth transitions for background change
+* Fade effect between banners
+* Loading skeleton
+
+---
+
+9. PERFORMANCE:
+
+* Compress images automatically
+* Lazy load banners
+
+---
+
+IMPORTANT:
+
+* ALL content editable from admin
+* No hardcoded text/images
+* Keep UI clean and premium
+
+---
+
+FINAL RESULT:
+
+* Full customer database
+* Marketing control panel
+* Dynamic backgrounds
+* Professional banner system
+* Real business-ready platform

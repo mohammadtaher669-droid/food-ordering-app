@@ -7,6 +7,7 @@ import { restaurantStore, branchStore, offerStore, categoryStore, menuStore } fr
 import type { MenuItem, Restaurant, Category } from "@/lib/store";
 import { useStore } from "@/hooks/useStore";
 import OffersCarousel from "@/components/OffersCarousel";
+import HeroBannerSlider from "@/components/HeroBannerSlider";
 
 function CategoryPill({
   label,
@@ -316,8 +317,20 @@ export default function Home() {
         </div>
       </motion.div>
 
-      {/* Offers */}
-      {offers.length > 0 && (
+      {/* Hero Banner Slider */}
+      {offers.some((o) => o.show_as_banner && o.image) && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.08 }}
+          className="px-4 mb-7"
+        >
+          <HeroBannerSlider offers={offers} />
+        </motion.div>
+      )}
+
+      {/* Text Offers carousel (non-banner) */}
+      {offers.some((o) => !o.show_as_banner) && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -326,7 +339,7 @@ export default function Home() {
         >
           <SectionHeader title={t("Hot Offers", "العروض الساخنة")} emoji="🔥" />
           <div className="px-4">
-            <OffersCarousel offers={offers} />
+            <OffersCarousel offers={offers.filter((o) => !o.show_as_banner)} />
           </div>
         </motion.div>
       )}

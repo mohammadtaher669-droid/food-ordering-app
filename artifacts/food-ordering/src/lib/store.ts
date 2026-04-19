@@ -28,6 +28,12 @@ export interface Branch {
   delivery_fee: number;
   address_en: string;
   address_ar: string;
+  is_delivery_enabled?: boolean;
+  delivery_type?: "radius" | "polygon";
+  center_lat?: number;
+  center_lng?: number;
+  delivery_radius_km?: number;
+  polygon_coordinates?: { lat: number; lng: number }[];
 }
 
 export interface Category {
@@ -65,6 +71,9 @@ export interface Offer {
   restaurant_id: string | "global";
   active: boolean;
   code?: string;
+  show_as_banner?: boolean;
+  banner_cta_en?: string;
+  banner_cta_ar?: string;
 }
 
 export interface Coupon {

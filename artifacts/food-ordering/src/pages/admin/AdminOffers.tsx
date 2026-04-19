@@ -127,6 +127,22 @@ export default function AdminOffers() {
             <input type="checkbox" checked={form.active ?? true} onChange={(e) => setForm({ ...form, active: e.target.checked })} className="accent-primary" />
             <span className="text-muted-foreground">{t("Active (show to customers)", "نشط (يظهر للعملاء)")}</span>
           </label>
+          <label className="flex items-center gap-2 text-sm cursor-pointer">
+            <input type="checkbox" checked={form.show_as_banner ?? false} onChange={(e) => setForm({ ...form, show_as_banner: e.target.checked })} className="accent-primary" />
+            <span className="text-muted-foreground">{t("Show as Hero Banner on homepage (requires image)", "عرض كبانر رئيسي في الصفحة الرئيسية (يتطلب صورة)")}</span>
+          </label>
+          {form.show_as_banner && (
+            <div className="grid grid-cols-2 gap-3 mt-1">
+              <div>
+                <label className="text-xs text-muted-foreground mb-1 block">{t("Button text (EN)", "نص الزر (EN)")}</label>
+                <input value={form.banner_cta_en || ""} onChange={(e) => setForm({ ...form, banner_cta_en: e.target.value })} placeholder="Order Now" className="w-full bg-background border border-white/10 rounded-xl px-3 py-2 text-sm text-foreground focus:outline-none" />
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground mb-1 block">{t("Button text (AR)", "نص الزر (AR)")}</label>
+                <input value={form.banner_cta_ar || ""} onChange={(e) => setForm({ ...form, banner_cta_ar: e.target.value })} placeholder="اطلب الآن" className="w-full bg-background border border-white/10 rounded-xl px-3 py-2 text-sm text-foreground focus:outline-none" />
+              </div>
+            </div>
+          )}
           <div className="flex gap-2">
             <button onClick={handleSave} className="px-4 py-2 bg-primary text-primary-foreground rounded-xl text-sm font-medium" data-testid="btn-save-offer"><Check size={13} className="inline mr-1" />{t("Save", "حفظ")}</button>
             <button onClick={() => { setShowForm(false); setEditingId(null); }} className="px-4 py-2 border border-white/10 rounded-xl text-sm text-muted-foreground"><X size={13} className="inline mr-1" />{t("Cancel", "إلغاء")}</button>
