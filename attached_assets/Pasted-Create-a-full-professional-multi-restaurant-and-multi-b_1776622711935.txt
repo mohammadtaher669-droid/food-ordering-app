@@ -1,0 +1,259 @@
+Create a full professional multi-restaurant and multi-branch food ordering web app with WhatsApp integration, bilingual support (Arabic/English), admin panel, delivery/pickup system, review system, and advanced discount system.
+
+---
+
+PROJECT GOAL:
+A scalable food ordering platform for multiple restaurants where customers order via website and send orders to WhatsApp.
+
+---
+
+RESTAURANTS:
+
+1. Sabah Al Lail (مطعم صباح الليل)
+2. Asad Al Hamra (مطعم أسد الحمرا)
+3. Chickens Bar (مطعم شيكنز بار)
+
+---
+
+DATA STRUCTURE:
+
+Restaurant:
+
+- id
+- name_en
+- name_ar
+- logo
+- color_theme
+
+Branch:
+
+- id
+- restaurant_id
+- branch_name
+- whatsapp_number
+- working_hours (open/close)
+- delivery_fee
+
+Menu Item:
+
+- id
+- restaurant_id
+- branch_id
+- name_en
+- name_ar
+- price
+- image
+- category
+
+Review:
+
+- id
+- name
+- rating
+- comment
+- approved (true/false)
+
+Coupon:
+
+- code
+- type (percentage / fixed / free_delivery)
+- value
+- active (true/false)
+
+---
+
+USER FLOW:
+
+1. Homepage:
+
+- Restaurants list
+- Offers banner
+- Language toggle
+
+2. Restaurant → Branch → Menu → Cart → Checkout
+
+---
+
+CHECKOUT:
+
+Fields:
+
+- Name / الاسم
+- Phone / الجوال
+- Location / الموقع (Delivery only)
+- Notes / ملاحظات
+
+Order Type:
+
+- Delivery 🚗
+- Pickup 🏪
+
+---
+
+DELIVERY LOGIC:
+
+IF Delivery:
+
+- Add delivery fee
+- Require location
+
+IF Pickup:
+
+- No delivery fee
+- Optional discount (2 SAR)
+
+---
+
+DISCOUNT SYSTEM:
+
+1. Promo Code Input
+
+2. Coupons:
+
+- SAVE10 → 10% discount
+- FIRST20 → 20% discount
+- FREESHIP → remove delivery fee
+
+3. Auto Discounts:
+
+- If subtotal > 50 SAR → 10% discount
+- If Pickup → -2 SAR
+
+4. Calculation Order:
+
+subtotal + delivery fee - discounts = final total
+
+---
+
+CART DISPLAY:
+
+Show:
+
+- Subtotal
+- Delivery Fee
+- Discount
+- Final Total
+
+---
+
+WHATSAPP MESSAGE:
+
+Include:
+
+- Restaurant
+- Branch
+- Order Type
+- Items
+- Subtotal
+- Delivery Fee
+- Discount
+- Final Total
+- Customer info
+
+---
+
+WORKING HOURS:
+
+- Disable ordering if closed
+- Show:
+  "Closed Now / مغلق حالياً"
+
+---
+
+REVIEW SYSTEM:
+
+Page: /review
+
+- Submit review
+- Save as pending
+- Admin approval required
+
+---
+
+ADMIN PANEL (/admin):
+
+1. Restaurants:
+
+- Add/Edit/Delete
+
+2. Branches:
+
+- WhatsApp
+- Hours
+- Delivery fee
+
+3. Menu:
+
+- Add/Edit/Delete items
+- Images
+- Categories
+- Arabic/English
+
+4. Coupons:
+
+- Add/edit/delete codes
+
+5. Reviews:
+
+- Approve/reject
+
+---
+
+LANGUAGE SYSTEM:
+
+- Arabic / English toggle
+- RTL / LTR
+- Save in localStorage
+
+---
+
+UI DESIGN:
+
+- Dark theme:
+  #0F0F0F background
+  #1A1A1A cards
+  #FF7A00 primary
+
+- Restaurant colors:
+  Sabah Al Lail → #6A0DAD
+  Asad Al Hamra → #C1121F
+  Chickens Bar → #FF3D00
+
+- Mobile-first
+
+- Premium modern look
+
+- Smooth animations
+
+---
+
+EXTRA:
+
+- Save cart
+- Generate Order ID
+- Confirmation page
+- Offers section
+- "Most Ordered" section
+- Checkbox:
+  "Agree to receive offers"
+
+---
+
+TECH:
+
+Use React preferred
+
+---
+
+IMPORTANT:
+
+- No backend required
+- Use localStorage or JSON
+- Make it scalable
+
+---
+
+GOAL:
+
+Create a real food delivery experience
+that increases direct sales and reduces reliance on delivery apps.

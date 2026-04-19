@@ -1,0 +1,96 @@
+import { useState, useEffect } from "react";
+import { Switch, Route, Router as WouterRouter } from "wouter";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { Toaster } from "@/components/ui/toaster";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { LanguageProvider } from "@/contexts/LanguageContext";
+import { CartProvider } from "@/contexts/CartContext";
+import NavBar from "@/components/NavBar";
+import ClearCartDialog from "@/components/ClearCartDialog";
+import Home from "@/pages/Home";
+import RestaurantPage from "@/pages/RestaurantPage";
+import BranchPage from "@/pages/BranchPage";
+import CartPage from "@/pages/CartPage";
+import CheckoutPage from "@/pages/CheckoutPage";
+import ConfirmationPage from "@/pages/ConfirmationPage";
+import ReviewPage from "@/pages/ReviewPage";
+import AdminLayout from "@/pages/admin/AdminLayout";
+import AdminAuth from "@/pages/admin/AdminAuth";
+import AdminDashboard from "@/pages/admin/AdminDashboard";
+import AdminRestaurants from "@/pages/admin/AdminRestaurants";
+import AdminBranches from "@/pages/admin/AdminBranches";
+import AdminMenu from "@/pages/admin/AdminMenu";
+import AdminCoupons from "@/pages/admin/AdminCoupons";
+import AdminReviews from "@/pages/admin/AdminReviews";
+import NotFound from "@/pages/not-found";
+
+const queryClient = new QueryClient();
+
+function AdminGuard({ children }: { children: React.ReactNode }) {
+  const [authed, setAuthed] = useState(() => sessionStorage.getItem("admin_auth") === "true");
+  if (!authed) return <AdminAuth onAuth={() => setAuthed(true)} />;
+  return <AdminLayout>{children}</AdminLayout>;
+}
+
+function AppRoutes() {
+  return (
+    <>
+      <Switch>
+        {/* Admin routes - no NavBar */}
+        <Route path="/admin">
+          <AdminGuard><AdminDashboard /></AdminGuard>
+        </Route>
+        <Route path="/admin/restaurants">
+          <AdminGuard><AdminRestaurants /></AdminGuard>
+        </Route>
+        <Route path="/admin/branches">
+          <AdminGuard><AdminBranches /></AdminGuard>
+        </Route>
+        <Route path="/admin/menu">
+          <AdminGuard><AdminMenu /></AdminGuard>
+        </Route>
+        <Route path="/admin/coupons">
+          <AdminGuard><AdminCoupons /></AdminGuard>
+        </Route>
+        <Route path="/admin/reviews">
+          <AdminGuard><AdminReviews /></AdminGuard>
+        </Route>
+
+        {/* Public routes - with NavBar */}
+        <Route>
+          <NavBar />
+          <Switch>
+            <Route path="/" component={Home} />
+            <Route path="/restaurant/:restaurantId" component={RestaurantPage} />
+            <Route path="/restaurant/:restaurantId/branch/:branchId" component={BranchPage} />
+            <Route path="/cart" component={CartPage} />
+            <Route path="/checkout" component={CheckoutPage} />
+            <Route path="/confirmation" component={ConfirmationPage} />
+            <Route path="/review" component={ReviewPage} />
+            <Route component={NotFound} />
+          </Switch>
+          <ClearCartDialog />
+        </Route>
+      </Switch>
+    </>
+  );
+}
+
+function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <LanguageProvider>
+          <CartProvider>
+            <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+              <AppRoutes />
+            </WouterRouter>
+            <Toaster />
+          </CartProvider>
+        </LanguageProvider>
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+}
+
+export default App;

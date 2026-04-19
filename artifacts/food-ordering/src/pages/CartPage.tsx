@@ -1,0 +1,223 @@
+import { useState } from "react";
+import { Link, useLocation } from "wouter";
+import { motion } from "framer-motion";
+import { useCart } from "@/contexts/CartContext";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { restaurants, coupons } from "@/data/restaurants";
+import { Trash2, Plus, Minus, ShoppingCart, Tag, ChevronRight, ChevronLeft } from "lucide-react";
+
+export function calculateDiscounts(subtotal: number, deliveryFee: number, orderType: "delivery" | "pickup", couponCode: string) {
+  const activeCoupons = [...coupons];
+  try {
+    const stored = JSON.parse(localStorage.getItem("admin_coupons") || "[]");
+    if (stored.length > 0) activeCoupons.splice(0, activeCoupons.length, ...stored);
+  } catch {}
+
+  let couponDiscount = 0;
+  let couponError = "";
+  let appliedCoupon = null;
+
+  if (couponCode) {
+    const coupon = activeCoupons.find((c) => c.code.toUpperCase() === couponCode.toUpperCase() && c.active);
+    if (coupon) {
+      appliedCoupon = coupon;
+      if (coupon.type === "percentage") couponDiscount = (subtotal * coupon.value) / 100;
+      else if (coupon.type === "free_delivery") couponDiscount = deliveryFee;
+      else if (coupon.type === "fixed") couponDiscount = coupon.value;
+    } else {
+      couponError = couponCode ? "Invalid or inactive coupon code" : "";
+    }
+  }
+
+  let autoDiscount = 0;
+  if (subtotal > 50) autoDiscount += (subtotal * 10) / 100;
+  if (orderType === "pickup") autoDiscount += 2;
+
+  const totalDiscount = couponDiscount + autoDiscount;
+  const finalTotal = Math.max(0, subtotal + deliveryFee - totalDiscount);
+
+  return { couponDiscount, autoDiscount, totalDiscount, finalTotal, couponError, appliedCoupon };
+}
+
+export default function CartPage() {
+  const { cartItems, removeFromCart, updateQuantity, clearCart, cartTotal, selectedRestaurantId, selectedBranchId } = useCart();
+  const { t, isRTL } = useLanguage();
+  const [, setLocation] = useLocation();
+  const [couponCode, setCouponCode] = useState("");
+  const [appliedCode, setAppliedCode] = useState("");
+  const [orderType, setOrderType] = useState<"delivery" | "pickup">("delivery");
+  const ChevronIcon = isRTL ? ChevronLeft : ChevronRight;
+
+  const restaurant = restaurants.find((r) => r.id === selectedRestaurantId);
+  const branch = restaurant?.branches.find((b) => b.id === selectedBranchId);
+
+  const deliveryFee = orderType === "delivery" ? (branch?.delivery_fee || 0) : 0;
+  const { couponDiscount, autoDiscount, totalDiscount, finalTotal, couponError, appliedCoupon } = calculateDiscounts(
+    cartTotal, deliveryFee, orderType, appliedCode
+  );
+
+  const handleApplyCoupon = () => {
+    setAppliedCode(couponCode.trim().toUpperCase());
+  };
+
+  const handleCheckout = () => {
+    localStorage.setItem("checkout_order_type", orderType);
+    localStorage.setItem("checkout_applied_coupon", appliedCode);
+    localStorage.setItem("checkout_delivery_fee", String(deliveryFee));
+    localStorage.setItem("checkout_discount", String(totalDiscount));
+    localStorage.setItem("checkout_final_total", String(finalTotal));
+    setLocation("/checkout");
+  };
+
+  if (cartItems.length === 0) {
+    return (
+      <div className="min-h-screen bg-background pt-20 flex items-center justify-center">
+        <div className="text-center">
+          <ShoppingCart size={64} className="text-white/10 mx-auto mb-4" />
+          <h2 className="text-xl font-bold text-foreground mb-2">{t("Your cart is empty", "سلتك فارغة")}</h2>
+          <p className="text-muted-foreground mb-6">{t("Add items from a restaurant to get started", "أضف عناصر من مطعم للبدء")}</p>
+          <Link href="/">
+            <button className="px-6 py-2.5 bg-primary text-primary-foreground rounded-xl font-medium">{t("Browse Restaurants", "تصفح المطاعم")}</button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-background pt-20 pb-12">
+      <div className="max-w-2xl mx-auto px-4">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+          <div className="flex items-center justify-between mb-6">
+            <h1 className="text-2xl font-bold text-foreground">{t("Your Cart", "سلتك")}</h1>
+            <button onClick={clearCart} className="text-sm text-destructive hover:text-destructive/80 transition" data-testid="btn-clear-cart">
+              {t("Clear All", "مسح الكل")}
+            </button>
+          </div>
+
+          {/* Restaurant info */}
+          {restaurant && branch && (
+            <div className="bg-card border border-white/5 rounded-xl p-3 mb-5 flex items-center gap-3">
+              <span className="text-xl">{restaurant.logo}</span>
+              <div>
+                <p className="text-sm font-medium text-foreground">{t(restaurant.name_en, restaurant.name_ar)}</p>
+                <p className="text-xs text-muted-foreground">{t(branch.name_en, branch.name_ar)}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Order Type */}
+          <div className="bg-card border border-white/5 rounded-2xl p-4 mb-5">
+            <p className="text-sm font-medium text-foreground mb-3">{t("Order Type", "نوع الطلب")}</p>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => setOrderType("delivery")}
+                className={`py-3 rounded-xl text-sm font-medium border transition-all ${orderType === "delivery" ? "bg-primary text-primary-foreground border-primary" : "border-white/10 text-muted-foreground hover:border-white/20"}`}
+                data-testid="btn-order-delivery"
+              >
+                {t("Delivery", "توصيل")}
+              </button>
+              <button
+                onClick={() => setOrderType("pickup")}
+                className={`py-3 rounded-xl text-sm font-medium border transition-all ${orderType === "pickup" ? "bg-primary text-primary-foreground border-primary" : "border-white/10 text-muted-foreground hover:border-white/20"}`}
+                data-testid="btn-order-pickup"
+              >
+                {t("Pickup", "استلام")}
+              </button>
+            </div>
+          </div>
+
+          {/* Items */}
+          <div className="bg-card border border-white/5 rounded-2xl overflow-hidden mb-5">
+            {cartItems.map((ci, i) => (
+              <div
+                key={ci.item.id}
+                className={`flex items-center gap-4 p-4 ${i < cartItems.length - 1 ? "border-b border-white/5" : ""}`}
+                data-testid={`cart-item-${ci.item.id}`}
+              >
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-foreground text-sm">{t(ci.item.name_en, ci.item.name_ar)}</p>
+                  <p className="text-sm text-primary font-bold mt-0.5">{ci.item.price} {t("SAR", "ريال")}</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button onClick={() => updateQuantity(ci.item.id, ci.quantity - 1)} className="w-7 h-7 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center transition" data-testid={`btn-decrease-${ci.item.id}`}><Minus size={12} /></button>
+                  <span className="text-sm font-bold w-5 text-center" data-testid={`qty-${ci.item.id}`}>{ci.quantity}</span>
+                  <button onClick={() => updateQuantity(ci.item.id, ci.quantity + 1)} className="w-7 h-7 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center transition" data-testid={`btn-increase-${ci.item.id}`}><Plus size={12} /></button>
+                </div>
+                <div className="text-right min-w-[60px]">
+                  <p className="text-sm font-bold text-foreground">{(ci.item.price * ci.quantity).toFixed(0)} {t("SAR", "ريال")}</p>
+                  <button onClick={() => removeFromCart(ci.item.id)} className="text-destructive/60 hover:text-destructive mt-1 transition" data-testid={`btn-remove-${ci.item.id}`}><Trash2 size={13} /></button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Coupon */}
+          <div className="bg-card border border-white/5 rounded-2xl p-4 mb-5">
+            <div className="flex items-center gap-2 mb-3">
+              <Tag size={14} className="text-primary" />
+              <span className="text-sm font-medium text-foreground">{t("Promo Code", "كود الخصم")}</span>
+            </div>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={couponCode}
+                onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                placeholder={t("Enter code", "أدخل الكود")}
+                className="flex-1 bg-background border border-white/10 rounded-xl px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
+                data-testid="input-coupon"
+              />
+              <button onClick={handleApplyCoupon} className="px-4 py-2.5 bg-primary text-primary-foreground rounded-xl text-sm font-medium hover:bg-primary/90 transition" data-testid="btn-apply-coupon">
+                {t("Apply", "تطبيق")}
+              </button>
+            </div>
+            {appliedCode && couponError && <p className="text-xs text-destructive mt-2" data-testid="coupon-error">{t(couponError, "كود غير صالح أو غير نشط")}</p>}
+            {appliedCoupon && <p className="text-xs text-green-400 mt-2" data-testid="coupon-success">{t("Coupon applied!", "تم تطبيق الكود!")}</p>}
+          </div>
+
+          {/* Order Summary */}
+          <div className="bg-card border border-white/5 rounded-2xl p-4 mb-6">
+            <h3 className="font-semibold text-foreground mb-4">{t("Order Summary", "ملخص الطلب")}</h3>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between text-muted-foreground">
+                <span>{t("Subtotal", "المجموع الفرعي")}</span>
+                <span>{cartTotal.toFixed(0)} {t("SAR", "ريال")}</span>
+              </div>
+              {orderType === "delivery" && (
+                <div className="flex justify-between text-muted-foreground">
+                  <span>{t("Delivery Fee", "رسوم التوصيل")}</span>
+                  <span>{deliveryFee} {t("SAR", "ريال")}</span>
+                </div>
+              )}
+              {totalDiscount > 0 && (
+                <div className="flex justify-between text-green-400">
+                  <span>{t("Discount", "الخصم")}</span>
+                  <span>-{totalDiscount.toFixed(0)} {t("SAR", "ريال")}</span>
+                </div>
+              )}
+              {autoDiscount > 0 && (
+                <p className="text-xs text-muted-foreground">
+                  {cartTotal > 50 && t("Auto 10% for order over 50 SAR", "خصم تلقائي 10% للطلبات فوق 50 ريال")}
+                  {orderType === "pickup" && ", " + t("2 SAR pickup discount", "خصم 2 ريال للاستلام")}
+                </p>
+              )}
+              <div className="border-t border-white/5 pt-2 flex justify-between font-bold text-base">
+                <span className="text-foreground">{t("Total", "الإجمالي")}</span>
+                <span className="text-primary">{finalTotal.toFixed(0)} {t("SAR", "ريال")}</span>
+              </div>
+            </div>
+          </div>
+
+          <button
+            onClick={handleCheckout}
+            className="w-full py-4 bg-primary text-primary-foreground rounded-2xl font-bold text-base flex items-center justify-center gap-2 hover:bg-primary/90 transition"
+            data-testid="btn-checkout"
+          >
+            {t("Proceed to Checkout", "المتابعة للدفع")}
+            <ChevronIcon size={18} />
+          </button>
+        </motion.div>
+      </div>
+    </div>
+  );
+}
