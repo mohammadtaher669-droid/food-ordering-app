@@ -15,7 +15,7 @@ Premium multi-restaurant food ordering web app with WhatsApp order routing, bili
 
 ## Key Files
 
-- `src/lib/store.ts` — Central typed CRUD store for all entities (Restaurant, Branch, Category, MenuItem, Offer, Coupon, Review). Dispatches `store-updated` events for reactivity.
+- `src/lib/store.ts` — Central typed CRUD store for all entities (Restaurant, Branch, Category, MenuItem, Offer, Coupon, Review, Customer, Order, Banner, AppSettings, AnalyticsEvent, UserBehavior). Dispatches `store-updated` events for reactivity.
 - `src/lib/initStore.ts` — Seeds default data on first load.
 - `src/data/seedData.ts` — Real restaurant data + 100+ menu items extracted from menu images.
 - `src/hooks/useStore.ts` — React hook for reactive store subscriptions.
@@ -49,14 +49,24 @@ Each has 2 branches (Riyadh + Jeddah) with WhatsApp numbers, delivery fees, and 
 - Checkout: customer details form, WhatsApp order routing
 - Confirmation + review submission
 
+### Customer Side — Extended
+- **Offers page** (`/offers`): hero + filter tabs per restaurant + countdown timers on expiring offers
+- **Smart Recommendations**: scoring engine (ordered +10, viewed +3, popular +5, new +2) via `userBehaviorStore`
+- **Abandoned cart banner**: dismissible top banner on Home when cart has items from previous session
+- **Cart upsell row**: cross-sells popular items from other restaurants
+
 ### Admin Panel (`/admin`, password: `admin123`)
 - **Dashboard**: stats overview + JSON export/import + reset
-- **Restaurants**: full CRUD — name, logo (emoji or image upload), color theme, description
-- **Branches**: full CRUD — name, WhatsApp, open/close hours, delivery fee, address
+- **Restaurants**: full CRUD — name, logo, color theme, background image + overlay control
+- **Branches**: full CRUD — name, WhatsApp, open/close hours, delivery fee, address, delivery zones
 - **Menu Builder**: category + item CRUD with image upload, popular/new/available toggles
-- **Offers**: create/toggle/delete promotional offers (%, fixed, free delivery) with carousel display
+- **Offers**: create/toggle/delete promotional offers (%, fixed, free delivery) with expiry date + carousel display
 - **Coupons**: create/toggle/delete coupon codes
 - **Reviews**: approve or delete customer reviews
+- **Customers (CRM)**: auto-saves customer on order, dedupe by phone, search + sort + export
+- **Analytics**: page visits + add-to-cart events, peak hours chart, top items + restaurants
+- **Banners**: create/manage banners (homepage, popup, category) with image + title/link
+- **Backgrounds**: control homepage background (color/gradient/image), overlay opacity/color, slogan EN/AR
 
 ## Assets
 

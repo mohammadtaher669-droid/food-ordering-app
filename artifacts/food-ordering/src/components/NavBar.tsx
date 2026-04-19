@@ -34,14 +34,21 @@ export default function NavBar() {
           </div>
         </Link>
 
-        <button
-          onClick={toggleLang}
-          data-testid="btn-toggle-lang"
-          className="px-3 py-1.5 rounded-lg border text-xs font-medium text-muted-foreground hover:text-foreground transition-all"
-          style={{ borderColor: "rgba(255,255,255,0.1)" }}
-        >
-          {lang === "en" ? "العربية" : "English"}
-        </button>
+        <div className="flex items-center gap-2">
+          <Link href="/offers">
+            <span className="hidden sm:flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium text-primary hover:bg-primary/10 transition-all border border-primary/20">
+              🔥 {t("Offers", "العروض")}
+            </span>
+          </Link>
+          <button
+            onClick={toggleLang}
+            data-testid="btn-toggle-lang"
+            className="px-3 py-1.5 rounded-lg border text-xs font-medium text-muted-foreground hover:text-foreground transition-all"
+            style={{ borderColor: "rgba(255,255,255,0.1)" }}
+          >
+            {lang === "en" ? "العربية" : "English"}
+          </button>
+        </div>
       </div>
     </nav>
   );

@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Home, ShoppingCart, Heart, User } from "lucide-react";
+import { Home, ShoppingCart, Heart, User, Tag } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { motion, AnimatePresence } from "framer-motion";
@@ -12,6 +12,7 @@ export default function BottomNav() {
   const tabs = [
     { href: "/", icon: Home, label: t("Home", "الرئيسية") },
     { href: "/cart", icon: ShoppingCart, label: t("Cart", "السلة"), count: cartCount },
+    { href: "/offers", icon: Tag, label: t("Offers", "العروض") },
     { href: "/favorites", icon: Heart, label: t("Saved", "المحفوظة") },
     { href: "/profile", icon: User, label: t("Profile", "حسابي") },
   ];

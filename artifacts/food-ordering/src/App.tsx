@@ -30,6 +30,11 @@ import AdminReviews from "@/pages/admin/AdminReviews";
 import AdminOffers from "@/pages/admin/AdminOffers";
 import AdminSettings from "@/pages/admin/AdminSettings";
 import AdminDeliveryZones from "@/pages/admin/AdminDeliveryZones";
+import AdminCustomers from "@/pages/admin/AdminCustomers";
+import AdminAnalytics from "@/pages/admin/AdminAnalytics";
+import AdminBanners from "@/pages/admin/AdminBanners";
+import AdminBackgrounds from "@/pages/admin/AdminBackgrounds";
+import OffersPage from "@/pages/OffersPage";
 import NotFound from "@/pages/not-found";
 import { useState } from "react";
 
@@ -74,6 +79,18 @@ function AppRoutes() {
         <Route path="/admin/delivery-zones">
           <AdminGuard><AdminDeliveryZones /></AdminGuard>
         </Route>
+        <Route path="/admin/customers">
+          <AdminGuard><AdminCustomers /></AdminGuard>
+        </Route>
+        <Route path="/admin/analytics">
+          <AdminGuard><AdminAnalytics /></AdminGuard>
+        </Route>
+        <Route path="/admin/banners">
+          <AdminGuard><AdminBanners /></AdminGuard>
+        </Route>
+        <Route path="/admin/backgrounds">
+          <AdminGuard><AdminBackgrounds /></AdminGuard>
+        </Route>
 
         <Route>
           <NavBar />
@@ -81,6 +98,7 @@ function AppRoutes() {
             <Route path="/" component={Home} />
             <Route path="/restaurant/:restaurantId" component={RestaurantPage} />
             <Route path="/restaurant/:restaurantId/branch/:branchId" component={BranchPage} />
+            <Route path="/offers" component={OffersPage} />
             <Route path="/cart" component={CartPage} />
             <Route path="/checkout" component={CheckoutPage} />
             <Route path="/confirmation" component={ConfirmationPage} />

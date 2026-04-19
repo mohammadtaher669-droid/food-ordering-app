@@ -12,6 +12,7 @@ import WorkingHoursStatus, { isBranchOpen } from "@/components/WorkingHoursStatu
 import { Plus, Check, Sparkles, Navigation, CheckCircle, XCircle, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { isInsideZone } from "@/lib/deliveryZones";
+import { analyticsStore, userBehaviorStore } from "@/lib/store";
 
 type ZoneStatus = "idle" | "checking" | "inside" | "outside" | "error";
 
@@ -201,6 +202,8 @@ export default function BranchPage() {
 
   const handleAddToCart = (item: MenuItem) => {
     if (!isOpen) return;
+    analyticsStore.track({ type: "add_to_cart", item_id: item.id, restaurant_id: item.restaurant_id });
+    userBehaviorStore.trackView(item.id);
     const cartItem = {
       id: item.id,
       restaurant_id: item.restaurant_id,

@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import { motion } from "framer-motion";
 import { useCart } from "@/contexts/CartContext";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { restaurantStore, branchStore } from "@/lib/store";
+import { restaurantStore, branchStore, orderStore, analyticsStore, userBehaviorStore } from "@/lib/store";
 import { MapPin, User, Phone, MessageSquare, Send } from "lucide-react";
 
 function generateOrderId(): string {
@@ -69,6 +69,31 @@ export default function CheckoutPage() {
     localStorage.setItem("last_order_branch", JSON.stringify({ name_en: branch.name_en, name_ar: branch.name_ar }));
     localStorage.setItem("last_order_total", String(finalTotal));
     localStorage.setItem("last_order_whatsapp", whatsappUrl);
+
+    // CRM: save customer + order
+    const itemIds = cartItems.map((ci) => ci.item.id);
+    orderStore.saveCustomerOrder(name, phone, location, {
+      id: orderId,
+      restaurant_id: restaurant.id,
+      restaurant_name: restaurant.name_en,
+      branch_id: branch.id,
+      branch_name: branch.name_en,
+      items: cartItems.map((ci) => ({
+        name_en: ci.item.name_en,
+        name_ar: ci.item.name_ar,
+        price: ci.item.price,
+        quantity: ci.quantity,
+      })),
+      total: finalTotal,
+      date: new Date().toISOString(),
+      type: orderType,
+    });
+
+    // Analytics: track order events
+    for (const ci of cartItems) {
+      analyticsStore.track({ type: "order", item_id: ci.item.id, restaurant_id: restaurant.id });
+    }
+    userBehaviorStore.trackOrder(itemIds);
 
     clearCart();
     window.open(whatsappUrl, "_blank");

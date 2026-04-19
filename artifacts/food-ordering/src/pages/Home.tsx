@@ -1,13 +1,15 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Link } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, X, Star, MapPin, ChevronRight, ChevronLeft, User, Flame } from "lucide-react";
+import { Search, X, Star, MapPin, ChevronRight, ChevronLeft, User, Flame, ShoppingCart } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { restaurantStore, branchStore, offerStore, categoryStore, menuStore } from "@/lib/store";
+import { restaurantStore, branchStore, offerStore, categoryStore, menuStore, settingsStore, analyticsStore } from "@/lib/store";
 import type { MenuItem, Restaurant, Category } from "@/lib/store";
 import { useStore } from "@/hooks/useStore";
 import OffersCarousel from "@/components/OffersCarousel";
 import HeroBannerSlider from "@/components/HeroBannerSlider";
+import RecommendationRow from "@/components/RecommendationRow";
+import { useCart } from "@/contexts/CartContext";
 
 function CategoryPill({
   label,
@@ -215,14 +217,29 @@ function SectionHeader({ title, emoji }: { title: string; emoji?: string }) {
 
 export default function Home() {
   const { t, isRTL } = useLanguage();
+  const { cartItems } = useCart();
   const [search, setSearch] = useState("");
   const [activeCatId, setActiveCatId] = useState<string | null>(null);
+  const [showAbandonedBanner, setShowAbandonedBanner] = useState(false);
+
+  const settings = settingsStore.get();
 
   const restaurants = useStore(useCallback(() => restaurantStore.getAll(), []));
   const branches = useStore(useCallback(() => branchStore.getAll(), []));
   const offers = useStore(useCallback(() => offerStore.getActive(), []));
   const allCategories = useStore(useCallback(() => categoryStore.getAll(), []));
   const allMenuItems = useStore(useCallback(() => menuStore.getAll(), []));
+
+  useEffect(() => {
+    analyticsStore.track({ type: "page_visit", page: "home" });
+  }, []);
+
+  useEffect(() => {
+    if (cartItems.length > 0) {
+      const dismissed = sessionStorage.getItem("abandoned_cart_dismissed");
+      if (!dismissed) setShowAbandonedBanner(true);
+    }
+  }, [cartItems.length]);
 
   const popularItems = allMenuItems.filter((m) => m.is_popular && m.is_available);
 
@@ -250,16 +267,67 @@ export default function Home() {
     );
   });
 
+  const bgStyle: React.CSSProperties = (() => {
+    if (settings.homepage_bg_type === "image" && settings.homepage_bg_image) {
+      return {
+        backgroundImage: `url(${settings.homepage_bg_image})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundAttachment: "fixed",
+      };
+    }
+    if (settings.homepage_bg_type === "gradient") {
+      return { background: "linear-gradient(135deg, #1a0a00 0%, #0F0F0F 60%)" };
+    }
+    return { background: "#0F0F0F" };
+  })();
+
   return (
     <div
-      className="min-h-screen pb-28"
-      style={{ background: "#0F0F0F", direction: isRTL ? "rtl" : "ltr" }}
+      className="min-h-screen pb-28 relative"
+      style={{ ...bgStyle, direction: isRTL ? "rtl" : "ltr" }}
     >
+      {/* Overlay for image background */}
+      {settings.homepage_bg_type === "image" && settings.homepage_bg_image && (
+        <div
+          className="fixed inset-0 pointer-events-none z-0"
+          style={{ background: settings.homepage_overlay_color, opacity: settings.homepage_overlay_opacity }}
+        />
+      )}
+
+      {/* Abandoned cart banner */}
+      <AnimatePresence>
+        {showAbandonedBanner && cartItems.length > 0 && (
+          <motion.div
+            initial={{ y: -60, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: -60, opacity: 0 }}
+            className="fixed top-14 left-0 right-0 z-40 px-4 pt-2"
+          >
+            <div className="max-w-2xl mx-auto bg-primary/95 backdrop-blur-sm rounded-2xl p-3 flex items-center gap-3 shadow-lg shadow-primary/20">
+              <ShoppingCart size={16} className="text-white flex-shrink-0" />
+              <p className="text-white text-sm font-medium flex-1">
+                {t(`You have ${cartItems.length} item(s) in your cart`, `لديك ${cartItems.length} منتج في سلتك`)}
+              </p>
+              <Link href="/cart">
+                <span className="text-white text-xs font-bold bg-white/20 hover:bg-white/30 transition px-3 py-1.5 rounded-lg">{t("View Cart", "عرض السلة")}</span>
+              </Link>
+              <button
+                onClick={() => { setShowAbandonedBanner(false); sessionStorage.setItem("abandoned_cart_dismissed", "1"); }}
+                className="text-white/70 hover:text-white transition ml-1"
+              >
+                <X size={14} />
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Greeting Header */}
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="px-4 pt-20 pb-4"
+        className="px-4 pt-20 pb-4 relative z-10"
       >
         <div className="flex items-center justify-between">
           <div>
@@ -269,6 +337,11 @@ export default function Home() {
             <h1 className="text-xl font-bold text-foreground">
               {t("What do you want today?", "ماذا تريد اليوم؟")}
             </h1>
+            {(settings.slogan_en || settings.slogan_ar) && (
+              <p className="text-xs text-muted-foreground mt-0.5 opacity-70">
+                {t(settings.slogan_en, settings.slogan_ar)}
+              </p>
+            )}
           </div>
           <Link href="/profile">
             <motion.div
@@ -374,6 +447,16 @@ export default function Home() {
           </div>
         </motion.div>
       )}
+
+      {/* Smart Recommendations */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.13 }}
+        className="mb-7"
+      >
+        <RecommendationRow limit={8} />
+      </motion.div>
 
       {/* Popular Items */}
       {visiblePopular.length > 0 && (

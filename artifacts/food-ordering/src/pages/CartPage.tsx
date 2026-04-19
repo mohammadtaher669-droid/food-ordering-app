@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { useCart } from "@/contexts/CartContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { restaurantStore, branchStore, couponStore } from "@/lib/store";
+import RecommendationRow from "@/components/RecommendationRow";
 import { Trash2, Plus, Minus, ShoppingCart, Tag, ChevronRight, ChevronLeft } from "lucide-react";
 
 export function calculateDiscounts(subtotal: number, deliveryFee: number, orderType: "delivery" | "pickup", couponCode: string) {
@@ -215,6 +216,16 @@ export default function CartPage() {
             <ChevronIcon size={18} />
           </button>
         </motion.div>
+
+        {/* Upsell recommendations */}
+        <div className="mt-6 pb-4">
+          <RecommendationRow
+            title_en="🔥 You might also like"
+            title_ar="🔥 قد يعجبك أيضاً"
+            restaurantId={selectedRestaurantId || undefined}
+            excludeIds={cartItems.map((ci) => ci.item.id)}
+          />
+        </div>
       </div>
     </div>
   );

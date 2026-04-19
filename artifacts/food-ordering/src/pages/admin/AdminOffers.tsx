@@ -108,6 +108,10 @@ export default function AdminOffers() {
               </select>
             </div>
             <F label={t("Coupon Code (optional)", "كود العرض (اختياري)")} value={form.code || ""} onChange={(v) => setForm({ ...form, code: v.toUpperCase() })} placeholder="e.g. SAVE10" />
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">{t("Expiry Date (optional)", "تاريخ الانتهاء (اختياري)")}</label>
+              <input type="datetime-local" value={form.expiry_date || ""} onChange={(e) => setForm({ ...form, expiry_date: e.target.value })} className="w-full bg-background border border-white/10 rounded-xl px-3 py-2 text-sm text-foreground focus:outline-none" />
+            </div>
           </div>
 
           {/* Banner Image */}

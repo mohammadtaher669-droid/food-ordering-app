@@ -1,0 +1,449 @@
+BUILD A COMPLETE ADVANCED MARKETING + CUSTOMER MANAGEMENT + ANALYTICS + RECOMMENDATION SYSTEM WITH FULL ADMIN CONTROL.
+
+---
+
+MAIN GOAL:
+
+Create a powerful business system that:
+
+* Increases sales (Landing Page + Offers)
+* Tracks customer behavior (Analytics)
+* Suggests products intelligently (AI-like recommendations)
+* Stores customer data (CRM system)
+* Allows full control of backgrounds, banners, and marketing content
+
+---
+
+========================================
+
+1. LANDING PAGE (OFFERS PAGE)
+   ========================================
+
+CREATE PAGE:
+
+/offers
+
+---
+
+DESIGN:
+
+* Large hero banner (editable image)
+* Title:
+  "🔥 أفضل العروض اليوم"
+* Subtitle:
+  "خصومات حصرية لفترة محدودة"
+
+---
+
+SECTIONS:
+
+A. Featured Offers:
+
+* Large cards
+* Image + discount badge
+* CTA button:
+  "اطلب الآن"
+
+---
+
+B. Restaurant Offers:
+
+* Group offers by restaurant
+
+---
+
+C. Limited Time Offers:
+
+* Countdown timer (based on expiry_date)
+
+---
+
+ADMIN CONTROL:
+
+* Add/Edit/Delete offers
+* Upload image
+* Set expiry date
+* Assign to restaurant
+* Activate/Deactivate
+
+---
+
+========================================
+2. CUSTOMER DATA STORAGE SYSTEM (CRM)
+=====================================
+
+CREATE:
+
+"👤 Customers"
+
+---
+
+DATA STRUCTURE:
+
+customer:
+
+* id
+* name
+* phone
+* location
+* orders[]
+* total_orders
+* last_order_date
+* notes
+
+---
+
+AUTO SAVE LOGIC:
+
+When order is placed:
+
+IF phone exists:
+→ update existing customer
+
+ELSE:
+→ create new customer
+
+---
+
+ORDER STRUCTURE:
+
+order:
+
+* id
+* customer_id
+* restaurant
+* branch
+* items[]
+* total
+* date
+
+---
+
+ADMIN PANEL:
+
+SECTION: Customers
+
+Features:
+
+* View all customers
+* Search (name / phone)
+* View order history
+* Add notes
+* Sort by:
+
+  * most orders
+  * latest
+
+---
+
+========================================
+3. CUSTOMER BEHAVIOR ANALYTICS
+==============================
+
+TRACK AUTOMATICALLY:
+
+* Page visits
+* Item views
+* Clicks
+* Add to cart
+* Orders
+
+---
+
+DATA STRUCTURE:
+
+analytics:
+
+* total_visits
+* orders_count
+* most_viewed_items[]
+* most_clicked_items[]
+* conversion_rate
+
+---
+
+PER USER:
+
+user_behavior:
+
+* viewed_items[]
+* ordered_items[]
+* favorite_category
+
+---
+
+ADMIN PANEL:
+
+SECTION:
+
+"📊 Analytics Dashboard"
+
+DISPLAY:
+
+* Most ordered items
+* Most viewed items
+* Top restaurants
+* Peak hours
+* Conversion rate
+
+---
+
+========================================
+4. SMART RECOMMENDATION SYSTEM
+==============================
+
+LOGIC:
+
+IF user has previous orders:
+
+SHOW:
+"💡 ننصحك بـ"
+
+Based on:
+
+* previous orders
+* viewed items
+
+---
+
+IF new user:
+
+SHOW:
+"🔥 الأكثر طلباً"
+
+---
+
+ALGORITHM:
+
+* Count item views
+* Count orders
+* Rank items
+
+---
+
+DISPLAY:
+
+* Homepage
+* Menu page
+* Cart page
+
+---
+
+========================================
+5. CART UPSELL SYSTEM
+=====================
+
+WHEN item added:
+
+SHOW:
+
+"🔥 قد يعجبك أيضاً"
+
+* Similar items
+* Quick add button
+
+---
+
+========================================
+6. ABANDONED CART SYSTEM
+========================
+
+IF user leaves:
+
+* Save cart in localStorage
+
+WHEN return:
+
+SHOW:
+
+"أكمل طلبك"
+
+---
+
+========================================
+7. BACKGROUND MANAGEMENT SYSTEM
+===============================
+
+ADMIN SECTION:
+
+"🎨 Design & Backgrounds"
+
+---
+
+A. HOMEPAGE:
+
+* Upload background image
+* Overlay (dark / gradient)
+* Opacity control
+
+---
+
+B. PER RESTAURANT:
+
+* cover_image
+* background_image
+* overlay_color
+
+---
+
+C. LIVE PREVIEW:
+
+* Preview before saving
+* Apply instantly
+
+---
+
+========================================
+8. BANNER & MARKETING SYSTEM
+============================
+
+ADMIN SECTION:
+
+"📢 Marketing & Banners"
+
+---
+
+BANNER STRUCTURE:
+
+banner:
+
+* id
+* image
+* title_ar
+* title_en
+* subtitle
+* button_text
+* link
+* active
+
+---
+
+TYPES:
+
+* Homepage banners
+* Restaurant banners
+* Offer banners
+
+---
+
+ADMIN FEATURES:
+
+* Add/Edit/Delete banner
+* Upload image
+* Reorder
+* Activate/Deactivate
+
+---
+
+========================================
+9. SLOGAN SYSTEM
+================
+
+GLOBAL:
+
+* slogan_ar
+* slogan_en
+
+PER RESTAURANT:
+
+* tagline_ar
+* tagline_en
+
+---
+
+DISPLAY:
+
+* Homepage hero
+* Restaurant header
+
+---
+
+========================================
+10. RESTAURANT VISUAL CONTROL
+=============================
+
+Admin can:
+
+* Upload logo
+* Upload cover image
+* Upload background
+* Set theme color
+
+---
+
+========================================
+11. FRONTEND DISPLAY
+====================
+
+HOMEPAGE:
+
+* Dynamic hero background
+* Editable slogan
+* Banner slider
+* Offers section
+* Recommended items
+
+---
+
+RESTAURANT PAGE:
+
+* Cover image
+* Custom background
+* Offers banners
+* Menu + recommendations
+
+---
+
+========================================
+12. DATA STORAGE
+================
+
+Use localStorage:
+
+* customers[]
+* orders[]
+* analytics[]
+* user_behavior[]
+* banners[]
+* backgrounds[]
+* settings[]
+
+---
+
+========================================
+13. UX & PERFORMANCE
+====================
+
+* Smooth animations
+* Lazy loading
+* Image compression
+* Skeleton loading
+
+---
+
+========================================
+IMPORTANT RULES
+===============
+
+* EVERYTHING editable from admin
+* NO hardcoded content
+* Automatic systems (analytics & recommendations)
+* Clean modern UI
+
+---
+
+========================================
+FINAL RESULT
+============
+
+A complete business platform with:
+
+* Landing page for offers
+* Customer database (CRM)
+* Analytics dashboard
+* Smart recommendations
+* Full marketing control
+* Dynamic backgrounds
+* Banner system
+
+READY FOR REAL BUSINESS USE
