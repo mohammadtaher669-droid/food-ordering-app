@@ -67,8 +67,8 @@ export default function RecommendationRow({
                   className="relative h-24 overflow-hidden"
                   style={{ background: `${rest?.color || "#FF7A00"}15` }}
                 >
-                  {item.image ? (
-                    <img src={item.image} alt={item.name_en} className="w-full h-full object-cover" loading="lazy" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                  {(item.image_url || item.image) ? (
+                    <img src={item.image_url || item.image} alt={item.name_en} className="w-full h-full object-cover" loading="lazy" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-3xl">🍽️</div>
                   )}

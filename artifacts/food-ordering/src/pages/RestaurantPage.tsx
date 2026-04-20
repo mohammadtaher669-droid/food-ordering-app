@@ -116,7 +116,7 @@ export default function RestaurantPage() {
                   className="flex-shrink-0 rounded-xl border border-yellow-400/15 overflow-hidden w-44"
                   style={{ background: "#1A1A1A" }}
                 >
-                  <ImageWithFallback src={item.image} alt={t(item.name_en, item.name_ar)} className="w-full h-24 object-cover" preset="product" />
+                  <ImageWithFallback src={item.image_url || item.image} alt={t(item.name_en, item.name_ar)} className="w-full h-24 object-cover" preset="product" />
                   <div className="p-3">
                     <div className="flex items-center justify-between mb-1">
                       <span className="text-[10px] bg-yellow-400/15 text-yellow-400 px-1.5 py-0.5 rounded-full font-medium">{t("New", "جديد")}</span>
@@ -145,8 +145,8 @@ export default function RestaurantPage() {
                   style={{ background: "#1A1A1A" }}
                   data-testid={`card-popular-${item.id}`}
                 >
-                  {item.image ? (
-                    <img src={item.image} alt="" className="w-full h-24 object-cover" loading="lazy" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                  {(item.image_url || item.image) ? (
+                    <img src={item.image_url || item.image} alt="" className="w-full h-24 object-cover" loading="lazy" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
                   ) : (
                     <div className="w-full h-24 flex items-center justify-center text-3xl" style={{ background: `${restaurant.color}10` }}>🍽️</div>
                   )}

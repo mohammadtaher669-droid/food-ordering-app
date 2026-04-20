@@ -61,7 +61,7 @@ function PopularCard({
           className="relative h-28 overflow-hidden"
           style={{ background: `${restaurant.color}15` }}
         >
-          <ImageWithFallback src={item.image} alt={item.name_en} className="w-full h-full object-cover" preset="product" />
+          <ImageWithFallback src={item.image_url || item.image} alt={item.name_en} className="w-full h-full object-cover" preset="product" />
           <div className="absolute inset-0 bg-gradient-to-t from-[#1A1A1A]/60 to-transparent" />
           {item.is_popular && (
             <div className="absolute top-2 left-2 bg-primary/90 text-primary-foreground text-[9px] font-bold px-2 py-0.5 rounded-full flex items-center gap-0.5">

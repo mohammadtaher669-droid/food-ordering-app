@@ -57,6 +57,7 @@ export interface MenuItem {
   description_ar: string;
   price: number;
   image?: string;
+  image_url?: string;
   calories?: number;
   is_available: boolean;
   is_popular: boolean;

@@ -32,8 +32,9 @@ export default function AdminMenu() {
   const [catForm, setCatForm] = useState({ name_en: "", name_ar: "" });
   const [itemForm, setItemForm] = useState<Partial<MenuItem & { category_id: string }>>({
     name_en: "", name_ar: "", price: 0, description_en: "", description_ar: "",
-    is_available: true, is_popular: false, is_new: false, category_id: "",
+    is_available: true, is_popular: false, is_new: false, category_id: "", image_url: undefined,
   });
+  const [urlError, setUrlError] = useState("");
   const categories = allCategories.filter((c) => c.restaurant_id === selectedRestaurant);
   const items = allItems.filter((m) => m.restaurant_id === selectedRestaurant);
   const restaurant = restaurants.find((r) => r.id === selectedRestaurant);
@@ -65,10 +66,27 @@ export default function AdminMenu() {
   const editCat = (cat: Category) => { setEditingCatId(cat.id); setCatForm({ name_en: cat.name_en, name_ar: cat.name_ar }); setShowCatForm(true); };
 
   // ─────────────────── ITEM CRUD ───────────────────
+  const validateUrl = (url: string): string => {
+    if (!url) return "";
+    try {
+      const u = new URL(url);
+      if (!["http:", "https:"].includes(u.protocol)) return t("URL must start with http:// or https://", "يجب أن يبدأ الرابط بـ http:// أو https://");
+      return "";
+    } catch {
+      return t("Invalid URL format", "صيغة الرابط غير صحيحة");
+    }
+  };
+
   const saveItem = () => {
     if (!itemForm.name_en?.trim() || !itemForm.name_ar?.trim() || !itemForm.category_id) {
       toast({ title: t("Required: name (EN, AR) and category", "مطلوب: الاسم والفئة"), variant: "destructive" }); return;
     }
+    const rawUrl = itemForm.image_url?.trim() || "";
+    if (rawUrl) {
+      const err = validateUrl(rawUrl);
+      if (err) { setUrlError(err); return; }
+    }
+    const usingUrl = !!rawUrl;
     const newItem: MenuItem = {
       id: editingItemId || `item-${Date.now()}`,
       restaurant_id: selectedRestaurant,
@@ -76,7 +94,8 @@ export default function AdminMenu() {
       name_en: itemForm.name_en!, name_ar: itemForm.name_ar!,
       description_en: itemForm.description_en || "", description_ar: itemForm.description_ar || "",
       price: itemForm.price || 0,
-      image: itemForm.image,
+      image_url: usingUrl ? rawUrl : undefined,
+      image: usingUrl ? undefined : itemForm.image,
       calories: itemForm.calories || undefined,
       is_available: itemForm.is_available ?? true,
       is_popular: itemForm.is_popular || false,
@@ -85,13 +104,13 @@ export default function AdminMenu() {
     try {
       menuStore.save(newItem);
       toast({ title: editingItemId ? t("Item updated", "تم تحديث العنصر") : t("Item added", "تمت الإضافة") });
-      setShowItemForm(false); setEditingItemId(null);
-      setItemForm({ name_en: "", name_ar: "", price: 0, description_en: "", description_ar: "", is_available: true, is_popular: false, is_new: false, category_id: "" });
+      setShowItemForm(false); setEditingItemId(null); setUrlError("");
+      setItemForm({ name_en: "", name_ar: "", price: 0, description_en: "", description_ar: "", is_available: true, is_popular: false, is_new: false, category_id: "", image_url: undefined });
     } catch (err) {
       toast({ title: t("Save failed", "فشل الحفظ"), description: err instanceof Error ? err.message : t("Unknown error", "خطأ غير معروف"), variant: "destructive" });
     }
   };
-  const editItem = (item: MenuItem) => { setEditingItemId(item.id); setItemForm({ ...item }); setShowItemForm(true); window.scrollTo({ top: 0, behavior: "smooth" }); };
+  const editItem = (item: MenuItem) => { setEditingItemId(item.id); setItemForm({ ...item }); setUrlError(""); setShowItemForm(true); window.scrollTo({ top: 0, behavior: "smooth" }); };
   const deleteItem = (id: string) => { menuStore.delete(id); };
   const toggleField = (item: MenuItem, field: "is_available" | "is_popular" | "is_new") => {
     menuStore.save({ ...item, [field]: !item[field] });
@@ -158,15 +177,46 @@ export default function AdminMenu() {
             <F label={t("Calories (optional)", "السعرات الحرارية (اختياري)")} value={itemForm.calories || ""} onChange={(v) => setItemForm({ ...itemForm, calories: v ? Number(v) : undefined })} type="number" min="0" placeholder="e.g. 650" data-testid="input-item-calories" />
           </div>
 
-          {/* Image Upload */}
-          <ImageUploader
-            preset="product"
-            label={t("Item Image (optional)", "صورة العنصر (اختياري)")}
-            value={itemForm.image}
-            onChange={(url) => setItemForm((f) => ({ ...f, image: url }))}
-            onDelete={() => setItemForm((f) => ({ ...f, image: undefined }))}
-            data-testid="uploader-item-image"
-          />
+          {/* Image URL */}
+          <div className="space-y-1">
+            <label className="text-xs text-muted-foreground block">{t("Image URL (optional — takes priority over upload)", "رابط الصورة (اختياري — يتقدم على الرفع)")}</label>
+            <input
+              type="url"
+              placeholder="https://example.com/image.webp"
+              value={itemForm.image_url || ""}
+              onChange={(e) => {
+                const val = e.target.value;
+                setItemForm((f) => ({ ...f, image_url: val || undefined }));
+                setUrlError("");
+              }}
+              className="w-full bg-background border border-white/10 rounded-xl px-3 py-2 text-sm text-foreground focus:outline-none focus:border-primary/50"
+              data-testid="input-item-image-url"
+            />
+            {urlError && <p className="text-xs text-red-400">{urlError}</p>}
+            {itemForm.image_url && !urlError && (
+              <div className="flex items-center gap-3 mt-1">
+                <img
+                  src={itemForm.image_url}
+                  alt="preview"
+                  className="w-20 h-20 rounded-xl object-cover border border-white/10 flex-shrink-0"
+                  onError={() => setUrlError(t("Image failed to load. Check the URL.", "تعذّر تحميل الصورة. تحقق من الرابط."))}
+                />
+                <p className="text-[11px] text-green-400">{t("URL image will be used (no file stored)", "سيتم استخدام رابط الصورة (لا يُخزَّن ملف)")}</p>
+              </div>
+            )}
+          </div>
+
+          {/* File Upload — only shown when no URL is set */}
+          {!itemForm.image_url && (
+            <ImageUploader
+              preset="product"
+              label={t("Upload Image (optional)", "رفع صورة (اختياري)")}
+              value={itemForm.image}
+              onChange={(url) => setItemForm((f) => ({ ...f, image: url }))}
+              onDelete={() => setItemForm((f) => ({ ...f, image: undefined }))}
+              data-testid="uploader-item-image"
+            />
+          )}
 
           {/* Flags */}
           <div className="flex gap-4 flex-wrap">
@@ -218,7 +268,7 @@ export default function AdminMenu() {
                 {catItems.length === 0 && <p className="text-sm text-muted-foreground">{t("No items in this category", "لا توجد عناصر في هذه الفئة")}</p>}
                 {catItems.map((item) => (
                   <div key={item.id} className="bg-card border border-white/5 rounded-xl p-3 flex items-center gap-3" data-testid={`admin-menu-item-${item.id}`}>
-                    <ImageWithFallback src={item.image} alt={item.name_en} className="w-10 h-10 rounded-lg object-cover flex-shrink-0" preset="thumbnail" />
+                    <ImageWithFallback src={item.image_url || item.image} alt={item.name_en} className="w-10 h-10 rounded-lg object-cover flex-shrink-0" preset="thumbnail" />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1.5 flex-wrap">
                         <p className="text-sm font-medium text-foreground">{item.name_en}</p>
