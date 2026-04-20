@@ -1,10 +1,11 @@
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { restaurantStore } from "@/lib/store";
 import type { Restaurant } from "@/lib/store";
 import { useStore } from "@/hooks/useStore";
-import { Plus, Trash2, Edit2, Check, X, Upload } from "lucide-react";
+import { Plus, Trash2, Edit2, Check, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import ImageUploader from "@/components/ImageUploader";
 
 function Field({ label, value, onChange, ...props }: { label: string; value: string; onChange: (v: string) => void; [k: string]: any }) {
   return (
@@ -24,7 +25,7 @@ const emptyForm: Partial<Restaurant> = {
 
 function LogoDisplay({ restaurant }: { restaurant: Restaurant }) {
   if (restaurant.logoType === "image" && restaurant.logo) {
-    return <img src={restaurant.logo} alt={restaurant.name_en} className="w-full h-full object-cover rounded-xl" />;
+    return <img src={restaurant.logo} alt={restaurant.name_en} className="w-full h-full object-cover rounded-xl" loading="lazy" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />;
   }
   return <span className="text-2xl">{restaurant.logo || "🍽️"}</span>;
 }
@@ -36,29 +37,6 @@ export default function AdminRestaurants() {
   const [showAdd, setShowAdd] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<Partial<Restaurant>>(emptyForm);
-  const fileRef = useRef<HTMLInputElement>(null);
-  const coverRef = useRef<HTMLInputElement>(null);
-
-  const handleCoverUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (file.size > 3 * 1024 * 1024) { toast({ title: t("File too large", "الملف كبير جداً"), description: t("Max 3MB", "الحد الأقصى 3MB"), variant: "destructive" }); return; }
-    const reader = new FileReader();
-    reader.onload = (ev) => setForm((f) => ({ ...f, cover_image: ev.target?.result as string }));
-    reader.readAsDataURL(file);
-  };
-
-  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (file.size > 2 * 1024 * 1024) { toast({ title: t("File too large", "الملف كبير جداً"), description: t("Max 2MB", "الحد الأقصى 2MB"), variant: "destructive" }); return; }
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      setForm((f) => ({ ...f, logo: ev.target?.result as string, logoType: "image" }));
-    };
-    reader.readAsDataURL(file);
-  };
-
   const handleSave = () => {
     if (!form.name_en?.trim() || !form.name_ar?.trim()) {
       toast({ title: t("Required fields missing", "حقول مطلوبة مفقودة"), variant: "destructive" }); return;
@@ -125,29 +103,14 @@ export default function AdminRestaurants() {
           </div>
 
           {/* Cover Image */}
-          <div>
-            <label className="text-xs text-muted-foreground mb-2 block">{t("Cover Image (shown on restaurant card & page)", "صورة الغلاف (تظهر على بطاقة المطعم والصفحة)")}</label>
-            <div className="flex items-center gap-3">
-              {form.cover_image && (
-                <img src={form.cover_image} alt="cover" className="h-20 w-36 rounded-xl object-cover flex-shrink-0 border border-white/10" />
-              )}
-              <div className="space-y-2">
-                <button
-                  onClick={() => coverRef.current?.click()}
-                  className="flex items-center gap-1.5 px-3 py-2 border border-white/10 rounded-xl text-sm text-muted-foreground hover:text-foreground transition"
-                >
-                  <Upload size={13} /> {t("Upload Cover Image", "رفع صورة الغلاف")}
-                </button>
-                {form.cover_image && (
-                  <button onClick={() => setForm({ ...form, cover_image: undefined })} className="text-xs text-destructive/70 hover:text-destructive block">
-                    {t("Remove cover", "إزالة الغلاف")}
-                  </button>
-                )}
-                <p className="text-xs text-muted-foreground/60">{t("Max 3MB. Will display as a banner.", "الحد الأقصى 3MB.")}</p>
-              </div>
-              <input ref={coverRef} type="file" accept="image/*" className="hidden" onChange={handleCoverUpload} />
-            </div>
-          </div>
+          <ImageUploader
+            preset="restaurant_cover"
+            label={t("Cover Image (shown on restaurant card & page)", "صورة الغلاف (تظهر على بطاقة المطعم والصفحة)")}
+            value={form.cover_image}
+            onChange={(url) => setForm((f) => ({ ...f, cover_image: url }))}
+            onDelete={() => setForm((f) => ({ ...f, cover_image: undefined }))}
+            data-testid="uploader-cover-image"
+          />
 
           {/* Logo Section */}
           <div>
@@ -155,33 +118,28 @@ export default function AdminRestaurants() {
             <div className="flex items-center gap-4">
               <div className="w-16 h-16 rounded-xl border border-white/10 flex items-center justify-center overflow-hidden" style={{ background: `${form.color}20` }}>
                 {form.logoType === "image" && form.logo ? (
-                  <img src={form.logo} alt="logo" className="w-full h-full object-cover" />
+                  <img src={form.logo} alt="logo" className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
                 ) : (
                   <span className="text-3xl">{form.logo || "🍽️"}</span>
                 )}
               </div>
-              <div className="space-y-2">
-                <div className="flex gap-2">
+              <div className="space-y-2 flex-1">
+                <div className="flex gap-2 flex-wrap items-center">
                   <input
                     placeholder={t("Emoji (e.g. 🍗)", "إيموجي (مثل 🍗)")}
                     value={form.logoType === "emoji" ? form.logo || "" : ""}
                     onChange={(e) => setForm({ ...form, logo: e.target.value, logoType: "emoji" })}
                     className="bg-background border border-white/10 rounded-xl px-3 py-2 text-sm text-foreground focus:outline-none w-36"
                   />
-                  <span className="text-muted-foreground text-sm self-center">{t("or", "أو")}</span>
-                  <button
-                    onClick={() => fileRef.current?.click()}
-                    className="flex items-center gap-1.5 px-3 py-2 border border-white/10 rounded-xl text-sm text-muted-foreground hover:text-foreground transition"
-                  >
-                    <Upload size={13} /> {t("Upload Image", "رفع صورة")}
-                  </button>
-                  <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} />
+                  <span className="text-muted-foreground text-sm">{t("or upload:", "أو ارفع صورة:")}</span>
                 </div>
-                {form.logoType === "image" && form.logo && (
-                  <button onClick={() => setForm({ ...form, logo: "", logoType: "emoji" })} className="text-xs text-destructive/70 hover:text-destructive">
-                    {t("Remove image", "إزالة الصورة")}
-                  </button>
-                )}
+                <ImageUploader
+                  preset="thumbnail"
+                  value={form.logoType === "image" ? form.logo : undefined}
+                  onChange={(url) => setForm((f) => ({ ...f, logo: url, logoType: "image" }))}
+                  onDelete={() => setForm((f) => ({ ...f, logo: "", logoType: "emoji" }))}
+                  data-testid="uploader-logo"
+                />
               </div>
             </div>
           </div>
@@ -226,7 +184,7 @@ export default function AdminRestaurants() {
             {/* Cover image strip */}
             <div className="relative h-20 overflow-hidden">
               {restaurant.cover_image ? (
-                <img src={restaurant.cover_image} alt="" className="w-full h-full object-cover" />
+                <img src={restaurant.cover_image} alt="" className="w-full h-full object-cover" loading="lazy" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
               ) : (
                 <div className="w-full h-full" style={{ background: `linear-gradient(135deg, ${restaurant.color}25, ${restaurant.color}08)` }} />
               )}

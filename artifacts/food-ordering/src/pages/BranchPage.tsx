@@ -10,6 +10,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useCart } from "@/contexts/CartContext";
 import WorkingHoursStatus, { isBranchOpen } from "@/components/WorkingHoursStatus";
 import { Plus, Check, Sparkles, Navigation, CheckCircle, XCircle, Loader2 } from "lucide-react";
+import ImageWithFallback from "@/components/ImageWithFallback";
 import { useToast } from "@/hooks/use-toast";
 import { isInsideZone } from "@/lib/deliveryZones";
 import { analyticsStore, userBehaviorStore } from "@/lib/store";
@@ -241,11 +242,10 @@ export default function BranchPage() {
             <div className="flex items-start justify-between flex-wrap gap-3">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0" style={{ background: `${restaurant.color}20` }}>
-                  {restaurant.logoType === "image" && restaurant.logo ? (
-                    <img src={restaurant.logo} alt={restaurant.name_en} className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-2xl">{restaurant.logo}</div>
-                  )}
+                  {restaurant.logoType === "image" && restaurant.logo
+                    ? <ImageWithFallback src={restaurant.logo} alt={restaurant.name_en} className="w-full h-full object-cover" preset="thumbnail" />
+                    : <div className="w-full h-full flex items-center justify-center text-2xl">{restaurant.logo || "🍽️"}</div>
+                  }
                 </div>
                 <div>
                   <h1 className="text-xl font-bold text-foreground">{t(restaurant.name_en, restaurant.name_ar)}</h1>

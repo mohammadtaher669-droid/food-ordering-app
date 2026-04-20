@@ -5,6 +5,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { analyticsStore, menuStore, restaurantStore, customerStore, orderStore } from "@/lib/store";
 import { useStore } from "@/hooks/useStore";
 import { useToast } from "@/hooks/use-toast";
+import ImageWithFallback from "@/components/ImageWithFallback";
 
 function StatCard({ icon: Icon, label, value, color }: { icon: any; label: string; value: string | number; color: string }) {
   return (
@@ -125,7 +126,7 @@ export default function AdminAnalytics() {
                   className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 text-sm overflow-hidden"
                   style={{ background: "#1A1A1A" }}
                 >
-                  {item!.image ? <img src={item!.image} className="w-full h-full object-cover" /> : "🍽️"}
+                  <ImageWithFallback src={item!.image} alt={item!.name_en} className="w-full h-full object-cover" preset="thumbnail" fallbackEmoji="🍽️" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-medium text-foreground line-clamp-1">{item!.name_en}</p>
@@ -148,7 +149,7 @@ export default function AdminAnalytics() {
                   className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 text-sm overflow-hidden"
                   style={{ background: "#1A1A1A" }}
                 >
-                  {item!.image ? <img src={item!.image} className="w-full h-full object-cover" /> : "🍽️"}
+                  <ImageWithFallback src={item!.image} alt={item!.name_en} className="w-full h-full object-cover" preset="thumbnail" fallbackEmoji="🍽️" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-medium text-foreground line-clamp-1">{item!.name_en}</p>

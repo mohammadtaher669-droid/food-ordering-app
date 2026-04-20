@@ -10,6 +10,7 @@ import OffersCarousel from "@/components/OffersCarousel";
 import HeroBannerSlider from "@/components/HeroBannerSlider";
 import RecommendationRow from "@/components/RecommendationRow";
 import { useCart } from "@/contexts/CartContext";
+import ImageWithFallback from "@/components/ImageWithFallback";
 
 function CategoryPill({
   label,
@@ -60,11 +61,7 @@ function PopularCard({
           className="relative h-28 overflow-hidden"
           style={{ background: `${restaurant.color}15` }}
         >
-          {item.image ? (
-            <img src={item.image} alt={item.name_en} className="w-full h-full object-cover" />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center text-4xl">🍽️</div>
-          )}
+          <ImageWithFallback src={item.image} alt={item.name_en} className="w-full h-full object-cover" preset="product" />
           <div className="absolute inset-0 bg-gradient-to-t from-[#1A1A1A]/60 to-transparent" />
           {item.is_popular && (
             <div className="absolute top-2 left-2 bg-primary/90 text-primary-foreground text-[9px] font-bold px-2 py-0.5 rounded-full flex items-center gap-0.5">
@@ -159,11 +156,10 @@ function RestaurantCard({
                 className="-mt-8 w-14 h-14 rounded-xl border-2 flex-shrink-0 overflow-hidden flex items-center justify-center shadow-lg relative z-10"
                 style={{ borderColor: `${restaurant.color}35`, background: `${restaurant.color}18` }}
               >
-                {restaurant.logoType === "image" && restaurant.logo ? (
-                  <img src={restaurant.logo} alt={restaurant.name_en} className="w-full h-full object-cover" />
-                ) : (
-                  <span className="text-2xl">{restaurant.logo || "🍽️"}</span>
-                )}
+                {restaurant.logoType === "image" && restaurant.logo
+                  ? <ImageWithFallback src={restaurant.logo} alt={restaurant.name_en} className="w-full h-full object-cover" preset="thumbnail" />
+                  : <span className="text-2xl">{restaurant.logo || "🍽️"}</span>
+                }
               </div>
               <div className="flex-1 min-w-0 pt-2">
                 <div className="flex items-start justify-between gap-2">

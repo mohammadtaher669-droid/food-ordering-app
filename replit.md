@@ -58,15 +58,24 @@ Each has 2 branches (Riyadh + Jeddah) with WhatsApp numbers, delivery fees, and 
 ### Admin Panel (`/admin`, password: `admin123`)
 - **Dashboard**: stats overview + JSON export/import + reset
 - **Restaurants**: full CRUD — name, logo, color theme, background image + overlay control
-- **Branches**: full CRUD — name, WhatsApp, open/close hours, delivery fee, address, delivery zones
-- **Menu Builder**: category + item CRUD with image upload, popular/new/available toggles
+- **Branches**: full CRUD — name, WhatsApp, open/close hours, delivery fee, address, delivery zones, delivery_time
+- **Menu Builder**: category + item CRUD with calories field + ImageUploader, popular/new/available toggles
 - **Offers**: create/toggle/delete promotional offers (%, fixed, free delivery) with expiry date + carousel display
 - **Coupons**: create/toggle/delete coupon codes
 - **Reviews**: approve or delete customer reviews
 - **Customers (CRM)**: auto-saves customer on order, dedupe by phone, search + sort + export
 - **Analytics**: page visits + add-to-cart events, peak hours chart, top items + restaurants
 - **Banners**: create/manage banners (homepage, popup, category) with image + title/link
-- **Backgrounds**: control homepage background (color/gradient/image), overlay opacity/color, slogan EN/AR
+- **Backgrounds**: control homepage background (color/gradient/image), overlay opacity/color, slogan EN/AR, brand color picker (live --primary CSS var)
+
+## Image System (`src/lib/imageUtils.ts` + `src/components/ImageUploader.tsx`)
+
+Centralized image pipeline — all uploads flow through `ImageUploader` component:
+- **Presets**: `hero_banner` (1200×400), `category_icon` (200×200), `product` (500×500), `restaurant_cover` (1200×600), `thumbnail` (150×150), `offer` (500×500)
+- **Processing**: auto-crops to aspect ratio (center-focus), resizes to preset, converts to WebP (JPEG fallback), stores as Base64 dataURL in localStorage
+- **Validation**: accepts JPG/PNG/WebP only, max 2 MB, shows clear error on violation
+- **UX**: shows loading spinner during processing, success toast on completion, hover to reveal Replace/Delete buttons, recommended size hint always visible
+- **Fallback display**: `ImageWithFallback` component — shows placeholder SVG if src missing or broken (onError), lazy loading on all images
 
 ## Assets
 

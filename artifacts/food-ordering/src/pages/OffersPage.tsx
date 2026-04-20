@@ -6,6 +6,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { offerStore, restaurantStore, bannerStore } from "@/lib/store";
 import { useStore } from "@/hooks/useStore";
 import type { Offer } from "@/lib/store";
+import ImageWithFallback from "@/components/ImageWithFallback";
 
 function CountdownTimer({ expiry }: { expiry: string }) {
   const [timeLeft, setTimeLeft] = useState<{ h: number; m: number; s: number } | null>(null);
@@ -50,7 +51,7 @@ function OfferCard({ offer, restaurantColor }: { offer: Offer; restaurantColor: 
     >
       {offer.image ? (
         <div className="relative h-44 overflow-hidden">
-          <img src={offer.image} alt={t(offer.title_en, offer.title_ar)} className="w-full h-full object-cover" />
+          <ImageWithFallback src={offer.image} alt={t(offer.title_en, offer.title_ar)} className="w-full h-full object-cover" preset="offer" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
           <div className="absolute top-3 right-3">
             {offer.value > 0 && (

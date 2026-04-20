@@ -1,10 +1,11 @@
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { restaurantStore, offerStore } from "@/lib/store";
 import type { Offer } from "@/lib/store";
 import { useStore } from "@/hooks/useStore";
-import { Plus, Trash2, Edit2, Check, X, ToggleLeft, ToggleRight, Upload, Percent, Truck, Banknote } from "lucide-react";
+import { Plus, Trash2, Edit2, Check, X, ToggleLeft, ToggleRight, Percent, Truck, Banknote } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import ImageUploader from "@/components/ImageUploader";
 
 function F({ label, value, onChange, ...p }: { label: string; value: string | number; onChange: (v: string) => void; [k: string]: any }) {
   return (
@@ -34,16 +35,6 @@ export default function AdminOffers() {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<Partial<Offer>>(emptyForm);
-  const fileRef = useRef<HTMLInputElement>(null);
-
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => setForm((f) => ({ ...f, image: ev.target?.result as string }));
-    reader.readAsDataURL(file);
-  };
-
   const handleSave = () => {
     if (!form.title_en?.trim() || !form.title_ar?.trim()) {
       toast({ title: t("Required: titles (EN & AR)", "مطلوب: العنوان بالعربي والإنجليزي"), variant: "destructive" }); return;
@@ -115,17 +106,14 @@ export default function AdminOffers() {
           </div>
 
           {/* Banner Image */}
-          <div>
-            <label className="text-xs text-muted-foreground mb-2 block">{t("Banner Image (optional)", "صورة البانر (اختياري)")}</label>
-            <div className="flex items-center gap-3">
-              {form.image && <img src={form.image} alt="banner" className="h-16 rounded-xl object-cover" />}
-              <button onClick={() => fileRef.current?.click()} className="flex items-center gap-1.5 px-3 py-2 border border-white/10 rounded-xl text-sm text-muted-foreground hover:text-foreground transition">
-                <Upload size={13} /> {t("Upload Banner", "رفع صورة")}
-              </button>
-              {form.image && <button onClick={() => setForm({ ...form, image: undefined })} className="text-xs text-destructive/70 hover:text-destructive">{t("Remove", "إزالة")}</button>}
-              <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
-            </div>
-          </div>
+          <ImageUploader
+            preset="offer"
+            label={t("Banner Image (optional)", "صورة البانر (اختياري)")}
+            value={form.image}
+            onChange={(url) => setForm((f) => ({ ...f, image: url }))}
+            onDelete={() => setForm((f) => ({ ...f, image: undefined }))}
+            data-testid="uploader-offer-image"
+          />
 
           <label className="flex items-center gap-2 text-sm cursor-pointer">
             <input type="checkbox" checked={form.active ?? true} onChange={(e) => setForm({ ...form, active: e.target.checked })} className="accent-primary" />

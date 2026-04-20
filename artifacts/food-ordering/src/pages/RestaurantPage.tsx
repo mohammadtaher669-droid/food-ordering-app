@@ -6,6 +6,7 @@ import { useStore } from "@/hooks/useStore";
 import { useLanguage } from "@/contexts/LanguageContext";
 import WorkingHoursStatus, { isBranchOpen } from "@/components/WorkingHoursStatus";
 import { ChevronRight, ChevronLeft, MapPin, Star, Sparkles, ArrowLeft, ArrowRight } from "lucide-react";
+import ImageWithFallback from "@/components/ImageWithFallback";
 
 export default function RestaurantPage() {
   const params = useParams<{ restaurantId: string }>();
@@ -83,11 +84,10 @@ export default function RestaurantPage() {
               className="w-16 h-16 md:w-20 md:h-20 rounded-2xl border-2 flex-shrink-0 overflow-hidden flex items-center justify-center shadow-xl"
               style={{ borderColor: `${restaurant.color}60`, background: `${restaurant.color}20` }}
             >
-              {restaurant.logoType === "image" && restaurant.logo ? (
-                <img src={restaurant.logo} alt={restaurant.name_en} className="w-full h-full object-cover" />
-              ) : (
-                <span className="text-3xl">{restaurant.logo}</span>
-              )}
+              {restaurant.logoType === "image" && restaurant.logo
+                ? <ImageWithFallback src={restaurant.logo} alt={restaurant.name_en} className="w-full h-full object-cover" preset="thumbnail" />
+                : <span className="text-3xl">{restaurant.logo}</span>
+              }
             </div>
             <div className="pb-1">
               <h1 className="text-2xl md:text-3xl font-black text-foreground drop-shadow-lg">
@@ -116,11 +116,7 @@ export default function RestaurantPage() {
                   className="flex-shrink-0 rounded-xl border border-yellow-400/15 overflow-hidden w-44"
                   style={{ background: "#1A1A1A" }}
                 >
-                  {item.image ? (
-                    <img src={item.image} alt="" className="w-full h-24 object-cover" />
-                  ) : (
-                    <div className="w-full h-24 flex items-center justify-center text-3xl" style={{ background: `${restaurant.color}10` }}>🍽️</div>
-                  )}
+                  <ImageWithFallback src={item.image} alt={t(item.name_en, item.name_ar)} className="w-full h-24 object-cover" preset="product" />
                   <div className="p-3">
                     <div className="flex items-center justify-between mb-1">
                       <span className="text-[10px] bg-yellow-400/15 text-yellow-400 px-1.5 py-0.5 rounded-full font-medium">{t("New", "جديد")}</span>

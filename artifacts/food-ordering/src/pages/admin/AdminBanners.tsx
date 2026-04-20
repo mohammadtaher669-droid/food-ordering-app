@@ -1,26 +1,13 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Edit2, Trash2, GripVertical, Check, X, Upload, Image, Link as LinkIcon } from "lucide-react";
+import { Plus, Edit2, Trash2, GripVertical, Check, X, Link as LinkIcon } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { bannerStore, restaurantStore } from "@/lib/store";
 import type { Banner } from "@/lib/store";
 import { useStore } from "@/hooks/useStore";
 import { useToast } from "@/hooks/use-toast";
-
-function compressImage(file: File, maxW = 1200, quality = 0.8): Promise<string> {
-  return new Promise((resolve) => {
-    const img = new Image();
-    img.onload = () => {
-      const canvas = document.createElement("canvas");
-      const scale = Math.min(1, maxW / img.width);
-      canvas.width = img.width * scale;
-      canvas.height = img.height * scale;
-      canvas.getContext("2d")!.drawImage(img, 0, 0, canvas.width, canvas.height);
-      resolve(canvas.toDataURL("image/jpeg", quality));
-    };
-    img.src = URL.createObjectURL(file);
-  });
-}
+import ImageUploader from "@/components/ImageUploader";
+import ImageWithFallback from "@/components/ImageWithFallback";
 
 const EMPTY: Omit<Banner, "id"> = {
   title_en: "",
@@ -38,20 +25,12 @@ const EMPTY: Omit<Banner, "id"> = {
 export default function AdminBanners() {
   const { t } = useLanguage();
   const { toast } = useToast();
-  const fileRef = useRef<HTMLInputElement>(null);
   const banners = useStore(useCallback(() => bannerStore.getAll(), []));
   const restaurants = useStore(useCallback(() => restaurantStore.getAll(), []));
 
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<Omit<Banner, "id">>(EMPTY);
-
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const compressed = await compressImage(file);
-    setForm((f) => ({ ...f, image: compressed }));
-  };
 
   const handleEdit = (banner: Banner) => {
     const { id, ...rest } = banner;
@@ -120,25 +99,14 @@ export default function AdminBanners() {
             <h2 className="text-sm font-bold text-foreground">{editingId ? t("Edit Banner", "تعديل البانر") : t("New Banner", "بانر جديد")}</h2>
 
             {/* Image */}
-            <div
-              onClick={() => fileRef.current?.click()}
-              className="relative h-32 rounded-xl overflow-hidden border-2 border-dashed border-white/10 cursor-pointer hover:border-primary/40 transition group"
-            >
-              {form.image ? (
-                <>
-                  <img src={form.image} className="w-full h-full object-cover" />
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
-                    <Upload size={18} className="text-white" />
-                  </div>
-                </>
-              ) : (
-                <div className="w-full h-full flex flex-col items-center justify-center gap-1.5 text-muted-foreground">
-                  <Image size={20} />
-                  <span className="text-xs">{t("Upload banner image", "رفع صورة البانر")}</span>
-                </div>
-              )}
-            </div>
-            <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+            <ImageUploader
+              preset="hero_banner"
+              label={t("Banner Image", "صورة البانر")}
+              value={form.image}
+              onChange={(url) => setForm((f) => ({ ...f, image: url }))}
+              onDelete={() => setForm((f) => ({ ...f, image: undefined }))}
+              data-testid="uploader-banner-image"
+            />
 
             <div className="grid grid-cols-2 gap-3">
               <div>
@@ -224,7 +192,7 @@ export default function AdminBanners() {
       <div className="space-y-3">
         {banners.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground">
-            <Image size={32} className="mx-auto mb-3 opacity-30" />
+            <span className="text-4xl opacity-30 block mb-3">📢</span>
             <p className="text-sm">{t("No banners yet. Add one to get started.", "لا توجد بانرات. أضف واحداً للبدء.")}</p>
           </div>
         ) : (
@@ -240,10 +208,10 @@ export default function AdminBanners() {
               <div className="flex items-center gap-3 p-3">
                 <GripVertical size={14} className="text-muted-foreground/40 flex-shrink-0" />
                 {banner.image ? (
-                  <img src={banner.image} alt="" className="w-16 h-10 object-cover rounded-lg flex-shrink-0" />
+                  <ImageWithFallback src={banner.image} alt="" className="w-16 h-10 object-cover rounded-lg flex-shrink-0" preset="hero_banner" />
                 ) : (
                   <div className="w-16 h-10 bg-white/5 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <Image size={14} className="text-muted-foreground/40" />
+                    <span className="text-lg">📢</span>
                   </div>
                 )}
                 <div className="flex-1 min-w-0">

@@ -109,7 +109,7 @@ export default function CheckoutPage() {
           {/* Order Type Badge */}
           <div className="bg-card border border-white/5 rounded-xl p-3 mb-5 flex items-center gap-3">
             {restaurant.logoType === "image" && restaurant.logo
-              ? <img src={restaurant.logo} alt="" className="w-9 h-9 rounded-lg object-cover" />
+              ? <img src={restaurant.logo} alt="" className="w-9 h-9 rounded-lg object-cover" loading="lazy" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
               : <span className="text-2xl">{restaurant.logo}</span>}
             <div>
               <p className="text-sm font-medium">{t(restaurant.name_en, restaurant.name_ar)} · {t(branch.name_en, branch.name_ar)}</p>

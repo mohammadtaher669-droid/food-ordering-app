@@ -1,10 +1,12 @@
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { restaurantStore, categoryStore, menuStore } from "@/lib/store";
 import type { Category, MenuItem } from "@/lib/store";
 import { useStore } from "@/hooks/useStore";
-import { Plus, Trash2, Edit2, Check, X, Upload, FolderPlus, GripVertical, Star, Sparkles, Eye, EyeOff } from "lucide-react";
+import { Plus, Trash2, Edit2, Check, X, FolderPlus, GripVertical, Star, Sparkles, Eye, EyeOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import ImageUploader from "@/components/ImageUploader";
+import ImageWithFallback from "@/components/ImageWithFallback";
 
 function F({ label, value, onChange, ...p }: { label: string; value: string | number; onChange: (v: string) => void; [k: string]: any }) {
   return (
@@ -32,8 +34,6 @@ export default function AdminMenu() {
     name_en: "", name_ar: "", price: 0, description_en: "", description_ar: "",
     is_available: true, is_popular: false, is_new: false, category_id: "",
   });
-  const fileRef = useRef<HTMLInputElement>(null);
-
   const categories = allCategories.filter((c) => c.restaurant_id === selectedRestaurant);
   const items = allItems.filter((m) => m.restaurant_id === selectedRestaurant);
   const restaurant = restaurants.find((r) => r.id === selectedRestaurant);
@@ -59,15 +59,6 @@ export default function AdminMenu() {
   const editCat = (cat: Category) => { setEditingCatId(cat.id); setCatForm({ name_en: cat.name_en, name_ar: cat.name_ar }); setShowCatForm(true); };
 
   // ─────────────────── ITEM CRUD ───────────────────
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (file.size > 2 * 1024 * 1024) { toast({ title: t("File too large (max 2MB)", "الملف كبير جداً (حد 2MB)"), variant: "destructive" }); return; }
-    const reader = new FileReader();
-    reader.onload = (ev) => setItemForm((f) => ({ ...f, image: ev.target?.result as string }));
-    reader.readAsDataURL(file);
-  };
-
   const saveItem = () => {
     if (!itemForm.name_en?.trim() || !itemForm.name_ar?.trim() || !itemForm.category_id) {
       toast({ title: t("Required: name (EN, AR) and category", "مطلوب: الاسم والفئة"), variant: "destructive" }); return;
@@ -158,27 +149,14 @@ export default function AdminMenu() {
           </div>
 
           {/* Image Upload */}
-          <div>
-            <label className="text-xs text-muted-foreground mb-2 block">{t("Item Image (optional)", "صورة العنصر (اختياري)")}</label>
-            <div className="flex items-center gap-3">
-              {itemForm.image && (
-                <div className="w-16 h-16 rounded-xl overflow-hidden flex-shrink-0">
-                  <img src={itemForm.image} alt="preview" className="w-full h-full object-cover" />
-                </div>
-              )}
-              <div className="flex gap-2">
-                <button onClick={() => fileRef.current?.click()} className="flex items-center gap-1.5 px-3 py-2 border border-white/10 rounded-xl text-sm text-muted-foreground hover:text-foreground transition">
-                  <Upload size={13} /> {t("Upload Image", "رفع صورة")}
-                </button>
-                {itemForm.image && (
-                  <button onClick={() => setItemForm({ ...itemForm, image: undefined })} className="text-xs text-destructive/70 hover:text-destructive px-2">
-                    {t("Remove", "إزالة")}
-                  </button>
-                )}
-              </div>
-              <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
-            </div>
-          </div>
+          <ImageUploader
+            preset="product"
+            label={t("Item Image (optional)", "صورة العنصر (اختياري)")}
+            value={itemForm.image}
+            onChange={(url) => setItemForm((f) => ({ ...f, image: url }))}
+            onDelete={() => setItemForm((f) => ({ ...f, image: undefined }))}
+            data-testid="uploader-item-image"
+          />
 
           {/* Flags */}
           <div className="flex gap-4 flex-wrap">
@@ -230,11 +208,7 @@ export default function AdminMenu() {
                 {catItems.length === 0 && <p className="text-sm text-muted-foreground">{t("No items in this category", "لا توجد عناصر في هذه الفئة")}</p>}
                 {catItems.map((item) => (
                   <div key={item.id} className="bg-card border border-white/5 rounded-xl p-3 flex items-center gap-3" data-testid={`admin-menu-item-${item.id}`}>
-                    {item.image ? (
-                      <img src={item.image} alt="" className="w-10 h-10 rounded-lg object-cover flex-shrink-0" />
-                    ) : (
-                      <div className="w-10 h-10 rounded-lg flex items-center justify-center text-lg flex-shrink-0" style={{ background: `${restaurant?.color || "#FF7A00"}15` }}>🍽️</div>
-                    )}
+                    <ImageWithFallback src={item.image} alt={item.name_en} className="w-10 h-10 rounded-lg object-cover flex-shrink-0" preset="thumbnail" />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1.5 flex-wrap">
                         <p className="text-sm font-medium text-foreground">{item.name_en}</p>

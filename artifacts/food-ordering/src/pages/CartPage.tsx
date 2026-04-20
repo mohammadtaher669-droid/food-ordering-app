@@ -96,7 +96,7 @@ export default function CartPage() {
           {restaurant && branch && (
             <div className="bg-card border border-white/5 rounded-xl p-3 mb-5 flex items-center gap-3">
               {restaurant.logoType === "image" && restaurant.logo
-                ? <img src={restaurant.logo} alt="" className="w-7 h-7 rounded-lg object-cover" />
+                ? <img src={restaurant.logo} alt="" className="w-7 h-7 rounded-lg object-cover" loading="lazy" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
                 : <span className="text-xl">{restaurant.logo}</span>}
               <div>
                 <p className="text-sm font-medium text-foreground">{t(restaurant.name_en, restaurant.name_ar)}</p>
