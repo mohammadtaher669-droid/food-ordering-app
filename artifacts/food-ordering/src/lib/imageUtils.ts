@@ -4,16 +4,17 @@ export interface ImagePresetConfig {
   width: number;
   height: number;
   label: string;
-  quality: number;
 }
 
+const QUALITY = 0.80;
+
 export const IMAGE_PRESETS: Record<ImagePreset, ImagePresetConfig> = {
-  hero_banner:       { width: 900,  height: 300,  label: "900 × 300 px",   quality: 0.75 },
-  category_icon:     { width: 200,  height: 200,  label: "200 × 200 px",   quality: 0.75 },
-  product:           { width: 400,  height: 400,  label: "400 × 400 px",   quality: 0.72 },
-  restaurant_cover:  { width: 900,  height: 450,  label: "900 × 450 px",   quality: 0.75 },
-  thumbnail:         { width: 150,  height: 150,  label: "150 × 150 px",   quality: 0.72 },
-  offer:             { width: 400,  height: 400,  label: "400 × 400 px",   quality: 0.72 },
+  hero_banner:       { width: 900,  height: 300,  label: "900 × 300 px"  },
+  category_icon:     { width: 200,  height: 200,  label: "200 × 200 px"  },
+  product:           { width: 400,  height: 400,  label: "400 × 400 px"  },
+  restaurant_cover:  { width: 900,  height: 450,  label: "900 × 450 px"  },
+  thumbnail:         { width: 150,  height: 150,  label: "150 × 150 px"  },
+  offer:             { width: 400,  height: 400,  label: "400 × 400 px"  },
 };
 
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
@@ -25,7 +26,7 @@ export function validateImageFile(file: File): string | null {
   return null;
 }
 
-function supportsWebP(): boolean {
+function canEncodeWebP(): boolean {
   try {
     const canvas = document.createElement("canvas");
     canvas.width = 1; canvas.height = 1;
@@ -35,48 +36,73 @@ function supportsWebP(): boolean {
   }
 }
 
-export function processImage(file: File, preset: ImagePreset): Promise<string> {
-  const { width: targetW, height: targetH, quality } = IMAGE_PRESETS[preset];
-  const outputType = supportsWebP() ? "image/webp" : "image/jpeg";
-
+function readFileAsDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
-    const objectUrl = URL.createObjectURL(file);
-    const img = new window.Image();
-
-    img.onload = () => {
-      URL.revokeObjectURL(objectUrl);
-
-      const srcW = img.naturalWidth;
-      const srcH = img.naturalHeight;
-
-      const srcRatio = srcW / srcH;
-      const tgtRatio = targetW / targetH;
-
-      let cropX = 0, cropY = 0, cropW = srcW, cropH = srcH;
-      if (srcRatio > tgtRatio) {
-        cropW = Math.round(srcH * tgtRatio);
-        cropX = Math.round((srcW - cropW) / 2);
-      } else {
-        cropH = Math.round(srcW / tgtRatio);
-        cropY = Math.round((srcH - cropH) / 2);
-      }
-
-      const canvas = document.createElement("canvas");
-      canvas.width = targetW;
-      canvas.height = targetH;
-      const ctx = canvas.getContext("2d")!;
-      ctx.drawImage(img, cropX, cropY, cropW, cropH, 0, 0, targetW, targetH);
-
-      resolve(canvas.toDataURL(outputType, quality));
-    };
-
-    img.onerror = () => {
-      URL.revokeObjectURL(objectUrl);
-      reject(new Error("Failed to load image."));
-    };
-
-    img.src = objectUrl;
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = () => reject(new Error("Failed to read file."));
+    reader.readAsDataURL(file);
   });
+}
+
+export async function processImage(file: File, preset: ImagePreset): Promise<string> {
+  const { width: targetW, height: targetH } = IMAGE_PRESETS[preset];
+  const webpSupported = canEncodeWebP();
+
+  const objectUrl = URL.createObjectURL(file);
+
+  try {
+    const dataUrl = await new Promise<string>((resolve, reject) => {
+      const img = new window.Image();
+
+      img.onload = () => {
+        URL.revokeObjectURL(objectUrl);
+
+        const srcW = img.naturalWidth;
+        const srcH = img.naturalHeight;
+        const srcRatio = srcW / srcH;
+        const tgtRatio = targetW / targetH;
+
+        let cropX = 0, cropY = 0, cropW = srcW, cropH = srcH;
+        if (srcRatio > tgtRatio) {
+          cropW = Math.round(srcH * tgtRatio);
+          cropX = Math.round((srcW - cropW) / 2);
+        } else {
+          cropH = Math.round(srcW / tgtRatio);
+          cropY = Math.round((srcH - cropH) / 2);
+        }
+
+        const canvas = document.createElement("canvas");
+        canvas.width = targetW;
+        canvas.height = targetH;
+        const ctx = canvas.getContext("2d")!;
+        ctx.drawImage(img, cropX, cropY, cropW, cropH, 0, 0, targetW, targetH);
+
+        if (webpSupported) {
+          const webpUrl = canvas.toDataURL("image/webp", QUALITY);
+          if (webpUrl.startsWith("data:image/webp")) {
+            resolve(webpUrl);
+            return;
+          }
+        }
+
+        const jpegUrl = canvas.toDataURL("image/jpeg", QUALITY);
+        resolve(jpegUrl);
+      };
+
+      img.onerror = () => {
+        URL.revokeObjectURL(objectUrl);
+        reject(new Error("Failed to load image."));
+      };
+
+      img.src = objectUrl;
+    });
+
+    return dataUrl;
+  } catch {
+    URL.revokeObjectURL(objectUrl);
+    return readFileAsDataUrl(file);
+  }
 }
 
 export function makePlaceholderSvg(w: number, h: number, icon = "🍽️"): string {
@@ -88,10 +114,10 @@ export function makePlaceholderSvg(w: number, h: number, icon = "🍽️"): stri
 }
 
 export const PLACEHOLDERS: Record<ImagePreset, string> = {
-  hero_banner:      makePlaceholderSvg(1200, 400, "🎉"),
+  hero_banner:      makePlaceholderSvg(900, 300, "🎉"),
   category_icon:    makePlaceholderSvg(200, 200, "🍴"),
-  product:          makePlaceholderSvg(500, 500, "🍽️"),
-  restaurant_cover: makePlaceholderSvg(1200, 600, "🏪"),
+  product:          makePlaceholderSvg(400, 400, "🍽️"),
+  restaurant_cover: makePlaceholderSvg(900, 450, "🏪"),
   thumbnail:        makePlaceholderSvg(150, 150, "🍽️"),
-  offer:            makePlaceholderSvg(500, 500, "🎁"),
+  offer:            makePlaceholderSvg(400, 400, "🎁"),
 };
