@@ -54,7 +54,7 @@ export default function ProfilePage() {
                 <div>
                   <p className="text-xs text-muted-foreground mb-0.5">{t("Last Order", "آخر طلب")}</p>
                   <p className="font-bold text-foreground">#{lastOrderId}</p>
-                  <p className="text-sm text-primary font-semibold mt-0.5">{parseFloat(lastTotal).toFixed(0)} {t("SAR", "ريال")}</p>
+                  <p className="text-sm text-primary font-semibold mt-0.5">{parseFloat(lastTotal).toFixed(0)} ﷼</p>
                 </div>
                 <ShoppingBag size={28} className="text-primary/40" />
               </div>

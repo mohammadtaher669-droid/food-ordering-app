@@ -195,7 +195,7 @@ export default function AdminCustomers() {
                               <p className="text-xs text-foreground mt-1">{order.items.map((i) => `${i.name_en} ×${i.quantity}`).join(", ")}</p>
                               <div className="flex items-center justify-between mt-1">
                                 <span className="text-xs text-muted-foreground">{order.type === "delivery" ? t("Delivery", "توصيل") : t("Pickup", "استلام")}</span>
-                                <span className="text-sm font-bold text-primary">{order.total} {t("SAR", "ريال")}</span>
+                                <span className="text-sm font-bold text-primary">{order.total} ﷼</span>
                               </div>
                             </div>
                           ))

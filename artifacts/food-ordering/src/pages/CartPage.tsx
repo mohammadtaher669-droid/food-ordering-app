@@ -136,7 +136,7 @@ export default function CartPage() {
               >
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-foreground text-sm">{t(ci.item.name_en, ci.item.name_ar)}</p>
-                  <p className="text-sm text-primary font-bold mt-0.5">{ci.item.price} {t("SAR", "ريال")}</p>
+                  <p className="text-sm text-primary font-bold mt-0.5">{ci.item.price} ﷼</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <button onClick={() => updateQuantity(ci.item.id, ci.quantity - 1)} className="w-7 h-7 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center transition" data-testid={`btn-decrease-${ci.item.id}`}><Minus size={12} /></button>
@@ -144,7 +144,7 @@ export default function CartPage() {
                   <button onClick={() => updateQuantity(ci.item.id, ci.quantity + 1)} className="w-7 h-7 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center transition" data-testid={`btn-increase-${ci.item.id}`}><Plus size={12} /></button>
                 </div>
                 <div className="text-right min-w-[60px]">
-                  <p className="text-sm font-bold text-foreground">{(ci.item.price * ci.quantity).toFixed(0)} {t("SAR", "ريال")}</p>
+                  <p className="text-sm font-bold text-foreground">{(ci.item.price * ci.quantity).toFixed(0)} ﷼</p>
                   <button onClick={() => removeFromCart(ci.item.id)} className="text-destructive/60 hover:text-destructive mt-1 transition" data-testid={`btn-remove-${ci.item.id}`}><Trash2 size={13} /></button>
                 </div>
               </div>
@@ -180,29 +180,29 @@ export default function CartPage() {
             <div className="space-y-2 text-sm">
               <div className="flex justify-between text-muted-foreground">
                 <span>{t("Subtotal", "المجموع الفرعي")}</span>
-                <span>{cartTotal.toFixed(0)} {t("SAR", "ريال")}</span>
+                <span>{cartTotal.toFixed(0)} ﷼</span>
               </div>
               {orderType === "delivery" && (
                 <div className="flex justify-between text-muted-foreground">
                   <span>{t("Delivery Fee", "رسوم التوصيل")}</span>
-                  <span>{deliveryFee} {t("SAR", "ريال")}</span>
+                  <span>{deliveryFee} ﷼</span>
                 </div>
               )}
               {totalDiscount > 0 && (
                 <div className="flex justify-between text-green-400">
                   <span>{t("Discount", "الخصم")}</span>
-                  <span>-{totalDiscount.toFixed(0)} {t("SAR", "ريال")}</span>
+                  <span>-{totalDiscount.toFixed(0)} ﷼</span>
                 </div>
               )}
               {autoDiscount > 0 && (
                 <p className="text-xs text-muted-foreground">
-                  {cartTotal > 50 && t("Auto 10% for order over 50 SAR", "خصم تلقائي 10% للطلبات فوق 50 ريال")}
-                  {orderType === "pickup" && ", " + t("2 SAR pickup discount", "خصم 2 ريال للاستلام")}
+                  {cartTotal > 50 && t("Auto 10% for order over 50 ﷼", "خصم تلقائي 10% للطلبات فوق 50 ﷼")}
+                  {orderType === "pickup" && ", " + t("2 ﷼ pickup discount", "خصم 2 ﷼ للاستلام")}
                 </p>
               )}
               <div className="border-t border-white/5 pt-2 flex justify-between font-bold text-base">
                 <span className="text-foreground">{t("Total", "الإجمالي")}</span>
-                <span className="text-primary">{finalTotal.toFixed(0)} {t("SAR", "ريال")}</span>
+                <span className="text-primary">{finalTotal.toFixed(0)} ﷼</span>
               </div>
             </div>
           </div>

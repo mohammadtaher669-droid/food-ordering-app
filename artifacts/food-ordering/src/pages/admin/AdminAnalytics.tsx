@@ -96,7 +96,7 @@ export default function AdminAnalytics() {
         <StatCard icon={ShoppingCart} label={t("Add to Cart", "إضافة للسلة")} value={summary.addToCartCount} color="#f59e0b" />
         <StatCard icon={ShoppingBag} label={t("Total Orders", "إجمالي الطلبات")} value={orders.length} color="#10b981" />
         <StatCard icon={Users} label={t("Customers", "العملاء")} value={customers.length} color="#ec4899" />
-        <StatCard icon={TrendingUp} label={t("Revenue (SAR)", "الإيرادات (ريال)")} value={totalRevenue.toFixed(0)} color="#FF7A00" />
+        <StatCard icon={TrendingUp} label={t("Revenue (﷼)", "الإيرادات (﷼)")} value={totalRevenue.toFixed(0)} color="#FF7A00" />
         <StatCard icon={Percent} label={t("Conversion %", "معدل التحويل %")} value={`${summary.conversionRate}%`} color="#3b82f6" />
         <StatCard icon={BarChart2} label={t("Event Count", "عدد الأحداث")} value={analyticsStore.getAll().length} color="#8b5cf6" />
         <StatCard icon={Eye} label={t("Item Views", "مشاهدات المنتجات")} value={Object.values(summary.itemViews).reduce((a, b) => a + b, 0)} color="#06b6d4" />
@@ -152,7 +152,7 @@ export default function AdminAnalytics() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-medium text-foreground line-clamp-1">{item!.name_en}</p>
-                  <p className="text-xs text-muted-foreground">{item!.price} SAR</p>
+                  <p className="text-xs text-muted-foreground">{item!.price} ﷼</p>
                 </div>
                 <span className="text-xs font-bold text-green-400">{count}</span>
               </div>
@@ -202,7 +202,7 @@ export default function AdminAnalytics() {
                   </div>
                   <p className="text-xs text-muted-foreground">{new Date(order.date).toLocaleString()}</p>
                 </div>
-                <span className="text-sm font-bold text-foreground">{order.total} {t("SAR", "ريال")}</span>
+                <span className="text-sm font-bold text-foreground">{order.total} ﷼</span>
               </div>
             ))}
           </div>

@@ -30,7 +30,7 @@ export default function FloatingCart() {
                 </div>
                 <span className="font-semibold text-sm">{t("View Cart", "عرض السلة")}</span>
               </div>
-              <span className="font-black text-base">{cartTotal.toFixed(0)} {t("SAR", "ريال")}</span>
+              <span className="font-black text-base">{cartTotal.toFixed(0)} ﷼</span>
             </div>
           </Link>
         </motion.div>

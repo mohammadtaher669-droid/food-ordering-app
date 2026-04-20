@@ -42,6 +42,7 @@ export default function AdminBranches() {
       whatsapp: form.whatsapp!,
       open: form.open || "09:00", close: form.close || "00:00",
       delivery_fee: form.delivery_fee || 0,
+      delivery_time: form.delivery_time,
       address_en: form.address_en || "", address_ar: form.address_ar || "",
     };
     branchStore.save(branch);
@@ -80,7 +81,8 @@ export default function AdminBranches() {
             <F label={t("Branch Name (EN)", "اسم الفرع (EN)")} value={form.name_en || ""} onChange={(v) => setForm({ ...form, name_en: v })} data-testid="input-branch-name-en" />
             <F label={t("Branch Name (AR)", "اسم الفرع (AR)")} value={form.name_ar || ""} onChange={(v) => setForm({ ...form, name_ar: v })} />
             <F label={t("WhatsApp Number", "رقم واتساب")} value={form.whatsapp || ""} onChange={(v) => setForm({ ...form, whatsapp: v })} placeholder="966XXXXXXXXX" />
-            <F label={t("Delivery Fee (SAR)", "رسوم التوصيل (ريال)")} value={form.delivery_fee || ""} onChange={(v) => setForm({ ...form, delivery_fee: Number(v) })} type="number" min="0" />
+            <F label={t("Delivery Fee (﷼)", "رسوم التوصيل (﷼)")} value={form.delivery_fee || ""} onChange={(v) => setForm({ ...form, delivery_fee: Number(v) })} type="number" min="0" />
+            <F label={t("Delivery Time (min)", "وقت التوصيل (دقيقة)")} value={form.delivery_time || ""} onChange={(v) => setForm({ ...form, delivery_time: v ? Number(v) : undefined })} type="number" min="0" placeholder="e.g. 30" />
             <div>
               <label className="text-xs text-muted-foreground mb-1 block">{t("Opens At", "يفتح الساعة")}</label>
               <input type="time" value={form.open || "09:00"} onChange={(e) => setForm({ ...form, open: e.target.value })} className="w-full bg-background border border-white/10 rounded-xl px-3 py-2 text-sm text-foreground focus:outline-none" />
@@ -144,7 +146,7 @@ export default function AdminBranches() {
                       </div>
                       <div className="flex items-center gap-2 text-muted-foreground">
                         <DollarSign size={13} />
-                        <span>{branch.delivery_fee} {t("SAR", "ريال")}</span>
+                        <span>{branch.delivery_fee} ﷼</span>
                       </div>
                       <div className="flex items-center gap-2 text-muted-foreground col-span-2">
                         <MapPin size={13} />

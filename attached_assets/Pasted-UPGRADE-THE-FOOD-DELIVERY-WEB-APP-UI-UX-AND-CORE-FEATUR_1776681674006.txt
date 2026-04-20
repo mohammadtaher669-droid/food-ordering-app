@@ -1,0 +1,149 @@
+UPGRADE THE FOOD DELIVERY WEB APP UI/UX AND CORE FEATURES TO MATCH MODERN APPS LIKE KEETA.
+
+GOAL:
+Create a professional, fast, and visually appealing food ordering experience similar to Keeta.
+
+---
+
+1. FIX IMAGE LOADING ISSUE
+
+- Ensure all images load correctly from:
+  - CDN links
+  - local storage
+  - external APIs
+
+- Add:
+  - fallback image if loading fails
+  - lazy loading for performance
+  - image optimization (compress + responsive sizes)
+
+---
+
+2. ENABLE FULL THEME CUSTOMIZATION
+
+- Allow dynamic theme editing from admin panel:
+  - Primary color
+  - Secondary color
+  - Background color
+  - Button styles
+  - Font style
+
+- Changes should reflect instantly (live preview)
+
+- Save theme settings in database
+
+---
+
+3. CHANGE CURRENCY TO SAUDI RIYAL (SAR)
+
+- Replace all currency symbols with:
+  "﷼" or "SAR"
+
+- Format example:
+  25 ﷼
+
+- Apply globally:
+  - products
+  - cart
+  - checkout
+  - offers
+
+---
+
+4. ADD CALORIES FIELD TO MENU ITEMS
+
+- Add new field in product model:
+  calories (number)
+
+- Display in UI:
+  Example:
+  "650 سعرة حرارية"
+
+- Optional toggle:
+  show/hide calories
+
+---
+
+5. HOMEPAGE REDESIGN (LIKE KEETA)
+
+STRUCTURE:
+
+1. TOP BAR:
+   - Location
+   - Search bar
+
+2. HERO BANNER:
+   - large slider images (offers)
+
+3. QUICK CATEGORIES:
+   - icons (shawarma, burgers, pizza, etc.)
+
+4. PROMOTIONS SECTION:
+   - horizontal scroll
+   - discount badges
+
+5. RESTAURANT LIST / FEATURED
+
+---
+
+6. RESTAURANT PAGE REDESIGN
+
+STRUCTURE:
+
+1. HEADER:
+   - large food image
+   - restaurant name
+   - rating
+   - cuisine type
+
+2. DELIVERY INFO:
+   - delivery time
+   - delivery fee
+
+3. OFFERS:
+   - coupons / discounts
+
+4. MENU NAVIGATION:
+   - tabs:
+     (Offers | Chicken | Meals | Drinks)
+
+5. MENU ITEMS:
+   - image
+   - name
+   - description
+   - price
+   - calories
+   - add to cart button
+
+---
+
+7. UX IMPROVEMENTS
+
+- Sticky "Add to Cart" button
+- Smooth animations
+- Fast loading
+- Mobile-first design
+- Clean spacing and modern typography
+
+---
+
+8. BONUS FEATURES (IMPORTANT)
+
+- Smart recommendations:
+  "Most popular"
+  "Recommended for you"
+
+- Auto discount system:
+  If order > X → apply discount
+
+---
+
+TECH STACK:
+- Use React (or Next.js)
+- Tailwind CSS
+- Clean component structure
+
+---
+
+FINAL RESULT:
+A modern, fast, scalable food ordering app similar to Keeta in UI and UX.

@@ -78,7 +78,7 @@ function PopularCard({
           </p>
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold" style={{ color: restaurant.color }}>
-              {item.price} {t("SAR", "ريال")}
+              {item.price} ﷼
             </span>
             <div className="flex items-center gap-0.5">
               <Star size={9} className="text-yellow-400 fill-yellow-400" />
@@ -399,6 +399,42 @@ export default function Home() {
           className="px-4 mb-7"
         >
           <HeroBannerSlider offers={offers} />
+        </motion.div>
+      )}
+
+      {/* Quick Food Type Icons (Keeta-style) */}
+      {!search && (
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.09 }}
+          className="mb-6 px-4"
+        >
+          <div className="flex gap-3 overflow-x-auto pb-1 no-scrollbar" style={{ direction: "ltr" }}>
+            {[
+              { emoji: "🥙", label_en: "Shawarma", label_ar: "شاورما" },
+              { emoji: "🍔", label_en: "Burgers", label_ar: "برغر" },
+              { emoji: "🍕", label_en: "Pizza", label_ar: "بيتزا" },
+              { emoji: "🍗", label_en: "Chicken", label_ar: "دجاج" },
+              { emoji: "🍚", label_en: "Kabsa", label_ar: "كبسة" },
+              { emoji: "🥗", label_en: "Salads", label_ar: "سلطة" },
+              { emoji: "☕", label_en: "Coffee", label_ar: "قهوة" },
+              { emoji: "🧁", label_en: "Desserts", label_ar: "حلويات" },
+            ].map((cat) => (
+              <button
+                key={cat.label_en}
+                onClick={() => setSearch(t(cat.label_en, cat.label_ar))}
+                className="flex-shrink-0 flex flex-col items-center gap-1.5 group"
+              >
+                <div className="w-14 h-14 rounded-2xl bg-card border border-white/5 flex items-center justify-center text-2xl group-hover:border-primary/30 group-hover:bg-primary/5 transition-all duration-200">
+                  {cat.emoji}
+                </div>
+                <span className="text-[10px] text-muted-foreground group-hover:text-primary transition-colors">
+                  {t(cat.label_en, cat.label_ar)}
+                </span>
+              </button>
+            ))}
+          </div>
         </motion.div>
       )}
 

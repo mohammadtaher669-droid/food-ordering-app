@@ -55,12 +55,12 @@ export default function CheckoutPage() {
     const orderTypeLine = orderType === "delivery" ? (lang === "ar" ? "توصيل 🚗" : "Delivery 🚗") : (lang === "ar" ? "استلام 🏪" : "Pickup 🏪");
 
     const itemsText = cartItems
-      .map((ci) => `• ${lang === "ar" ? ci.item.name_ar : ci.item.name_en} x${ci.quantity} — ${(ci.item.price * ci.quantity).toFixed(0)} ${lang === "ar" ? "ريال" : "SAR"}`)
+      .map((ci) => `• ${lang === "ar" ? ci.item.name_ar : ci.item.name_en} x${ci.quantity} — ${(ci.item.price * ci.quantity).toFixed(0)} ﷼`)
       .join("\n");
 
     const message = lang === "ar"
-      ? `🧾 طلب جديد\nرقم الطلب: #${orderId}\n---\nالمطعم: ${restaurant.name_ar}\nالفرع: ${branch.name_ar}\nنوع الطلب: ${orderTypeLine}\n---\nالعناصر:\n${itemsText}\n---\nالمجموع الفرعي: ${cartTotal.toFixed(0)} ريال\nرسوم التوصيل: ${deliveryFee} ريال\nالخصم: -${discount.toFixed(0)} ريال\nالإجمالي: ${finalTotal.toFixed(0)} ريال\n---\nالاسم: ${name}\nالجوال: ${phone}${orderType === "delivery" ? `\nالموقع: ${location}` : ""}\nملاحظات: ${notes || "—"}\n---\nالموافقة على استقبال العروض: ${agreeOffers ? "نعم" : "لا"}`
-      : `🧾 New Order\nOrder ID: #${orderId}\n---\nRestaurant: ${restaurant.name_en}\nBranch: ${branch.name_en}\nOrder Type: ${orderTypeLine}\n---\nItems:\n${itemsText}\n---\nSubtotal: ${cartTotal.toFixed(0)} SAR\nDelivery Fee: ${deliveryFee} SAR\nDiscount: -${discount.toFixed(0)} SAR\nTotal: ${finalTotal.toFixed(0)} SAR\n---\nName: ${name}\nPhone: ${phone}${orderType === "delivery" ? `\nLocation: ${location}` : ""}\nNotes: ${notes || "—"}\n---\nAgree to receive offers: ${agreeOffers ? "Yes" : "No"}`;
+      ? `🧾 طلب جديد\nرقم الطلب: #${orderId}\n---\nالمطعم: ${restaurant.name_ar}\nالفرع: ${branch.name_ar}\nنوع الطلب: ${orderTypeLine}\n---\nالعناصر:\n${itemsText}\n---\nالمجموع الفرعي: ${cartTotal.toFixed(0)} ﷼\nرسوم التوصيل: ${deliveryFee} ﷼\nالخصم: -${discount.toFixed(0)} ﷼\nالإجمالي: ${finalTotal.toFixed(0)} ﷼\n---\nالاسم: ${name}\nالجوال: ${phone}${orderType === "delivery" ? `\nالموقع: ${location}` : ""}\nملاحظات: ${notes || "—"}\n---\nالموافقة على استقبال العروض: ${agreeOffers ? "نعم" : "لا"}`
+      : `🧾 New Order\nOrder ID: #${orderId}\n---\nRestaurant: ${restaurant.name_en}\nBranch: ${branch.name_en}\nOrder Type: ${orderTypeLine}\n---\nItems:\n${itemsText}\n---\nSubtotal: ${cartTotal.toFixed(0)} ﷼\nDelivery Fee: ${deliveryFee} ﷼\nDiscount: -${discount.toFixed(0)} ﷼\nTotal: ${finalTotal.toFixed(0)} ﷼\n---\nName: ${name}\nPhone: ${phone}${orderType === "delivery" ? `\nLocation: ${location}` : ""}\nNotes: ${notes || "—"}\n---\nAgree to receive offers: ${agreeOffers ? "Yes" : "No"}`;
 
     const whatsappUrl = `https://wa.me/${branch.whatsapp}?text=${encodeURIComponent(message)}`;
 
@@ -198,23 +198,23 @@ export default function CheckoutPage() {
           <div className="bg-card border border-white/5 rounded-2xl p-4 mb-6 space-y-2 text-sm">
             <div className="flex justify-between text-muted-foreground">
               <span>{t("Subtotal", "المجموع الفرعي")}</span>
-              <span>{cartTotal.toFixed(0)} {t("SAR", "ريال")}</span>
+              <span>{cartTotal.toFixed(0)} ﷼</span>
             </div>
             {orderType === "delivery" && (
               <div className="flex justify-between text-muted-foreground">
                 <span>{t("Delivery", "التوصيل")}</span>
-                <span>{deliveryFee} {t("SAR", "ريال")}</span>
+                <span>{deliveryFee} ﷼</span>
               </div>
             )}
             {discount > 0 && (
               <div className="flex justify-between text-green-400">
                 <span>{t("Discount", "الخصم")}</span>
-                <span>-{discount.toFixed(0)} {t("SAR", "ريال")}</span>
+                <span>-{discount.toFixed(0)} ﷼</span>
               </div>
             )}
             <div className="border-t border-white/5 pt-2 flex justify-between font-bold text-base">
               <span>{t("Total", "الإجمالي")}</span>
-              <span className="text-primary">{finalTotal.toFixed(0)} {t("SAR", "ريال")}</span>
+              <span className="text-primary">{finalTotal.toFixed(0)} ﷼</span>
             </div>
           </div>
 

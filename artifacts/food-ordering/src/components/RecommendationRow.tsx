@@ -68,7 +68,7 @@ export default function RecommendationRow({
                   style={{ background: `${rest?.color || "#FF7A00"}15` }}
                 >
                   {item.image ? (
-                    <img src={item.image} alt={item.name_en} className="w-full h-full object-cover" />
+                    <img src={item.image} alt={item.name_en} className="w-full h-full object-cover" loading="lazy" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-3xl">🍽️</div>
                   )}
@@ -79,7 +79,7 @@ export default function RecommendationRow({
                 <p className="text-xs font-semibold text-foreground line-clamp-1 mb-1">{t(item.name_en, item.name_ar)}</p>
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold" style={{ color: rest?.color || "#FF7A00" }}>
-                    {item.price} {t("SAR", "ريال")}
+                    {item.price} ﷼
                   </span>
                   {onAddToCart && (
                     <button

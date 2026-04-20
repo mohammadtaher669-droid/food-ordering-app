@@ -50,7 +50,7 @@ export default function ConfirmationPage() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">{t("Total Paid", "الإجمالي")}</span>
-                  <span className="text-primary font-bold">{finalTotal} {t("SAR", "ريال")}</span>
+                  <span className="text-primary font-bold">{finalTotal} ﷼</span>
                 </div>
               </div>
             )}

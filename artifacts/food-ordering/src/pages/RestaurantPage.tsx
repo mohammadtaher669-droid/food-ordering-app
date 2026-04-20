@@ -126,7 +126,7 @@ export default function RestaurantPage() {
                       <span className="text-[10px] bg-yellow-400/15 text-yellow-400 px-1.5 py-0.5 rounded-full font-medium">{t("New", "جديد")}</span>
                     </div>
                     <p className="text-xs font-semibold text-foreground line-clamp-2 leading-snug">{t(item.name_en, item.name_ar)}</p>
-                    <p className="text-xs font-bold mt-1.5" style={{ color: restaurant.color }}>{item.price} {t("SAR", "ريال")}</p>
+                    <p className="text-xs font-bold mt-1.5" style={{ color: restaurant.color }}>{item.price} ﷼</p>
                   </div>
                 </div>
               ))}
@@ -150,13 +150,13 @@ export default function RestaurantPage() {
                   data-testid={`card-popular-${item.id}`}
                 >
                   {item.image ? (
-                    <img src={item.image} alt="" className="w-full h-24 object-cover" />
+                    <img src={item.image} alt="" className="w-full h-24 object-cover" loading="lazy" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
                   ) : (
                     <div className="w-full h-24 flex items-center justify-center text-3xl" style={{ background: `${restaurant.color}10` }}>🍽️</div>
                   )}
                   <div className="p-3">
                     <p className="text-xs font-semibold text-foreground line-clamp-2 leading-snug">{t(item.name_en, item.name_ar)}</p>
-                    <p className="text-xs font-bold mt-1.5" style={{ color: restaurant.color }}>{item.price} {t("SAR", "ريال")}</p>
+                    <p className="text-xs font-bold mt-1.5" style={{ color: restaurant.color }}>{item.price} ﷼</p>
                   </div>
                 </div>
               ))}
@@ -198,9 +198,16 @@ export default function RestaurantPage() {
                       <span>{t(branch.address_en, branch.address_ar)}</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-xs text-muted-foreground">
-                        {t("Delivery:", "التوصيل:")} <span className="text-foreground font-semibold">{branch.delivery_fee} {t("SAR", "ريال")}</span>
-                      </span>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-xs text-muted-foreground">
+                          {t("Delivery:", "التوصيل:")} <span className="text-foreground font-semibold">{branch.delivery_fee} ﷼</span>
+                        </span>
+                        {branch.delivery_time && branch.delivery_time > 0 && (
+                          <span className="text-xs text-muted-foreground">
+                            ⏱ <span className="text-foreground font-semibold">{branch.delivery_time} {t("min", "د")}</span>
+                          </span>
+                        )}
+                      </div>
                       <div
                         className="flex items-center gap-1 text-sm font-semibold transition-all group-hover:gap-2"
                         style={{ color: restaurant.color }}

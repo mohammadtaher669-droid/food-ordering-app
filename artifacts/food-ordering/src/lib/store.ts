@@ -28,6 +28,7 @@ export interface Branch {
   open: string;
   close: string;
   delivery_fee: number;
+  delivery_time?: number;
   address_en: string;
   address_ar: string;
   is_delivery_enabled?: boolean;
@@ -56,6 +57,7 @@ export interface MenuItem {
   description_ar: string;
   price: number;
   image?: string;
+  calories?: number;
   is_available: boolean;
   is_popular: boolean;
   is_new: boolean;
@@ -150,6 +152,8 @@ export interface AppSettings {
   homepage_bg_type: "color" | "image" | "gradient";
   homepage_overlay_opacity: number;
   homepage_overlay_color: string;
+  primary_color?: string;
+  show_calories?: boolean;
 }
 
 export interface AnalyticsEvent {

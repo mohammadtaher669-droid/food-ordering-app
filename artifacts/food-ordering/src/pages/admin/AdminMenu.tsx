@@ -80,6 +80,7 @@ export default function AdminMenu() {
       description_en: itemForm.description_en || "", description_ar: itemForm.description_ar || "",
       price: itemForm.price || 0,
       image: itemForm.image,
+      calories: itemForm.calories || undefined,
       is_available: itemForm.is_available ?? true,
       is_popular: itemForm.is_popular || false,
       is_new: itemForm.is_new || false,
@@ -153,6 +154,7 @@ export default function AdminMenu() {
             <F label={t("Name (AR)", "الاسم (AR)")} value={itemForm.name_ar || ""} onChange={(v) => setItemForm({ ...itemForm, name_ar: v })} data-testid="input-item-name-ar" />
             <F label={t("Description (EN)", "الوصف (EN)")} value={itemForm.description_en || ""} onChange={(v) => setItemForm({ ...itemForm, description_en: v })} />
             <F label={t("Description (AR)", "الوصف (AR)")} value={itemForm.description_ar || ""} onChange={(v) => setItemForm({ ...itemForm, description_ar: v })} />
+            <F label={t("Calories (optional)", "السعرات الحرارية (اختياري)")} value={itemForm.calories || ""} onChange={(v) => setItemForm({ ...itemForm, calories: v ? Number(v) : undefined })} type="number" min="0" placeholder="e.g. 650" data-testid="input-item-calories" />
           </div>
 
           {/* Image Upload */}
@@ -242,7 +244,7 @@ export default function AdminMenu() {
                         {!item.is_available && <span className="text-[10px] bg-red-500/15 text-red-400 px-1.5 rounded-full">{t("Unavailable", "غير متاح")}</span>}
                       </div>
                     </div>
-                    <span className="font-bold text-sm flex-shrink-0" style={{ color: restaurant?.color || "#FF7A00" }}>{item.price} SAR</span>
+                    <span className="font-bold text-sm flex-shrink-0" style={{ color: restaurant?.color || "#FF7A00" }}>{item.price} ﷼</span>
                     <div className="flex gap-1 flex-shrink-0">
                       <button onClick={() => toggleField(item, "is_available")} className={`p-1 rounded transition ${item.is_available ? "text-green-400 hover:text-red-400" : "text-red-400 hover:text-green-400"}`} title={t("Toggle availability", "تبديل التوفر")}>
                         {item.is_available ? <Eye size={13} /> : <EyeOff size={13} />}

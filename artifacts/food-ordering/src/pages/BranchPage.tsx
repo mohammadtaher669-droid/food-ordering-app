@@ -116,6 +116,7 @@ function MenuItemCard({
             loading="lazy"
             whileHover={{ scale: 1.07 }}
             transition={{ duration: 0.35 }}
+            onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-5xl opacity-40">🍽️</div>
@@ -140,13 +141,18 @@ function MenuItemCard({
           {t(item.name_en, item.name_ar)}
         </h3>
         {(item.description_en || item.description_ar) && (
-          <p className="text-xs text-muted-foreground line-clamp-2 mb-2 flex-1">
+          <p className="text-xs text-muted-foreground line-clamp-2 mb-1 flex-1">
             {t(item.description_en, item.description_ar)}
+          </p>
+        )}
+        {item.calories != null && item.calories > 0 && (
+          <p className="text-[10px] text-muted-foreground/60 mb-1">
+            🔥 {item.calories} {t("kcal", "سعرة")}
           </p>
         )}
         <div className="flex items-center justify-between mt-auto pt-2">
           <span className="font-bold text-sm" style={{ color: restaurantColor }}>
-            {item.price} {t("SAR", "ريال")}
+            {item.price} ﷼
           </span>
           <button
             onClick={onAdd}

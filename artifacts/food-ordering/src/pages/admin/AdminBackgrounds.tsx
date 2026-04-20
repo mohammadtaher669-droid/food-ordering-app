@@ -59,8 +59,30 @@ export default function AdminBackgrounds() {
     setRestState((s) => ({ ...s, bg_image: compressed }));
   };
 
+  function hexToHsl(hex: string): string {
+    const r = parseInt(hex.slice(1, 3), 16) / 255;
+    const g = parseInt(hex.slice(3, 5), 16) / 255;
+    const b = parseInt(hex.slice(5, 7), 16) / 255;
+    const max = Math.max(r, g, b), min = Math.min(r, g, b);
+    let h = 0, s = 0;
+    const l = (max + min) / 2;
+    if (max !== min) {
+      const d = max - min;
+      s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+      switch (max) {
+        case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break;
+        case g: h = ((b - r) / d + 2) / 6; break;
+        case b: h = ((r - g) / d + 4) / 6; break;
+      }
+    }
+    return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
+  }
+
   const handleSaveHome = () => {
     settingsStore.save(settings);
+    if (settings.primary_color) {
+      document.documentElement.style.setProperty("--primary", hexToHsl(settings.primary_color));
+    }
     toast({ title: t("Homepage background saved!", "تم حفظ خلفية الصفحة الرئيسية!") });
   };
 
@@ -81,6 +103,48 @@ export default function AdminBackgrounds() {
         <h1 className="text-xl font-bold text-foreground">{t("🎨 Design & Backgrounds", "🎨 التصميم والخلفيات")}</h1>
         <p className="text-sm text-muted-foreground">{t("Control homepage and restaurant backgrounds, overlays, and slogans.", "تحكم في خلفيات الصفحة الرئيسية والمطاعم والطبقات العلوية والشعارات.")}</p>
       </motion.div>
+
+      {/* Theme Color */}
+      <div className="bg-card border border-white/5 rounded-2xl p-5 space-y-4">
+        <div className="flex items-center gap-2 mb-1">
+          <Palette size={16} className="text-primary" />
+          <h2 className="text-sm font-bold text-foreground">{t("🎨 Brand Color", "🎨 لون العلامة التجارية")}</h2>
+        </div>
+        <p className="text-xs text-muted-foreground">{t("Change the primary accent color used across buttons, prices, and highlights.", "غيّر اللون الرئيسي المستخدم في الأزرار والأسعار والإبرازات.")}</p>
+        <div className="flex items-center gap-4">
+          <input
+            type="color"
+            value={settings.primary_color || "#FF7A00"}
+            onChange={(e) => setSettings((s) => ({ ...s, primary_color: e.target.value }))}
+            className="w-14 h-11 rounded-xl cursor-pointer border border-white/10 bg-background p-0.5"
+            data-testid="input-primary-color"
+          />
+          <span className="text-sm font-mono text-muted-foreground">{settings.primary_color || "#FF7A00"}</span>
+          <button
+            onClick={() => setSettings((s) => ({ ...s, primary_color: "#FF7A00" }))}
+            className="text-xs text-muted-foreground hover:text-foreground border border-white/10 px-3 py-1.5 rounded-lg transition"
+          >
+            {t("Reset default", "إعادة التعيين")}
+          </button>
+        </div>
+        <div className="flex gap-2 flex-wrap">
+          {["#FF7A00", "#E63946", "#2196F3", "#4CAF50", "#9C27B0", "#FF5722"].map((color) => (
+            <button
+              key={color}
+              onClick={() => setSettings((s) => ({ ...s, primary_color: color }))}
+              className="w-8 h-8 rounded-full border-2 transition hover:scale-110"
+              style={{ background: color, borderColor: settings.primary_color === color ? "white" : "transparent" }}
+            />
+          ))}
+        </div>
+        <button
+          onClick={handleSaveHome}
+          className="w-full py-2.5 bg-primary text-white rounded-xl text-sm font-semibold flex items-center justify-center gap-2"
+          data-testid="btn-save-theme"
+        >
+          <Save size={14} /> {t("Apply Theme Color", "تطبيق لون العلامة")}
+        </button>
+      </div>
 
       {/* Homepage Section */}
       <div className="bg-card border border-white/5 rounded-2xl p-5 space-y-4">
