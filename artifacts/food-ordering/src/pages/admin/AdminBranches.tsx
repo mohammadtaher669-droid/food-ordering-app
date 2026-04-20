@@ -30,8 +30,6 @@ export default function AdminBranches() {
   const [showAdd, setShowAdd] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<Partial<Branch>>({ ...emptyForm, restaurant_id: "" });
-  const [saving, setSaving] = useState(false);
-
   const handleSave = () => {
     if (!form.restaurant_id || !form.name_en?.trim() || !form.name_ar?.trim() || !form.whatsapp?.trim()) {
       toast({ title: t("Required fields missing", "حقول مطلوبة مفقودة"), variant: "destructive" }); return;
@@ -46,12 +44,10 @@ export default function AdminBranches() {
       delivery_time: form.delivery_time,
       address_en: form.address_en || "", address_ar: form.address_ar || "",
     };
-    setSaving(true);
     branchStore.save(branch);
     toast({ title: editingId ? t("Updated!", "تم التحديث!") : t("Added!", "تمت الإضافة!") });
     setShowAdd(false); setEditingId(null);
     setForm({ ...emptyForm, restaurant_id: "" });
-    setSaving(false);
   };
 
   const handleEdit = (b: Branch) => { setEditingId(b.id); setForm({ ...b }); setShowAdd(true); };
@@ -98,8 +94,8 @@ export default function AdminBranches() {
             <F label={t("Address (AR)", "العنوان (AR)")} value={form.address_ar || ""} onChange={(v) => setForm({ ...form, address_ar: v })} />
           </div>
           <div className="flex gap-2">
-            <button type="submit" disabled={saving} className="px-4 py-2 bg-primary text-primary-foreground rounded-xl text-sm font-medium disabled:opacity-60" data-testid="btn-save-branch">
-              <Check size={14} className="inline mr-1" /> {saving ? t("Saving…", "جارٍ الحفظ…") : t("Save", "حفظ")}
+            <button type="submit" className="px-4 py-2 bg-primary text-primary-foreground rounded-xl text-sm font-medium" data-testid="btn-save-branch">
+              <Check size={14} className="inline mr-1" /> {t("Save", "حفظ")}
             </button>
             <button type="button" onClick={() => { setShowAdd(false); setEditingId(null); }} className="px-4 py-2 border border-white/10 rounded-xl text-sm text-muted-foreground">
               <X size={14} className="inline mr-1" /> {t("Cancel", "إلغاء")}

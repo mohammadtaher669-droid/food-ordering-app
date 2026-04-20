@@ -37,7 +37,6 @@ export default function AdminRestaurants() {
   const [showAdd, setShowAdd] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<Partial<Restaurant>>(emptyForm);
-  const [saving, setSaving] = useState(false);
   const handleSave = () => {
     if (!form.name_en?.trim() || !form.name_ar?.trim()) {
       toast({ title: t("Required fields missing", "حقول مطلوبة مفقودة"), variant: "destructive" }); return;
@@ -55,13 +54,11 @@ export default function AdminRestaurants() {
       tagline_en: form.tagline_en || "",
       tagline_ar: form.tagline_ar || "",
     };
-    setSaving(true);
     restaurantStore.save(restaurant);
     toast({ title: editingId ? t("Updated!", "تم التحديث!") : t("Added!", "تمت الإضافة!") });
     setShowAdd(false);
     setEditingId(null);
     setForm(emptyForm);
-    setSaving(false);
   };
 
   const handleEdit = (r: Restaurant) => {
@@ -171,8 +168,8 @@ export default function AdminRestaurants() {
           </div>
 
           <div className="flex gap-2">
-            <button type="submit" disabled={saving} className="px-4 py-2 bg-primary text-primary-foreground rounded-xl text-sm font-medium disabled:opacity-60" data-testid="btn-save-restaurant">
-              <Check size={14} className="inline mr-1" />{saving ? t("Saving…", "جارٍ الحفظ…") : t("Save", "حفظ")}
+            <button type="submit" className="px-4 py-2 bg-primary text-primary-foreground rounded-xl text-sm font-medium" data-testid="btn-save-restaurant">
+              <Check size={14} className="inline mr-1" />{t("Save", "حفظ")}
             </button>
             <button type="button" onClick={handleCancel} className="px-4 py-2 border border-white/10 rounded-xl text-sm text-muted-foreground">
               <X size={14} className="inline mr-1" />{t("Cancel", "إلغاء")}

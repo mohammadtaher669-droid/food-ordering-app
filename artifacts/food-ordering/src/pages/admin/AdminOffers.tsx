@@ -35,7 +35,6 @@ export default function AdminOffers() {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<Partial<Offer>>(emptyForm);
-  const [saving, setSaving] = useState(false);
   const handleSave = () => {
     if (!form.title_en?.trim() || !form.title_ar?.trim()) {
       toast({ title: t("Required: titles (EN & AR)", "مطلوب: العنوان بالعربي والإنجليزي"), variant: "destructive" }); return;
@@ -51,11 +50,9 @@ export default function AdminOffers() {
       active: form.active ?? true,
       code: form.code?.trim() || undefined,
     };
-    setSaving(true);
     offerStore.save(offer);
     toast({ title: editingId ? t("Offer updated!", "تم تحديث العرض!") : t("Offer added!", "تمت إضافة العرض!") });
     setShowForm(false); setEditingId(null); setForm(emptyForm);
-    setSaving(false);
   };
 
   const handleEdit = (o: Offer) => { setEditingId(o.id); setForm({ ...o }); setShowForm(true); };
@@ -139,7 +136,7 @@ export default function AdminOffers() {
             </div>
           )}
           <div className="flex gap-2">
-            <button type="submit" disabled={saving} className="px-4 py-2 bg-primary text-primary-foreground rounded-xl text-sm font-medium disabled:opacity-60" data-testid="btn-save-offer"><Check size={13} className="inline mr-1" />{saving ? t("Saving…", "جارٍ الحفظ…") : t("Save", "حفظ")}</button>
+            <button type="submit" className="px-4 py-2 bg-primary text-primary-foreground rounded-xl text-sm font-medium" data-testid="btn-save-offer"><Check size={13} className="inline mr-1" />{t("Save", "حفظ")}</button>
             <button type="button" onClick={() => { setShowForm(false); setEditingId(null); }} className="px-4 py-2 border border-white/10 rounded-xl text-sm text-muted-foreground"><X size={13} className="inline mr-1" />{t("Cancel", "إلغاء")}</button>
           </div>
         </form>
