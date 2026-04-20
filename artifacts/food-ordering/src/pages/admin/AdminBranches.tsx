@@ -44,10 +44,14 @@ export default function AdminBranches() {
       delivery_time: form.delivery_time,
       address_en: form.address_en || "", address_ar: form.address_ar || "",
     };
-    branchStore.save(branch);
-    toast({ title: editingId ? t("Updated!", "تم التحديث!") : t("Added!", "تمت الإضافة!") });
-    setShowAdd(false); setEditingId(null);
-    setForm({ ...emptyForm, restaurant_id: "" });
+    try {
+      branchStore.save(branch);
+      toast({ title: editingId ? t("Updated!", "تم التحديث!") : t("Added!", "تمت الإضافة!") });
+      setShowAdd(false); setEditingId(null);
+      setForm({ ...emptyForm, restaurant_id: "" });
+    } catch (err) {
+      toast({ title: t("Save failed", "فشل الحفظ"), description: err instanceof Error ? err.message : t("Unknown error", "خطأ غير معروف"), variant: "destructive" });
+    }
   };
 
   const handleEdit = (b: Branch) => { setEditingId(b.id); setForm({ ...b }); setShowAdd(true); };

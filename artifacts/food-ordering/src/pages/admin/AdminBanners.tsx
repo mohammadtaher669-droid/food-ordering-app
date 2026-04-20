@@ -44,11 +44,15 @@ export default function AdminBanners() {
       return;
     }
     const id = editingId || ("b_" + Date.now());
-    bannerStore.save({ id, ...form, sort_order: form.sort_order || banners.length });
-    setShowForm(false);
-    setEditingId(null);
-    setForm(EMPTY);
-    toast({ title: t("Banner saved!", "تم حفظ البانر!") });
+    try {
+      bannerStore.save({ id, ...form, sort_order: form.sort_order || banners.length });
+      setShowForm(false);
+      setEditingId(null);
+      setForm(EMPTY);
+      toast({ title: t("Banner saved!", "تم حفظ البانر!") });
+    } catch (err) {
+      toast({ title: t("Save failed", "فشل الحفظ"), description: err instanceof Error ? err.message : t("Unknown error", "خطأ غير معروف"), variant: "destructive" });
+    }
   };
 
   const handleDelete = (id: string) => {

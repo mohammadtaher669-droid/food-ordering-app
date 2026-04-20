@@ -50,9 +50,13 @@ export default function AdminOffers() {
       active: form.active ?? true,
       code: form.code?.trim() || undefined,
     };
-    offerStore.save(offer);
-    toast({ title: editingId ? t("Offer updated!", "تم تحديث العرض!") : t("Offer added!", "تمت إضافة العرض!") });
-    setShowForm(false); setEditingId(null); setForm(emptyForm);
+    try {
+      offerStore.save(offer);
+      toast({ title: editingId ? t("Offer updated!", "تم تحديث العرض!") : t("Offer added!", "تمت إضافة العرض!") });
+      setShowForm(false); setEditingId(null); setForm(emptyForm);
+    } catch (err) {
+      toast({ title: t("Save failed", "فشل الحفظ"), description: err instanceof Error ? err.message : t("Unknown error", "خطأ غير معروف"), variant: "destructive" });
+    }
   };
 
   const handleEdit = (o: Offer) => { setEditingId(o.id); setForm({ ...o }); setShowForm(true); };

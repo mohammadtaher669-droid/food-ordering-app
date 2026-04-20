@@ -54,11 +54,15 @@ export default function AdminRestaurants() {
       tagline_en: form.tagline_en || "",
       tagline_ar: form.tagline_ar || "",
     };
-    restaurantStore.save(restaurant);
-    toast({ title: editingId ? t("Updated!", "تم التحديث!") : t("Added!", "تمت الإضافة!") });
-    setShowAdd(false);
-    setEditingId(null);
-    setForm(emptyForm);
+    try {
+      restaurantStore.save(restaurant);
+      toast({ title: editingId ? t("Updated!", "تم التحديث!") : t("Added!", "تمت الإضافة!") });
+      setShowAdd(false);
+      setEditingId(null);
+      setForm(emptyForm);
+    } catch (err) {
+      toast({ title: t("Save failed", "فشل الحفظ"), description: err instanceof Error ? err.message : t("Unknown error", "خطأ غير معروف"), variant: "destructive" });
+    }
   };
 
   const handleEdit = (r: Restaurant) => {

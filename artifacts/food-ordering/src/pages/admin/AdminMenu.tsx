@@ -49,9 +49,13 @@ export default function AdminMenu() {
       name_en: catForm.name_en, name_ar: catForm.name_ar,
       sort_order: editingCatId ? (allCategories.find((c) => c.id === editingCatId)?.sort_order || 99) : allCategories.filter((c) => c.restaurant_id === selectedRestaurant).length + 1,
     };
-    categoryStore.save(cat);
-    toast({ title: editingCatId ? t("Category updated", "تم تحديث الفئة") : t("Category added", "تمت إضافة الفئة") });
-    setShowCatForm(false); setEditingCatId(null); setCatForm({ name_en: "", name_ar: "" });
+    try {
+      categoryStore.save(cat);
+      toast({ title: editingCatId ? t("Category updated", "تم تحديث الفئة") : t("Category added", "تمت إضافة الفئة") });
+      setShowCatForm(false); setEditingCatId(null); setCatForm({ name_en: "", name_ar: "" });
+    } catch (err) {
+      toast({ title: t("Save failed", "فشل الحفظ"), description: err instanceof Error ? err.message : t("Unknown error", "خطأ غير معروف"), variant: "destructive" });
+    }
   };
   const deleteCat = (id: string) => {
     if (!confirm(t("Delete category and all its items?", "حذف الفئة وجميع عناصرها؟"))) return;
@@ -78,10 +82,14 @@ export default function AdminMenu() {
       is_popular: itemForm.is_popular || false,
       is_new: itemForm.is_new || false,
     };
-    menuStore.save(newItem);
-    toast({ title: editingItemId ? t("Item updated", "تم تحديث العنصر") : t("Item added", "تمت الإضافة") });
-    setShowItemForm(false); setEditingItemId(null);
-    setItemForm({ name_en: "", name_ar: "", price: 0, description_en: "", description_ar: "", is_available: true, is_popular: false, is_new: false, category_id: "" });
+    try {
+      menuStore.save(newItem);
+      toast({ title: editingItemId ? t("Item updated", "تم تحديث العنصر") : t("Item added", "تمت الإضافة") });
+      setShowItemForm(false); setEditingItemId(null);
+      setItemForm({ name_en: "", name_ar: "", price: 0, description_en: "", description_ar: "", is_available: true, is_popular: false, is_new: false, category_id: "" });
+    } catch (err) {
+      toast({ title: t("Save failed", "فشل الحفظ"), description: err instanceof Error ? err.message : t("Unknown error", "خطأ غير معروف"), variant: "destructive" });
+    }
   };
   const editItem = (item: MenuItem) => { setEditingItemId(item.id); setItemForm({ ...item }); setShowItemForm(true); window.scrollTo({ top: 0, behavior: "smooth" }); };
   const deleteItem = (id: string) => { menuStore.delete(id); };

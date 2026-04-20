@@ -215,11 +215,25 @@ function readOne<T>(key: string, fallback: T): T {
 }
 
 function write<T>(key: string, data: T[]): void {
-  localStorage.setItem(key, JSON.stringify(data));
+  try {
+    localStorage.setItem(key, JSON.stringify(data));
+  } catch (e) {
+    if (e instanceof DOMException) {
+      throw new Error("Storage full. Delete some item images to free space.");
+    }
+    throw e;
+  }
 }
 
 function writeOne<T>(key: string, data: T): void {
-  localStorage.setItem(key, JSON.stringify(data));
+  try {
+    localStorage.setItem(key, JSON.stringify(data));
+  } catch (e) {
+    if (e instanceof DOMException) {
+      throw new Error("Storage full. Delete some item images to free space.");
+    }
+    throw e;
+  }
 }
 
 export function dispatch() {

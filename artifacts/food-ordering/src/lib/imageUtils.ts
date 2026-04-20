@@ -8,12 +8,12 @@ export interface ImagePresetConfig {
 }
 
 export const IMAGE_PRESETS: Record<ImagePreset, ImagePresetConfig> = {
-  hero_banner:       { width: 1200, height: 400,  label: "1200 × 400 px",  quality: 0.82 },
-  category_icon:     { width: 200,  height: 200,  label: "200 × 200 px",   quality: 0.85 },
-  product:           { width: 500,  height: 500,  label: "500 × 500 px",   quality: 0.85 },
-  restaurant_cover:  { width: 1200, height: 600,  label: "1200 × 600 px",  quality: 0.82 },
-  thumbnail:         { width: 150,  height: 150,  label: "150 × 150 px",   quality: 0.80 },
-  offer:             { width: 500,  height: 500,  label: "500 × 500 px",   quality: 0.85 },
+  hero_banner:       { width: 900,  height: 300,  label: "900 × 300 px",   quality: 0.75 },
+  category_icon:     { width: 200,  height: 200,  label: "200 × 200 px",   quality: 0.75 },
+  product:           { width: 400,  height: 400,  label: "400 × 400 px",   quality: 0.72 },
+  restaurant_cover:  { width: 900,  height: 450,  label: "900 × 450 px",   quality: 0.75 },
+  thumbnail:         { width: 150,  height: 150,  label: "150 × 150 px",   quality: 0.72 },
+  offer:             { width: 400,  height: 400,  label: "400 × 400 px",   quality: 0.72 },
 };
 
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
