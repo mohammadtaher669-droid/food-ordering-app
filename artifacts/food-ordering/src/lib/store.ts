@@ -477,13 +477,20 @@ export const bannerStore = {
 const DEFAULT_SETTINGS: AppSettings = {
   slogan_en: "Order food from the best restaurants",
   slogan_ar: "اطلب الطعام من أفضل المطاعم",
-  homepage_bg_type: "color",
-  homepage_overlay_opacity: 0.5,
+  homepage_bg_type: "image",
+  homepage_bg_image: "/homepage-bg.jpg",
+  homepage_overlay_opacity: 0.65,
   homepage_overlay_color: "#000000",
 };
 
 export const settingsStore = {
-  get: (): AppSettings => readOne<AppSettings>(KEYS.settings, DEFAULT_SETTINGS),
+  get: (): AppSettings => {
+    const stored = readOne<AppSettings>(KEYS.settings, DEFAULT_SETTINGS);
+    if (stored.homepage_bg_type === "color" && !stored.homepage_bg_image) {
+      return { ...stored, homepage_bg_type: "image", homepage_bg_image: "/homepage-bg.jpg", homepage_overlay_opacity: 0.65 };
+    }
+    return stored;
+  },
   save: (settings: AppSettings): void => {
     writeOne(KEYS.settings, settings);
     dispatch();
