@@ -7,7 +7,7 @@ import { restaurantStore, branchStore, couponStore } from "@/lib/store";
 import RecommendationRow from "@/components/RecommendationRow";
 import { Trash2, Plus, Minus, ShoppingCart, Tag, ChevronRight, ChevronLeft } from "lucide-react";
 
-export function calculateDiscounts(subtotal: number, deliveryFee: number, orderType: "delivery" | "pickup", couponCode: string) {
+function calculateDiscounts(subtotal: number, deliveryFee: number, orderType: "delivery" | "pickup", couponCode: string) {
   const activeCoupons = couponStore.getAll();
 
   let couponDiscount = 0;

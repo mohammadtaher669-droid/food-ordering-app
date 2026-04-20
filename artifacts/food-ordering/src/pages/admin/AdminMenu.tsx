@@ -34,13 +34,18 @@ export default function AdminMenu() {
     name_en: "", name_ar: "", price: 0, description_en: "", description_ar: "",
     is_available: true, is_popular: false, is_new: false, category_id: "",
   });
+  const [savingCat, setSavingCat] = useState(false);
+  const [savingItem, setSavingItem] = useState(false);
   const categories = allCategories.filter((c) => c.restaurant_id === selectedRestaurant);
   const items = allItems.filter((m) => m.restaurant_id === selectedRestaurant);
   const restaurant = restaurants.find((r) => r.id === selectedRestaurant);
 
   // ─────────────────── CATEGORY CRUD ───────────────────
   const saveCat = () => {
-    if (!catForm.name_en.trim() || !catForm.name_ar.trim()) return;
+    if (!catForm.name_en.trim() || !catForm.name_ar.trim()) {
+      toast({ title: t("Required: name in EN and AR", "مطلوب: الاسم بالعربي والإنجليزي"), variant: "destructive" }); return;
+    }
+    setSavingCat(true);
     const cat: Category = {
       id: editingCatId || `cat-${Date.now()}`,
       restaurant_id: selectedRestaurant,
@@ -50,6 +55,7 @@ export default function AdminMenu() {
     categoryStore.save(cat);
     toast({ title: editingCatId ? t("Category updated", "تم تحديث الفئة") : t("Category added", "تمت إضافة الفئة") });
     setShowCatForm(false); setEditingCatId(null); setCatForm({ name_en: "", name_ar: "" });
+    setSavingCat(false);
   };
   const deleteCat = (id: string) => {
     if (!confirm(t("Delete category and all its items?", "حذف الفئة وجميع عناصرها؟"))) return;
@@ -63,6 +69,7 @@ export default function AdminMenu() {
     if (!itemForm.name_en?.trim() || !itemForm.name_ar?.trim() || !itemForm.category_id) {
       toast({ title: t("Required: name (EN, AR) and category", "مطلوب: الاسم والفئة"), variant: "destructive" }); return;
     }
+    setSavingItem(true);
     const newItem: MenuItem = {
       id: editingItemId || `item-${Date.now()}`,
       restaurant_id: selectedRestaurant,
@@ -80,6 +87,7 @@ export default function AdminMenu() {
     toast({ title: editingItemId ? t("Item updated", "تم تحديث العنصر") : t("Item added", "تمت الإضافة") });
     setShowItemForm(false); setEditingItemId(null);
     setItemForm({ name_en: "", name_ar: "", price: 0, description_en: "", description_ar: "", is_available: true, is_popular: false, is_new: false, category_id: "" });
+    setSavingItem(false);
   };
   const editItem = (item: MenuItem) => { setEditingItemId(item.id); setItemForm({ ...item }); setShowItemForm(true); window.scrollTo({ top: 0, behavior: "smooth" }); };
   const deleteItem = (id: string) => { menuStore.delete(id); };
@@ -115,22 +123,22 @@ export default function AdminMenu() {
 
       {/* Category Form */}
       {showCatForm && (
-        <div className="bg-card border border-white/10 rounded-2xl p-4 mb-4 space-y-3">
+        <form onSubmit={(e) => { e.preventDefault(); saveCat(); }} className="bg-card border border-white/10 rounded-2xl p-4 mb-4 space-y-3">
           <h3 className="font-medium text-foreground text-sm">{editingCatId ? t("Edit Category", "تعديل الفئة") : t("New Category", "فئة جديدة")}</h3>
           <div className="grid grid-cols-2 gap-3">
             <F label={t("Name (EN)", "الاسم (EN)")} value={catForm.name_en} onChange={(v) => setCatForm({ ...catForm, name_en: v })} />
             <F label={t("Name (AR)", "الاسم (AR)")} value={catForm.name_ar} onChange={(v) => setCatForm({ ...catForm, name_ar: v })} />
           </div>
           <div className="flex gap-2">
-            <button onClick={saveCat} className="px-4 py-2 bg-primary text-primary-foreground rounded-xl text-sm font-medium" data-testid="btn-save-category"><Check size={13} className="inline mr-1" /> {t("Save", "حفظ")}</button>
-            <button onClick={() => { setShowCatForm(false); setEditingCatId(null); }} className="px-4 py-2 border border-white/10 rounded-xl text-sm text-muted-foreground"><X size={13} className="inline mr-1" /> {t("Cancel", "إلغاء")}</button>
+            <button type="submit" disabled={savingCat} className="px-4 py-2 bg-primary text-primary-foreground rounded-xl text-sm font-medium disabled:opacity-60" data-testid="btn-save-category"><Check size={13} className="inline mr-1" /> {savingCat ? t("Saving…", "جارٍ الحفظ…") : t("Save", "حفظ")}</button>
+            <button type="button" onClick={() => { setShowCatForm(false); setEditingCatId(null); }} className="px-4 py-2 border border-white/10 rounded-xl text-sm text-muted-foreground"><X size={13} className="inline mr-1" /> {t("Cancel", "إلغاء")}</button>
           </div>
-        </div>
+        </form>
       )}
 
       {/* Item Form */}
       {showItemForm && (
-        <div className="bg-card border border-white/10 rounded-2xl p-5 mb-6 space-y-4">
+        <form onSubmit={(e) => { e.preventDefault(); saveItem(); }} className="bg-card border border-white/10 rounded-2xl p-5 mb-6 space-y-4">
           <h3 className="font-semibold text-foreground">{editingItemId ? t("Edit Item", "تعديل العنصر") : t("New Menu Item", "عنصر جديد")}</h3>
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -172,10 +180,10 @@ export default function AdminMenu() {
             ))}
           </div>
           <div className="flex gap-2">
-            <button onClick={saveItem} className="px-4 py-2 bg-primary text-primary-foreground rounded-xl text-sm font-medium" data-testid="btn-save-menu-item"><Check size={13} className="inline mr-1" />{t("Save", "حفظ")}</button>
-            <button onClick={() => { setShowItemForm(false); setEditingItemId(null); }} className="px-4 py-2 border border-white/10 rounded-xl text-sm text-muted-foreground"><X size={13} className="inline mr-1" />{t("Cancel", "إلغاء")}</button>
+            <button type="submit" disabled={savingItem} className="px-4 py-2 bg-primary text-primary-foreground rounded-xl text-sm font-medium disabled:opacity-60" data-testid="btn-save-menu-item"><Check size={13} className="inline mr-1" />{savingItem ? t("Saving…", "جارٍ الحفظ…") : t("Save", "حفظ")}</button>
+            <button type="button" onClick={() => { setShowItemForm(false); setEditingItemId(null); }} className="px-4 py-2 border border-white/10 rounded-xl text-sm text-muted-foreground"><X size={13} className="inline mr-1" />{t("Cancel", "إلغاء")}</button>
           </div>
-        </div>
+        </form>
       )}
 
       {/* Categories & Items */}

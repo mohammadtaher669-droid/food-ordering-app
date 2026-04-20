@@ -37,6 +37,7 @@ export default function AdminRestaurants() {
   const [showAdd, setShowAdd] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<Partial<Restaurant>>(emptyForm);
+  const [saving, setSaving] = useState(false);
   const handleSave = () => {
     if (!form.name_en?.trim() || !form.name_ar?.trim()) {
       toast({ title: t("Required fields missing", "حقول مطلوبة مفقودة"), variant: "destructive" }); return;
@@ -54,11 +55,13 @@ export default function AdminRestaurants() {
       tagline_en: form.tagline_en || "",
       tagline_ar: form.tagline_ar || "",
     };
+    setSaving(true);
     restaurantStore.save(restaurant);
     toast({ title: editingId ? t("Updated!", "تم التحديث!") : t("Added!", "تمت الإضافة!") });
     setShowAdd(false);
     setEditingId(null);
     setForm(emptyForm);
+    setSaving(false);
   };
 
   const handleEdit = (r: Restaurant) => {
@@ -87,7 +90,7 @@ export default function AdminRestaurants() {
 
       {/* Form */}
       {showAdd && (
-        <div className="bg-card border border-white/10 rounded-2xl p-5 mb-6 space-y-4">
+        <form onSubmit={(e) => { e.preventDefault(); handleSave(); }} className="bg-card border border-white/10 rounded-2xl p-5 mb-6 space-y-4">
           <h3 className="font-semibold text-foreground">{editingId ? t("Edit Restaurant", "تعديل المطعم") : t("New Restaurant", "مطعم جديد")}</h3>
           <div className="grid grid-cols-2 gap-3">
             <Field label={t("Name (EN)", "الاسم (EN)")} value={form.name_en || ""} onChange={(v) => setForm({ ...form, name_en: v })} data-testid="input-rest-name-en" />
@@ -151,6 +154,7 @@ export default function AdminRestaurants() {
               {COLOR_PRESETS.map((c) => (
                 <button
                   key={c}
+                  type="button"
                   onClick={() => setForm({ ...form, color: c })}
                   className={`w-8 h-8 rounded-full transition-transform ${form.color === c ? "scale-125 ring-2 ring-white/40" : "hover:scale-110"}`}
                   style={{ background: c }}
@@ -167,14 +171,14 @@ export default function AdminRestaurants() {
           </div>
 
           <div className="flex gap-2">
-            <button onClick={handleSave} className="px-4 py-2 bg-primary text-primary-foreground rounded-xl text-sm font-medium" data-testid="btn-save-restaurant">
-              <Check size={14} className="inline mr-1" />{t("Save", "حفظ")}
+            <button type="submit" disabled={saving} className="px-4 py-2 bg-primary text-primary-foreground rounded-xl text-sm font-medium disabled:opacity-60" data-testid="btn-save-restaurant">
+              <Check size={14} className="inline mr-1" />{saving ? t("Saving…", "جارٍ الحفظ…") : t("Save", "حفظ")}
             </button>
-            <button onClick={handleCancel} className="px-4 py-2 border border-white/10 rounded-xl text-sm text-muted-foreground">
+            <button type="button" onClick={handleCancel} className="px-4 py-2 border border-white/10 rounded-xl text-sm text-muted-foreground">
               <X size={14} className="inline mr-1" />{t("Cancel", "إلغاء")}
             </button>
           </div>
-        </div>
+        </form>
       )}
 
       {/* List */}

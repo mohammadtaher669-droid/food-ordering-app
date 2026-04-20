@@ -31,6 +31,7 @@ export default function AdminBanners() {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<Omit<Banner, "id">>(EMPTY);
+  const [saving, setSaving] = useState(false);
 
   const handleEdit = (banner: Banner) => {
     const { id, ...rest } = banner;
@@ -44,12 +45,14 @@ export default function AdminBanners() {
       toast({ title: t("Title is required", "العنوان مطلوب"), variant: "destructive" });
       return;
     }
+    setSaving(true);
     const id = editingId || ("b_" + Date.now());
     bannerStore.save({ id, ...form, sort_order: form.sort_order || banners.length });
     setShowForm(false);
     setEditingId(null);
     setForm(EMPTY);
     toast({ title: t("Banner saved!", "تم حفظ البانر!") });
+    setSaving(false);
   };
 
   const handleDelete = (id: string) => {
@@ -90,7 +93,8 @@ export default function AdminBanners() {
       {/* Form */}
       <AnimatePresence>
         {showForm && (
-          <motion.div
+          <motion.form
+            onSubmit={(e) => { e.preventDefault(); handleSave(); }}
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
@@ -177,14 +181,14 @@ export default function AdminBanners() {
             </label>
 
             <div className="flex gap-2">
-              <button onClick={handleSave} className="px-4 py-2 bg-primary text-white rounded-xl text-sm font-medium flex items-center gap-1" data-testid="btn-save-banner">
-                <Check size={13} /> {t("Save", "حفظ")}
+              <button type="submit" disabled={saving} className="px-4 py-2 bg-primary text-white rounded-xl text-sm font-medium flex items-center gap-1 disabled:opacity-60" data-testid="btn-save-banner">
+                <Check size={13} /> {saving ? t("Saving…", "جارٍ الحفظ…") : t("Save", "حفظ")}
               </button>
-              <button onClick={() => { setShowForm(false); setEditingId(null); }} className="px-4 py-2 border border-white/10 rounded-xl text-sm text-muted-foreground flex items-center gap-1">
+              <button type="button" onClick={() => { setShowForm(false); setEditingId(null); }} className="px-4 py-2 border border-white/10 rounded-xl text-sm text-muted-foreground flex items-center gap-1">
                 <X size={13} /> {t("Cancel", "إلغاء")}
               </button>
             </div>
-          </motion.div>
+          </motion.form>
         )}
       </AnimatePresence>
 

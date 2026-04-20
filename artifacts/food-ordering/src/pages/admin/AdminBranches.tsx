@@ -30,6 +30,7 @@ export default function AdminBranches() {
   const [showAdd, setShowAdd] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<Partial<Branch>>({ ...emptyForm, restaurant_id: "" });
+  const [saving, setSaving] = useState(false);
 
   const handleSave = () => {
     if (!form.restaurant_id || !form.name_en?.trim() || !form.name_ar?.trim() || !form.whatsapp?.trim()) {
@@ -45,10 +46,12 @@ export default function AdminBranches() {
       delivery_time: form.delivery_time,
       address_en: form.address_en || "", address_ar: form.address_ar || "",
     };
+    setSaving(true);
     branchStore.save(branch);
     toast({ title: editingId ? t("Updated!", "تم التحديث!") : t("Added!", "تمت الإضافة!") });
     setShowAdd(false); setEditingId(null);
     setForm({ ...emptyForm, restaurant_id: "" });
+    setSaving(false);
   };
 
   const handleEdit = (b: Branch) => { setEditingId(b.id); setForm({ ...b }); setShowAdd(true); };
@@ -68,7 +71,7 @@ export default function AdminBranches() {
       </div>
 
       {showAdd && (
-        <div className="bg-card border border-white/10 rounded-2xl p-5 mb-6 space-y-4">
+        <form onSubmit={(e) => { e.preventDefault(); handleSave(); }} className="bg-card border border-white/10 rounded-2xl p-5 mb-6 space-y-4">
           <h3 className="font-semibold text-foreground">{editingId ? t("Edit Branch", "تعديل الفرع") : t("New Branch", "فرع جديد")}</h3>
           <div className="grid grid-cols-2 gap-3">
             <div className="col-span-2">
@@ -95,14 +98,14 @@ export default function AdminBranches() {
             <F label={t("Address (AR)", "العنوان (AR)")} value={form.address_ar || ""} onChange={(v) => setForm({ ...form, address_ar: v })} />
           </div>
           <div className="flex gap-2">
-            <button onClick={handleSave} className="px-4 py-2 bg-primary text-primary-foreground rounded-xl text-sm font-medium" data-testid="btn-save-branch">
-              <Check size={14} className="inline mr-1" /> {t("Save", "حفظ")}
+            <button type="submit" disabled={saving} className="px-4 py-2 bg-primary text-primary-foreground rounded-xl text-sm font-medium disabled:opacity-60" data-testid="btn-save-branch">
+              <Check size={14} className="inline mr-1" /> {saving ? t("Saving…", "جارٍ الحفظ…") : t("Save", "حفظ")}
             </button>
-            <button onClick={() => { setShowAdd(false); setEditingId(null); }} className="px-4 py-2 border border-white/10 rounded-xl text-sm text-muted-foreground">
+            <button type="button" onClick={() => { setShowAdd(false); setEditingId(null); }} className="px-4 py-2 border border-white/10 rounded-xl text-sm text-muted-foreground">
               <X size={14} className="inline mr-1" /> {t("Cancel", "إلغاء")}
             </button>
           </div>
-        </div>
+        </form>
       )}
 
       <div className="space-y-6">
