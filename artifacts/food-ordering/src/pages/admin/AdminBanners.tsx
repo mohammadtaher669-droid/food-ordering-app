@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Edit2, Trash2, GripVertical, Check, X, Link as LinkIcon } from "lucide-react";
+import { Plus, Edit2, Trash2, GripVertical, Check, X, Link as LinkIcon, Image as ImageIcon, Video } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { bannerStore, restaurantStore } from "@/lib/store";
 import type { Banner } from "@/lib/store";
@@ -20,7 +20,20 @@ const EMPTY: Omit<Banner, "id"> = {
   active: true,
   type: "homepage",
   sort_order: 0,
+  image_url: undefined,
+  video_url: undefined,
 };
+
+function validateUrl(url: string): string {
+  if (!url) return "";
+  try {
+    const u = new URL(url);
+    if (!["http:", "https:"].includes(u.protocol)) return "URL must start with http:// or https://";
+    return "";
+  } catch {
+    return "Invalid URL format";
+  }
+}
 
 export default function AdminBanners() {
   const { t } = useLanguage();
@@ -31,10 +44,15 @@ export default function AdminBanners() {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<Omit<Banner, "id">>(EMPTY);
+  const [imgUrlError, setImgUrlError] = useState("");
+  const [videoUrlError, setVideoUrlError] = useState("");
+
   const handleEdit = (banner: Banner) => {
     const { id, ...rest } = banner;
     setForm(rest);
     setEditingId(id);
+    setImgUrlError("");
+    setVideoUrlError("");
     setShowForm(true);
   };
 
@@ -43,12 +61,25 @@ export default function AdminBanners() {
       toast({ title: t("Title is required", "العنوان مطلوب"), variant: "destructive" });
       return;
     }
+    const imgErr = form.image_url ? validateUrl(form.image_url) : "";
+    const vidErr = form.video_url ? validateUrl(form.video_url) : "";
+    if (imgErr) { setImgUrlError(imgErr); return; }
+    if (vidErr) { setVideoUrlError(vidErr); return; }
+
     const id = editingId || ("b_" + Date.now());
+    const saved: Banner = {
+      id,
+      ...form,
+      image: form.image_url ? undefined : form.image,
+      sort_order: form.sort_order || banners.length,
+    };
     try {
-      bannerStore.save({ id, ...form, sort_order: form.sort_order || banners.length });
+      bannerStore.save(saved);
       setShowForm(false);
       setEditingId(null);
       setForm(EMPTY);
+      setImgUrlError("");
+      setVideoUrlError("");
       toast({ title: t("Banner saved!", "تم حفظ البانر!") });
     } catch (err) {
       toast({ title: t("Save failed", "فشل الحفظ"), description: err instanceof Error ? err.message : t("Unknown error", "خطأ غير معروف"), variant: "destructive" });
@@ -70,6 +101,8 @@ export default function AdminBanners() {
     offer: "#f59e0b",
   };
 
+  const mediaPreview = form.video_url || form.image_url || form.image;
+
   return (
     <div className="max-w-3xl mx-auto space-y-5">
       <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
@@ -80,7 +113,7 @@ export default function AdminBanners() {
           </div>
           {!showForm && (
             <button
-              onClick={() => { setForm({ ...EMPTY, sort_order: banners.length }); setEditingId(null); setShowForm(true); }}
+              onClick={() => { setForm({ ...EMPTY, sort_order: banners.length }); setEditingId(null); setImgUrlError(""); setVideoUrlError(""); setShowForm(true); }}
               className="flex items-center gap-1.5 px-4 py-2 bg-primary text-white rounded-xl text-sm font-medium"
               data-testid="btn-add-banner"
             >
@@ -98,19 +131,74 @@ export default function AdminBanners() {
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="bg-card border border-primary/20 rounded-2xl p-5 space-y-3"
+            className="bg-card border border-primary/20 rounded-2xl p-5 space-y-4"
           >
             <h2 className="text-sm font-bold text-foreground">{editingId ? t("Edit Banner", "تعديل البانر") : t("New Banner", "بانر جديد")}</h2>
 
-            {/* Image */}
-            <ImageUploader
-              preset="hero_banner"
-              label={t("Banner Image", "صورة البانر")}
-              value={form.image}
-              onChange={(url) => setForm((f) => ({ ...f, image: url }))}
-              onDelete={() => setForm((f) => ({ ...f, image: undefined }))}
-              data-testid="uploader-banner-image"
-            />
+            {/* Media Preview */}
+            {mediaPreview && (
+              <div className="relative rounded-xl overflow-hidden border border-white/10" style={{ height: 140 }}>
+                {form.video_url ? (
+                  <video
+                    src={form.video_url}
+                    className="w-full h-full object-cover"
+                    autoPlay muted loop playsInline
+                    onError={() => setVideoUrlError(t("Video failed to load. Check the URL.", "تعذّر تحميل الفيديو. تحقق من الرابط."))}
+                  />
+                ) : (
+                  <img
+                    src={form.image_url || form.image}
+                    alt="preview"
+                    className="w-full h-full object-cover"
+                    onError={() => form.image_url && setImgUrlError(t("Image failed to load. Check the URL.", "تعذّر تحميل الصورة. تحقق من الرابط."))}
+                  />
+                )}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent pointer-events-none" />
+                <span className="absolute bottom-2 left-2 text-[10px] text-white/70 bg-black/40 px-2 py-0.5 rounded-full">
+                  {form.video_url ? t("Video preview", "معاينة الفيديو") : t("Image preview", "معاينة الصورة")}
+                </span>
+              </div>
+            )}
+
+            {/* Video URL */}
+            <div className="space-y-1">
+              <label className="text-xs text-muted-foreground flex items-center gap-1"><Video size={11} /> {t("Promo Video URL (optional — highest priority)", "رابط فيديو ترويجي (اختياري — الأولوية القصوى)")}</label>
+              <input
+                type="url"
+                placeholder="https://example.com/promo.mp4"
+                value={form.video_url || ""}
+                onChange={(e) => { setForm((f) => ({ ...f, video_url: e.target.value || undefined })); setVideoUrlError(""); }}
+                className="w-full bg-background border border-white/10 rounded-xl px-3 py-2 text-sm text-foreground focus:outline-none focus:border-primary/50"
+              />
+              {videoUrlError && <p className="text-xs text-red-400">{videoUrlError}</p>}
+              {form.video_url && !videoUrlError && <p className="text-[11px] text-green-400">{t("Video will play as banner background", "سيُشغَّل الفيديو كخلفية للبانر")}</p>}
+            </div>
+
+            {/* Image URL */}
+            <div className="space-y-1">
+              <label className="text-xs text-muted-foreground flex items-center gap-1"><ImageIcon size={11} /> {t("Image URL (optional — used if no video)", "رابط الصورة (اختياري — يُستخدم إن لم يكن فيديو)")}</label>
+              <input
+                type="url"
+                placeholder="https://example.com/banner.webp"
+                value={form.image_url || ""}
+                onChange={(e) => { setForm((f) => ({ ...f, image_url: e.target.value || undefined })); setImgUrlError(""); }}
+                className="w-full bg-background border border-white/10 rounded-xl px-3 py-2 text-sm text-foreground focus:outline-none focus:border-primary/50"
+              />
+              {imgUrlError && <p className="text-xs text-red-400">{imgUrlError}</p>}
+              {form.image_url && !imgUrlError && !form.video_url && <p className="text-[11px] text-green-400">{t("URL image will be used (no file stored)", "سيتم استخدام رابط الصورة (لا يُخزَّن ملف)")}</p>}
+            </div>
+
+            {/* File Upload — only shown when no URL or video is set */}
+            {!form.image_url && !form.video_url && (
+              <ImageUploader
+                preset="hero_banner"
+                label={t("Upload Banner Image (fallback when no URL)", "رفع صورة البانر (احتياطي إن لم يكن رابط)")}
+                value={form.image}
+                onChange={(url) => setForm((f) => ({ ...f, image: url }))}
+                onDelete={() => setForm((f) => ({ ...f, image: undefined }))}
+                data-testid="uploader-banner-image"
+              />
+            )}
 
             <div className="grid grid-cols-2 gap-3">
               <div>
@@ -150,11 +238,7 @@ export default function AdminBanners() {
             <div className="flex gap-3 flex-wrap">
               <div className="flex-1 min-w-32">
                 <label className="text-xs text-muted-foreground mb-1 block">{t("Banner type", "نوع البانر")}</label>
-                <select
-                  value={form.type}
-                  onChange={(e) => setForm({ ...form, type: e.target.value as Banner["type"] })}
-                  className="w-full bg-background border border-white/10 rounded-xl px-3 py-2 text-sm text-foreground focus:outline-none"
-                >
+                <select value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value as Banner["type"] })} className="w-full bg-background border border-white/10 rounded-xl px-3 py-2 text-sm text-foreground focus:outline-none">
                   <option value="homepage">{t("Homepage", "الصفحة الرئيسية")}</option>
                   <option value="restaurant">{t("Restaurant", "مطعم")}</option>
                   <option value="offer">{t("Offer page", "صفحة العروض")}</option>
@@ -163,11 +247,7 @@ export default function AdminBanners() {
               {form.type === "restaurant" && (
                 <div className="flex-1 min-w-32">
                   <label className="text-xs text-muted-foreground mb-1 block">{t("Restaurant", "المطعم")}</label>
-                  <select
-                    value={form.restaurant_id || ""}
-                    onChange={(e) => setForm({ ...form, restaurant_id: e.target.value })}
-                    className="w-full bg-background border border-white/10 rounded-xl px-3 py-2 text-sm text-foreground focus:outline-none"
-                  >
+                  <select value={form.restaurant_id || ""} onChange={(e) => setForm({ ...form, restaurant_id: e.target.value })} className="w-full bg-background border border-white/10 rounded-xl px-3 py-2 text-sm text-foreground focus:outline-none">
                     <option value="">{t("All restaurants", "جميع المطاعم")}</option>
                     {restaurants.map((r) => <option key={r.id} value={r.id}>{t(r.name_en, r.name_ar)}</option>)}
                   </select>
@@ -184,7 +264,7 @@ export default function AdminBanners() {
               <button type="submit" className="px-4 py-2 bg-primary text-white rounded-xl text-sm font-medium flex items-center gap-1" data-testid="btn-save-banner">
                 <Check size={13} /> {t("Save", "حفظ")}
               </button>
-              <button type="button" onClick={() => { setShowForm(false); setEditingId(null); }} className="px-4 py-2 border border-white/10 rounded-xl text-sm text-muted-foreground flex items-center gap-1">
+              <button type="button" onClick={() => { setShowForm(false); setEditingId(null); setImgUrlError(""); setVideoUrlError(""); }} className="px-4 py-2 border border-white/10 rounded-xl text-sm text-muted-foreground flex items-center gap-1">
                 <X size={13} /> {t("Cancel", "إلغاء")}
               </button>
             </div>
@@ -211,35 +291,32 @@ export default function AdminBanners() {
             >
               <div className="flex items-center gap-3 p-3">
                 <GripVertical size={14} className="text-muted-foreground/40 flex-shrink-0" />
-                {banner.image ? (
-                  <ImageWithFallback src={banner.image} alt="" className="w-16 h-10 object-cover rounded-lg flex-shrink-0" preset="hero_banner" />
-                ) : (
-                  <div className="w-16 h-10 bg-white/5 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <span className="text-lg">📢</span>
-                  </div>
-                )}
+                <div className="w-16 h-10 rounded-lg flex-shrink-0 overflow-hidden border border-white/10">
+                  {banner.video_url ? (
+                    <div className="w-full h-full bg-purple-900/30 flex items-center justify-center">
+                      <Video size={16} className="text-purple-400" />
+                    </div>
+                  ) : (banner.image_url || banner.image) ? (
+                    <ImageWithFallback src={banner.image_url || banner.image} alt="" className="w-full h-full object-cover" preset="hero_banner" />
+                  ) : (
+                    <div className="w-full h-full bg-white/5 flex items-center justify-center">
+                      <span className="text-lg">📢</span>
+                    </div>
+                  )}
+                </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <p className="text-sm font-medium text-foreground line-clamp-1">{banner.title_en || banner.title_ar}</p>
-                    <span
-                      className="text-[10px] font-bold px-1.5 py-0.5 rounded-full text-white"
-                      style={{ background: typeColors[banner.type] }}
-                    >
-                      {banner.type}
-                    </span>
-                    {!banner.active && (
-                      <span className="text-[10px] text-muted-foreground border border-white/10 px-1.5 py-0.5 rounded-full">{t("Inactive", "غير نشط")}</span>
-                    )}
+                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full text-white" style={{ background: typeColors[banner.type] }}>{banner.type}</span>
+                    {banner.video_url && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full text-white bg-purple-600">video</span>}
+                    {!banner.active && <span className="text-[10px] text-muted-foreground border border-white/10 px-1.5 py-0.5 rounded-full">{t("Inactive", "غير نشط")}</span>}
                   </div>
                   {(banner.subtitle_en || banner.subtitle_ar) && (
                     <p className="text-xs text-muted-foreground line-clamp-1">{banner.subtitle_en}</p>
                   )}
                 </div>
                 <div className="flex items-center gap-1 flex-shrink-0">
-                  <button
-                    onClick={() => toggleActive(banner)}
-                    className={`w-8 h-8 rounded-lg flex items-center justify-center transition ${banner.active ? "text-green-400 hover:bg-green-400/10" : "text-muted-foreground hover:bg-white/5"}`}
-                  >
+                  <button onClick={() => toggleActive(banner)} className={`w-8 h-8 rounded-lg flex items-center justify-center transition ${banner.active ? "text-green-400 hover:bg-green-400/10" : "text-muted-foreground hover:bg-white/5"}`}>
                     <Check size={14} />
                   </button>
                   <button onClick={() => handleEdit(banner)} className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition">

@@ -147,8 +147,10 @@ export default function OffersPage() {
     >
       {/* Hero */}
       <div className="relative overflow-hidden" style={{ minHeight: 220 }}>
-        {heroSettings?.image ? (
-          <img src={heroSettings.image} alt="" className="absolute inset-0 w-full h-full object-cover" />
+        {heroSettings?.video_url ? (
+          <video src={heroSettings.video_url} className="absolute inset-0 w-full h-full object-cover" autoPlay muted loop playsInline />
+        ) : (heroSettings?.image_url || heroSettings?.image) ? (
+          <img src={heroSettings.image_url || heroSettings.image} alt="" className="absolute inset-0 w-full h-full object-cover" />
         ) : (
           <div className="absolute inset-0 bg-gradient-to-br from-primary/30 via-primary/10 to-background" />
         )}

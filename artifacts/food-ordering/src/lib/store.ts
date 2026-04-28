@@ -133,6 +133,8 @@ export interface Customer {
 export interface Banner {
   id: string;
   image?: string;
+  image_url?: string;
+  video_url?: string;
   title_en: string;
   title_ar: string;
   subtitle_en?: string;
