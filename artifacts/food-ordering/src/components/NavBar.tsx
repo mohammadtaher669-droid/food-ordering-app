@@ -10,7 +10,7 @@ export default function NavBar() {
 
   return (
     <nav
-      className="fixed top-0 left-0 right-0 z-50"
+      className="fixed top-0 left-0 right-0 z-50 print:hidden"
       style={{
         background: "rgba(15,15,15,0.95)",
         backdropFilter: "blur(16px)",

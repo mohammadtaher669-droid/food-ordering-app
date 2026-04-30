@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { LayoutDashboard, UtensilsCrossed, MapPin, BookOpen, Tag, Star, LogOut, Menu, X, Percent, Settings, Navigation, Users, BarChart2, Image, Megaphone } from "lucide-react";
+import { LayoutDashboard, UtensilsCrossed, MapPin, BookOpen, Tag, Star, LogOut, Menu, X, Percent, Settings, Navigation, Users, BarChart2, Image, Megaphone, Printer } from "lucide-react";
 import matAmiLogo from "@assets/لوجو_الموقع_مطعمي_1776635393637.png";
 
 const NAV = [
@@ -25,6 +25,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [location] = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
 
+  const currentPage = NAV.find((item) =>
+    item.exact ? location === item.path : location.startsWith(item.path) && item.path !== "/admin"
+  );
+  const pageTitle = currentPage ? t(currentPage.label_en, currentPage.label_ar) : t("Dashboard", "لوحة التحكم");
+
   const handleLogout = () => {
     sessionStorage.removeItem("admin_auth");
     window.location.href = "/admin";
@@ -32,9 +37,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   return (
     <div className="min-h-screen bg-background flex">
-      {mobileOpen && <div className="fixed inset-0 bg-black/50 z-40 md:hidden" onClick={() => setMobileOpen(false)} />}
+      {mobileOpen && <div className="fixed inset-0 bg-black/50 z-40 md:hidden print:hidden" onClick={() => setMobileOpen(false)} />}
 
-      <aside className={`fixed left-0 top-0 h-full w-60 bg-sidebar border-r border-sidebar-border z-50 transition-transform md:translate-x-0 flex flex-col ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`}>
+      {/* Sidebar — hidden when printing */}
+      <aside className={`fixed left-0 top-0 h-full w-60 bg-sidebar border-r border-sidebar-border z-50 transition-transform md:translate-x-0 flex flex-col print:hidden ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`}>
         <div className="p-4 border-b border-white/5 flex-shrink-0">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -73,12 +79,37 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </div>
       </aside>
 
-      <div className="flex-1 md:ml-60">
-        <header className="sticky top-0 bg-[#0F0F0F]/95 backdrop-blur border-b border-white/5 px-4 h-14 flex items-center gap-3 z-30">
+      <div className="flex-1 md:ml-60 print:ml-0">
+        {/* Top bar — hidden when printing */}
+        <header className="sticky top-0 bg-[#0F0F0F]/95 backdrop-blur border-b border-white/5 px-4 h-14 flex items-center gap-3 z-30 print:hidden">
           <button onClick={() => setMobileOpen(true)} className="md:hidden text-muted-foreground"><Menu size={20} /></button>
-          <span className="text-sm text-muted-foreground">{t("Mat'ami Admin Panel", "لوحة إدارة مطعمي")}</span>
+          <span className="text-sm text-muted-foreground flex-1">{t("Mat'ami Admin Panel", "لوحة إدارة مطعمي")}</span>
+          <button
+            onClick={() => window.print()}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium border border-white/10 text-muted-foreground hover:text-foreground hover:border-white/20 transition"
+            title={t("Print this page", "طباعة هذه الصفحة")}
+            data-testid="btn-print"
+          >
+            <Printer size={14} />
+            {t("Print", "طباعة")}
+          </button>
         </header>
-        <main className="p-6">{children}</main>
+
+        {/* Print-only header — shows date, page title, and branding */}
+        <div className="hidden print:block print-header px-8 pt-6 pb-4 border-b border-gray-300 mb-2">
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-xs text-gray-500 uppercase tracking-widest mb-0.5">Mat'ami Admin Panel</p>
+              <h1 className="text-2xl font-bold text-gray-900">{pageTitle}</h1>
+            </div>
+            <div className="text-right text-xs text-gray-500 leading-relaxed">
+              <p>{new Date().toLocaleDateString(undefined, { weekday: "long", year: "numeric", month: "long", day: "numeric" })}</p>
+              <p>{new Date().toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })}</p>
+            </div>
+          </div>
+        </div>
+
+        <main className="p-6 print:px-8 print:py-2">{children}</main>
       </div>
     </div>
   );

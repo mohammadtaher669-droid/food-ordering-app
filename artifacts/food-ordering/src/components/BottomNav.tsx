@@ -18,7 +18,7 @@ export default function BottomNav() {
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 pointer-events-none">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 pointer-events-none print:hidden">
       <div className="mx-auto max-w-lg px-4 pb-4 pt-1 pointer-events-auto">
         <div
           className="flex items-center justify-around rounded-2xl px-1 py-2 shadow-2xl"

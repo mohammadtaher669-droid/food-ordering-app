@@ -166,3 +166,181 @@
     scrollbar-width: none;
   }
 }
+
+/* ─── Print Styles ────────────────────────────────────────────────────────── */
+@media print {
+
+  /* Page setup */
+  @page {
+    size: A4 portrait;
+    margin: 1.5cm 1.8cm;
+  }
+
+  /* Light theme override for readable printing */
+  :root, .dark {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 8%;
+    --card: 0 0% 97%;
+    --card-foreground: 0 0% 8%;
+    --card-border: 0 0% 88%;
+    --border: 0 0% 88%;
+    --muted: 0 0% 95%;
+    --muted-foreground: 0 0% 45%;
+    --primary: 28 100% 45%;
+    --secondary: 0 0% 93%;
+    --secondary-foreground: 0 0% 20%;
+  }
+
+  /* Reset background colours so nothing bleeds ink */
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Force colours on text */
+  body {
+    background: #fff !important;
+    color: #111 !important;
+  }
+
+  /* ── Hide all UI chrome ────────────────────────────────────────────── */
+
+  /* Fixed/sticky elements that break print layout */
+  [class*="fixed"],
+  [class*="sticky"] {
+    position: static !important;
+  }
+
+  /* Explicit hide list */
+  .print\:hidden,
+  aside,
+  header,
+  nav,
+  footer,
+  dialog,
+  [role="dialog"],
+  [data-radix-popper-content-wrapper],
+  [data-sonner-toaster] {
+    display: none !important;
+  }
+
+  /* ── Layout fix: remove sidebar offset ────────────────────────────── */
+  .md\:ml-60,
+  .print\:ml-0 {
+    margin-left: 0 !important;
+  }
+
+  /* ── Remove decorative backgrounds & shadows ──────────────────────── */
+  .bg-background,
+  .bg-card,
+  .bg-muted,
+  .bg-sidebar {
+    background: transparent !important;
+  }
+
+  [class*="shadow"] {
+    box-shadow: none !important;
+  }
+
+  [class*="backdrop-blur"] {
+    backdrop-filter: none !important;
+  }
+
+  /* ── Cards: use a simple border ───────────────────────────────────── */
+  .rounded-2xl,
+  .rounded-xl,
+  [class*="border"] {
+    border-color: #ddd !important;
+  }
+
+  /* ── Tables: full-width, proper headers ───────────────────────────── */
+  table {
+    border-collapse: collapse !important;
+    width: 100% !important;
+  }
+
+  thead {
+    display: table-header-group;
+  }
+
+  tfoot {
+    display: table-footer-group;
+  }
+
+  th, td {
+    border: 1px solid #ddd !important;
+    padding: 6px 10px !important;
+    font-size: 11px !important;
+    color: #111 !important;
+    background: transparent !important;
+  }
+
+  th {
+    background-color: #f5f5f5 !important;
+    font-weight: 700 !important;
+  }
+
+  /* ── Page-break rules ─────────────────────────────────────────────── */
+  tr {
+    page-break-inside: avoid;
+  }
+
+  h1, h2, h3 {
+    page-break-after: avoid;
+  }
+
+  section,
+  .space-y-5 > div,
+  .space-y-6 > div,
+  .space-y-8 > section {
+    page-break-inside: avoid;
+  }
+
+  /* Large stat/card grids: allow breaks between grid items */
+  .grid {
+    page-break-inside: auto;
+  }
+
+  /* ── Framer Motion: remove transforms that break layout ───────────── */
+  [style*="transform"],
+  [style*="opacity"] {
+    transform: none !important;
+    opacity: 1 !important;
+  }
+
+  /* ── Images: prevent overflow ─────────────────────────────────────── */
+  img {
+    max-width: 100% !important;
+    page-break-inside: avoid;
+  }
+
+  /* ── Text adjustments ─────────────────────────────────────────────── */
+  p, span, li {
+    font-size: 12px !important;
+    line-height: 1.5 !important;
+  }
+
+  h1 { font-size: 22px !important; color: #111 !important; }
+  h2 { font-size: 16px !important; color: #222 !important; }
+  h3 { font-size: 13px !important; color: #333 !important; }
+
+  /* ── Print-only elements ──────────────────────────────────────────── */
+  .print\:block { display: block !important; }
+  .print\:flex { display: flex !important; }
+  .print\:hidden { display: none !important; }
+  .print-header { display: block !important; }
+
+  /* ── Page counter in footer ───────────────────────────────────────── */
+  @page {
+    @bottom-right {
+      content: "Page " counter(page) " of " counter(pages);
+      font-size: 9px;
+      color: #888;
+    }
+    @bottom-left {
+      content: "Mat'ami Admin — Printed " attr(data-print-date);
+      font-size: 9px;
+      color: #888;
+    }
+  }
+}

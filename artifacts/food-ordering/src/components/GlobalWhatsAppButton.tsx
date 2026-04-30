@@ -30,7 +30,7 @@ export default function GlobalWhatsAppButton() {
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.8 }}
         transition={{ delay: 1.5, type: "spring", stiffness: 200 }}
-        className="fixed left-4 z-40 flex items-center gap-0"
+        className="fixed left-4 z-40 flex items-center gap-0 print:hidden"
         style={{ bottom: "96px" }}
       >
         <motion.button
