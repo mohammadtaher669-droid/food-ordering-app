@@ -157,6 +157,11 @@ export interface AppSettings {
   homepage_overlay_color: string;
   primary_color?: string;
   show_calories?: boolean;
+  bg_color?: string;
+  text_color?: string;
+  font_family?: string;
+  font_size_scale?: number;
+  logo_size?: "sm" | "md" | "lg";
 }
 
 export interface AnalyticsEvent {

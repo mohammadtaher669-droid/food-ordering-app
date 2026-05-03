@@ -1,12 +1,23 @@
+import { useCallback } from "react";
 import { Link, useLocation } from "wouter";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { settingsStore } from "@/lib/store";
+import { useStore } from "@/hooks/useStore";
 import matAmiLogo from "@assets/لوجو_الموقع_مطعمي_1776635393637.png";
+
+const LOGO_SIZE = {
+  sm: "h-5 w-5",
+  md: "h-8 w-8",
+  lg: "h-12 w-12",
+};
 
 export default function NavBar() {
   const { lang, toggleLang, t } = useLanguage();
   const [location] = useLocation();
+  const settings = useStore(useCallback(() => settingsStore.get(), []));
 
   const isHome = location === "/";
+  const logoClass = LOGO_SIZE[settings.logo_size || "md"];
 
   return (
     <nav
@@ -24,7 +35,7 @@ export default function NavBar() {
             <img
               src={matAmiLogo}
               alt="Mat'ami"
-              className="h-8 w-8 object-contain rounded-full"
+              className={`${logoClass} object-contain rounded-full transition-all duration-300`}
             />
             {isHome && (
               <span className="text-sm font-bold text-primary tracking-tight hidden sm:block">

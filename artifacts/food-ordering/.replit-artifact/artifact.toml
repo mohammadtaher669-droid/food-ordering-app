@@ -1,6 +1,6 @@
 kind = "web"
 previewPath = "/"
-title = "Multi-Restaurant Food Ordering"
+title = "Mattami"
 version = "1.0.0"
 id = "artifacts/food-ordering"
 router = "path"
