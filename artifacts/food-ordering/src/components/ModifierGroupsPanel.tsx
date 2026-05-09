@@ -26,7 +26,11 @@ interface Props {
 export default function ModifierGroupsPanel({ menuItem, restaurantId, color }: Props) {
   const { t } = useLanguage();
   const { toast } = useToast();
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(() => {
+    const gs = modifierGroupStore.getByItem(menuItem.id);
+    const aos = addOnStore.getByItem(menuItem.id);
+    return gs.length > 0 || aos.length > 0;
+  });
 
   const groups = useStore(useCallback(() => modifierGroupStore.getByItem(menuItem.id), [menuItem.id]));
   const allOptions = useStore(useCallback(() => modifierOptionStore.getAll(), []));
@@ -167,15 +171,17 @@ export default function ModifierGroupsPanel({ menuItem, restaurantId, color }: P
   const totalCount = groups.length + addOns.length;
 
   return (
-    <div className="mt-2 border-t border-white/5">
+    <div className={`mt-2 border-t transition-colors ${totalCount > 0 ? "border-primary/20 bg-primary/5 rounded-b-xl" : "border-white/5"}`}>
       <button
         onClick={() => setOpen((v) => !v)}
-        className="w-full flex items-center justify-between px-3 py-2 text-xs text-muted-foreground hover:text-foreground transition"
+        className={`w-full flex items-center justify-between px-3 py-2.5 text-xs transition ${totalCount > 0 ? "text-primary font-medium hover:text-primary/80" : "text-muted-foreground hover:text-foreground"}`}
       >
         <span className="flex items-center gap-1.5">
           <span>{t("Options & Add-ons", "الخيارات والإضافات")}</span>
-          {totalCount > 0 && (
-            <span className="bg-primary/20 text-primary text-[10px] px-1.5 py-0.5 rounded-full font-medium">{totalCount}</span>
+          {totalCount > 0 ? (
+            <span className="bg-primary text-primary-foreground text-[10px] px-1.5 py-0.5 rounded-full font-bold">{totalCount}</span>
+          ) : (
+            <span className="text-muted-foreground/50 text-[10px]">{t("none", "لا يوجد")}</span>
           )}
         </span>
         {open ? <ChevronUp size={13} /> : <ChevronDown size={13} />}

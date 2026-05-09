@@ -37,6 +37,21 @@ function calculateDiscounts(subtotal: number, deliveryFee: number, orderType: "d
   return { couponDiscount, autoDiscount, totalDiscount, finalTotal, couponError, appliedCoupon };
 }
 
+function getEffectiveUnitPrice(ci: CartItem): number {
+  let price = ci.item.price;
+  if (ci.selectedOptions) {
+    for (const opts of Object.values(ci.selectedOptions)) {
+      for (const opt of opts) price += opt.price_addition;
+    }
+  }
+  if (ci.selectedAddOns) {
+    for (const a of ci.selectedAddOns) {
+      if (!a.is_free) price += a.price;
+    }
+  }
+  return price;
+}
+
 function CartItemModifierSummary({ ci }: { ci: CartItem }) {
   const { t, lang } = useLanguage();
   const lines: string[] = [];
@@ -216,7 +231,8 @@ export default function CartPage() {
           <div className="bg-card border border-white/5 rounded-2xl overflow-hidden mb-5">
             {cartItems.map((ci, i) => {
               const key = ci.cartKey || ci.item.id;
-              const lineTotal = ci.item.price * ci.quantity;
+              const unitPrice = getEffectiveUnitPrice(ci);
+              const lineTotal = unitPrice * ci.quantity;
               return (
                 <div
                   key={key}
@@ -226,7 +242,7 @@ export default function CartPage() {
                   <div className="flex items-start gap-3">
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-foreground text-sm">{t(ci.item.name_en, ci.item.name_ar)}</p>
-                      <p className="text-sm text-primary font-bold mt-0.5">{ci.item.price} ﷼</p>
+                      <p className="text-sm text-primary font-bold mt-0.5">{unitPrice.toFixed(2).replace(/\.00$/, "")} ﷼</p>
                       <CartItemModifierSummary ci={ci} />
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0">

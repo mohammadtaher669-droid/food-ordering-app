@@ -132,9 +132,10 @@ interface Props {
   restaurantColor: string;
   isOpen: boolean;
   onClose: () => void;
+  onAdded?: (itemId: string) => void;
 }
 
-export default function ItemDetailModal({ item, restaurantId, branchId, restaurantColor, isOpen, onClose }: Props) {
+export default function ItemDetailModal({ item, restaurantId, branchId, restaurantColor, isOpen, onClose, onAdded }: Props) {
   const { t, isRTL } = useLanguage();
   const { addToCart } = useCart();
   const { toast } = useToast();
@@ -219,7 +220,7 @@ export default function ItemDetailModal({ item, restaurantId, branchId, restaura
       restaurant_id: item.restaurant_id,
       name_en: item.name_en,
       name_ar: item.name_ar,
-      price: unitPrice,
+      price: item.price,
       category_id: item.category_id,
       description_en: item.description_en,
       description_ar: item.description_ar,
@@ -235,6 +236,7 @@ export default function ItemDetailModal({ item, restaurantId, branchId, restaura
       addToCart(cartItem, restaurantId, branchId, cleanOptions, selectedAddOns, customerNote);
     }
 
+    onAdded?.(item.id);
     toast({
       title: t("Added to cart", "تمت الإضافة للسلة"),
       description: t(item.name_en, item.name_ar),

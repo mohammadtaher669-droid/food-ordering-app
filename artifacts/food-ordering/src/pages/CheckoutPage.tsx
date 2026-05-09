@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import { motion } from "framer-motion";
 import { useCart } from "@/contexts/CartContext";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { restaurantStore, branchStore, orderStore, analyticsStore, userBehaviorStore } from "@/lib/store";
+import { restaurantStore, branchStore, orderStore, analyticsStore, userBehaviorStore, modifierGroupStore } from "@/lib/store";
 import { MapPin, User, Phone, MessageSquare, Send } from "lucide-react";
 
 function generateOrderId(): string {
@@ -57,12 +57,25 @@ export default function CheckoutPage() {
     const itemsText = cartItems
       .map((ci) => {
         const name = lang === "ar" ? ci.item.name_ar : ci.item.name_en;
-        let line = `• ${name} x${ci.quantity} — ${(ci.item.price * ci.quantity).toFixed(0)} ﷼`;
+        let unitPrice = ci.item.price;
         if (ci.selectedOptions) {
           for (const opts of Object.values(ci.selectedOptions)) {
+            for (const opt of opts) unitPrice += opt.price_addition;
+          }
+        }
+        if (ci.selectedAddOns) {
+          for (const a of ci.selectedAddOns) {
+            if (!a.is_free) unitPrice += a.price;
+          }
+        }
+        let line = `• ${name} x${ci.quantity} — ${(unitPrice * ci.quantity).toFixed(0)} ﷼`;
+        if (ci.selectedOptions) {
+          for (const [groupId, opts] of Object.entries(ci.selectedOptions)) {
             if (opts.length > 0) {
+              const group = modifierGroupStore.getAll().find((g) => g.id === groupId);
+              const groupName = group ? (lang === "ar" ? group.name_ar : group.name_en) : "";
               const optNames = opts.map((o) => lang === "ar" ? o.name_ar : o.name_en).join(", ");
-              line += `\n   — ${optNames}`;
+              line += `\n   — ${groupName ? `${groupName}: ` : ""}${optNames}`;
             }
           }
         }
