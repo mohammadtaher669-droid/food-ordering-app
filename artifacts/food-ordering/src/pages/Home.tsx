@@ -8,28 +8,26 @@ import {
 } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import {
-  restaurantStore, branchStore, offerStore, categoryStore,
-  menuStore, settingsStore, analyticsStore,
+  restaurantStore, branchStore, offerStore,
+  menuStore, settingsStore, analyticsStore, bannerStore,
 } from "@/lib/store";
-import type { MenuItem, Restaurant, Offer } from "@/lib/store";
+import type { MenuItem, Restaurant, Offer, Banner } from "@/lib/store";
 import { useStore } from "@/hooks/useStore";
 import { useCart } from "@/contexts/CartContext";
 import { useToast } from "@/hooks/use-toast";
 import ImageWithFallback from "@/components/ImageWithFallback";
 import { isBranchOpen } from "@/components/WorkingHoursStatus";
 import RecommendationRow from "@/components/RecommendationRow";
-import OffersCarousel from "@/components/OffersCarousel";
+import OffersGrid from "@/components/OffersGrid";
 import { SkeletonRestaurantCard, SkeletonItemCard, SkeletonBanner } from "@/components/SkeletonCard";
 
-// ── Promo Banner Slider ───────────────────────────────────────────────────────
+// ── Promo Banner Slider (reads from bannerStore) ──────────────────────────────
 
-function PromoSlider({ offers }: { offers: Offer[] }) {
+function PromoSlider({ banners }: { banners: Banner[] }) {
   const { t, isRTL } = useLanguage();
   const [current, setCurrent] = useState(0);
   const [paused, setPaused] = useState(false);
   const touchStartX = useRef(0);
-
-  const banners = offers.filter((o) => o.show_as_banner && o.active && o.image);
 
   const next = useCallback(() => setCurrent((c) => (c + 1) % banners.length), [banners.length]);
   const prev = useCallback(() => setCurrent((c) => (c - 1 + banners.length) % banners.length), [banners.length]);
@@ -45,8 +43,8 @@ function PromoSlider({ offers }: { offers: Offer[] }) {
   if (banners.length === 0) return null;
 
   const banner = banners[current];
-  const href = banner.restaurant_id && banner.restaurant_id !== "global"
-    ? `/restaurant/${banner.restaurant_id}` : "/offers";
+  const href = banner.link || "/offers";
+  const imgSrc = banner.image_url || banner.image;
 
   return (
     <div
@@ -70,12 +68,24 @@ function PromoSlider({ offers }: { offers: Offer[] }) {
           transition={{ duration: 0.4, ease: "easeInOut" }}
           className="absolute inset-0"
         >
-          <img
-            src={banner.image!}
-            alt={t(banner.title_en, banner.title_ar)}
-            className="w-full h-full object-cover"
-            loading="lazy"
-          />
+          {/* Video background */}
+          {banner.video_url ? (
+            <video
+              src={banner.video_url}
+              className="w-full h-full object-cover"
+              autoPlay muted loop playsInline
+            />
+          ) : imgSrc ? (
+            <img
+              src={imgSrc}
+              alt={t(banner.title_en, banner.title_ar)}
+              className="w-full h-full object-cover"
+              loading="lazy"
+            />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-br from-primary/40 to-primary/10" />
+          )}
+
           <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
           <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-transparent" />
 
@@ -86,29 +96,24 @@ function PromoSlider({ offers }: { offers: Offer[] }) {
               transition={{ delay: 0.12 }}
               className="max-w-xs"
             >
-              {banner.value > 0 && (
-                <span className="inline-block text-[10px] font-bold text-white bg-primary rounded-full px-2.5 py-0.5 mb-2">
-                  {banner.type === "percentage" ? `${banner.value}% OFF`
-                    : banner.type === "fixed" ? `-${banner.value} ﷼`
-                    : t("FREE DELIVERY", "توصيل مجاني")}
-                </span>
-              )}
               <h3 className="text-white font-bold text-xl leading-tight line-clamp-2 mb-1">
                 {t(banner.title_en, banner.title_ar)}
               </h3>
-              {(banner.description_en || banner.description_ar) && (
-                <p className="text-white/70 text-xs line-clamp-1 mb-3">
-                  {t(banner.description_en, banner.description_ar)}
+              {(banner.subtitle_en || banner.subtitle_ar) && (
+                <p className="text-white/75 text-xs line-clamp-1 mb-3">
+                  {t(banner.subtitle_en || "", banner.subtitle_ar || "")}
                 </p>
               )}
-              <Link href={href}>
-                <motion.button
-                  whileTap={{ scale: 0.95 }}
-                  className="px-5 py-2 bg-primary text-white text-sm font-bold rounded-full shadow-lg shadow-primary/40 hover:opacity-90 transition"
-                >
-                  {t(banner.banner_cta_en || "Order Now", banner.banner_cta_ar || "اطلب الآن")}
-                </motion.button>
-              </Link>
+              {(banner.button_text_en || banner.button_text_ar || href !== "/offers") && (
+                <Link href={href}>
+                  <motion.button
+                    whileTap={{ scale: 0.95 }}
+                    className="px-5 py-2 bg-primary text-white text-sm font-bold rounded-full shadow-lg shadow-primary/40 hover:opacity-90 transition"
+                  >
+                    {t(banner.button_text_en || "Order Now", banner.button_text_ar || "اطلب الآن")}
+                  </motion.button>
+                </Link>
+              )}
             </motion.div>
           </div>
         </motion.div>
@@ -496,6 +501,7 @@ export default function Home() {
   const branches = useStore(useCallback(() => branchStore.getAll(), []));
   const offers = useStore(useCallback(() => offerStore.getActive(), []));
   const allMenuItems = useStore(useCallback(() => menuStore.getAll(), []));
+  const homeBanners = useStore(useCallback(() => bannerStore.getActive("homepage"), []));
 
   useEffect(() => {
     analyticsStore.track({ type: "page_visit", page: "home" });
@@ -519,8 +525,7 @@ export default function Home() {
     );
   });
 
-  const bannerOffers = offers.filter((o) => o.show_as_banner && o.image);
-  const nonBannerOffers = offers.filter((o) => !o.show_as_banner);
+  const nonBannerOffers = offers;
 
   const bgStyle: React.CSSProperties = (() => {
     if (settings.homepage_bg_type === "image" && settings.homepage_bg_image) {
@@ -605,15 +610,15 @@ export default function Home() {
         </motion.div>
       </div>
 
-      {/* ─── 1. Promo Banner Slider ─── */}
-      {bannerOffers.length > 0 && (
+      {/* ─── 1. Promo Banner Slider (from bannerStore) ─── */}
+      {homeBanners.length > 0 && (
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.07 }}
           className="px-4 mb-7"
         >
-          <PromoSlider offers={bannerOffers} />
+          <PromoSlider banners={homeBanners} />
         </motion.div>
       )}
 
@@ -716,16 +721,19 @@ export default function Home() {
         </motion.div>
       )}
 
-      {/* Hot offers carousel */}
+      {/* ─── 5. Offers & Discounts Grid ─── */}
       {!search && nonBannerOffers.length > 0 && (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.19 }} className="mb-8">
-          <div className="flex items-center gap-2 px-4 mb-4">
-            <Sparkles size={16} className="text-primary" />
-            <h2 className="text-base font-bold text-foreground">{t("Hot Offers", "العروض الساخنة")}</h2>
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.19 }} className="px-4 mb-10">
+          <div className="flex items-center justify-between mb-5">
+            <div className="flex items-center gap-2">
+              <Sparkles size={16} className="text-primary" />
+              <h2 className="text-base font-bold text-foreground">{t("Offers & Discounts", "العروض والخصومات")}</h2>
+            </div>
+            <Link href="/offers">
+              <span className="text-xs text-primary font-semibold hover:underline">{t("View all", "عرض الكل")}</span>
+            </Link>
           </div>
-          <div className="px-4">
-            <OffersCarousel offers={nonBannerOffers} />
-          </div>
+          <OffersGrid offers={nonBannerOffers} />
         </motion.div>
       )}
     </div>

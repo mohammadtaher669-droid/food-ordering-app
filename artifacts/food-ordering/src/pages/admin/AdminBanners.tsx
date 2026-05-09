@@ -1,12 +1,13 @@
 import { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Edit2, Trash2, GripVertical, Check, X, Link as LinkIcon, Image as ImageIcon, Video } from "lucide-react";
+import { Plus, Edit2, Trash2, GripVertical, Check, X, Link as LinkIcon, Image as ImageIcon, Video, Upload } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { bannerStore, restaurantStore } from "@/lib/store";
 import type { Banner } from "@/lib/store";
 import { useStore } from "@/hooks/useStore";
 import { useToast } from "@/hooks/use-toast";
 import ImageWithFallback from "@/components/ImageWithFallback";
+import ImageUploader from "@/components/ImageUploader";
 
 const EMPTY: Omit<Banner, "id"> = {
   title_en: "",
@@ -19,6 +20,7 @@ const EMPTY: Omit<Banner, "id"> = {
   active: true,
   type: "homepage",
   sort_order: 0,
+  image: undefined,
   image_url: undefined,
   video_url: undefined,
 };
@@ -43,6 +45,7 @@ export default function AdminBanners() {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<Omit<Banner, "id">>(EMPTY);
+  const [imgMode, setImgMode] = useState<"upload" | "url">("upload");
   const [imgUrlError, setImgUrlError] = useState("");
   const [videoUrlError, setVideoUrlError] = useState("");
 
@@ -50,6 +53,7 @@ export default function AdminBanners() {
     const { id, ...rest } = banner;
     setForm(rest);
     setEditingId(id);
+    setImgMode(rest.image ? "upload" : "url");
     setImgUrlError("");
     setVideoUrlError("");
     setShowForm(true);
@@ -69,7 +73,6 @@ export default function AdminBanners() {
     const saved: Banner = {
       id,
       ...form,
-      image: undefined,
       sort_order: form.sort_order || banners.length,
     };
     try {
@@ -99,8 +102,6 @@ export default function AdminBanners() {
     restaurant: "#10b981",
     offer: "#f59e0b",
   };
-
-  const mediaPreview = form.video_url || form.image_url;
 
   return (
     <div className="max-w-3xl mx-auto space-y-5">
@@ -134,35 +135,67 @@ export default function AdminBanners() {
           >
             <h2 className="text-sm font-bold text-foreground">{editingId ? t("Edit Banner", "تعديل البانر") : t("New Banner", "بانر جديد")}</h2>
 
-            {/* Media Preview */}
-            {mediaPreview && (
-              <div className="relative rounded-xl overflow-hidden border border-white/10" style={{ height: 140 }}>
-                {form.video_url ? (
-                  <video
-                    src={form.video_url}
-                    className="w-full h-full object-cover"
-                    autoPlay muted loop playsInline
-                    onError={() => setVideoUrlError(t("Video failed to load. Check the URL.", "تعذّر تحميل الفيديو. تحقق من الرابط."))}
-                  />
-                ) : (
-                  <img
-                    src={form.image_url}
-                    alt="preview"
-                    className="w-full h-full object-cover"
-                    onError={() => form.image_url && setImgUrlError(t("Image failed to load. Check the URL.", "تعذّر تحميل الصورة. تحقق من الرابط."))}
-                  />
-                )}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent pointer-events-none" />
-                <span className="absolute bottom-2 left-2 text-[10px] text-white/70 bg-black/40 px-2 py-0.5 rounded-full flex items-center gap-1">
-                  <LinkIcon size={8} /> {form.video_url ? t("Video URL", "رابط فيديو") : t("Image URL", "رابط صورة")}
-                </span>
+            {/* Image — toggle between Upload and URL */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <label className="text-xs text-muted-foreground flex items-center gap-1">
+                  <ImageIcon size={11} /> {t("Banner Image", "صورة البانر")}
+                </label>
+                <div className="flex rounded-lg overflow-hidden border border-white/10 text-[11px] font-medium">
+                  <button
+                    type="button"
+                    onClick={() => setImgMode("upload")}
+                    className={`px-2.5 py-1 flex items-center gap-1 transition ${imgMode === "upload" ? "bg-primary text-white" : "text-muted-foreground hover:text-foreground"}`}
+                  >
+                    <Upload size={10} /> {t("Upload", "رفع")}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setImgMode("url")}
+                    className={`px-2.5 py-1 flex items-center gap-1 transition ${imgMode === "url" ? "bg-primary text-white" : "text-muted-foreground hover:text-foreground"}`}
+                  >
+                    <LinkIcon size={10} /> URL
+                  </button>
+                </div>
               </div>
-            )}
+
+              {imgMode === "upload" ? (
+                <ImageUploader
+                  preset="hero_banner"
+                  value={form.image}
+                  onChange={(url) => setForm((f) => ({ ...f, image: url, image_url: undefined }))}
+                  onDelete={() => setForm((f) => ({ ...f, image: undefined }))}
+                  label={t("Upload banner image (JPG/PNG/WebP, max 2MB)", "رفع صورة البانر (JPG/PNG/WebP، حد 2MB)")}
+                />
+              ) : (
+                <div className="space-y-1">
+                  <input
+                    type="url"
+                    placeholder="https://example.com/banner.webp"
+                    value={form.image_url || ""}
+                    onChange={(e) => { setForm((f) => ({ ...f, image_url: e.target.value || undefined, image: undefined })); setImgUrlError(""); }}
+                    className="w-full bg-background border border-white/10 rounded-xl px-3 py-2 text-sm text-foreground focus:outline-none focus:border-primary/50"
+                  />
+                  {imgUrlError && <p className="text-xs text-red-400">{imgUrlError}</p>}
+                  {form.image_url && !imgUrlError && (
+                    <div className="relative rounded-xl overflow-hidden border border-white/10" style={{ height: 110 }}>
+                      <img
+                        src={form.image_url}
+                        alt="preview"
+                        className="w-full h-full object-cover"
+                        onError={() => setImgUrlError(t("Image failed to load. Check the URL.", "تعذّر تحميل الصورة. تحقق من الرابط."))}
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent pointer-events-none" />
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
 
             {/* Video URL */}
             <div className="space-y-1">
               <label className="text-xs text-muted-foreground flex items-center gap-1.5">
-                <Video size={11} /> {t("Promo Video URL (optional — highest priority)", "رابط فيديو ترويجي (اختياري — الأولوية القصوى)")}
+                <Video size={11} /> {t("Promo Video URL (optional, overrides image)", "رابط فيديو ترويجي (اختياري، يُقدَّم على الصورة)")}
               </label>
               <input
                 type="url"
@@ -172,23 +205,16 @@ export default function AdminBanners() {
                 className="w-full bg-background border border-white/10 rounded-xl px-3 py-2 text-sm text-foreground focus:outline-none focus:border-primary/50"
               />
               {videoUrlError && <p className="text-xs text-red-400">{videoUrlError}</p>}
-              {form.video_url && !videoUrlError && <p className="text-[11px] text-green-400">{t("Video will play as banner background", "سيُشغَّل الفيديو كخلفية للبانر")}</p>}
-            </div>
-
-            {/* Image URL */}
-            <div className="space-y-1">
-              <label className="text-xs text-muted-foreground flex items-center gap-1.5">
-                <ImageIcon size={11} /> {t("Image URL (optional — used if no video)", "رابط الصورة (اختياري — يُستخدم إن لم يكن فيديو)")}
-              </label>
-              <input
-                type="url"
-                placeholder="https://example.com/banner.webp"
-                value={form.image_url || ""}
-                onChange={(e) => { setForm((f) => ({ ...f, image_url: e.target.value || undefined })); setImgUrlError(""); }}
-                className="w-full bg-background border border-white/10 rounded-xl px-3 py-2 text-sm text-foreground focus:outline-none focus:border-primary/50"
-              />
-              {imgUrlError && <p className="text-xs text-red-400">{imgUrlError}</p>}
-              {form.image_url && !imgUrlError && !form.video_url && <p className="text-[11px] text-green-400">{t("URL image will be used — no file stored", "سيتم استخدام رابط الصورة — لا يُخزَّن ملف")}</p>}
+              {form.video_url && !videoUrlError && (
+                <div className="relative rounded-xl overflow-hidden border border-white/10" style={{ height: 110 }}>
+                  <video src={form.video_url} className="w-full h-full object-cover" autoPlay muted loop playsInline
+                    onError={() => setVideoUrlError(t("Video failed to load.", "تعذّر تحميل الفيديو."))} />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent pointer-events-none" />
+                  <span className="absolute bottom-2 left-2 text-[10px] text-white/70 bg-black/40 px-2 py-0.5 rounded-full">
+                    {t("Video preview", "معاينة الفيديو")}
+                  </span>
+                </div>
+              )}
             </div>
 
             <div className="grid grid-cols-2 gap-3">
