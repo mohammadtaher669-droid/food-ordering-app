@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { User, ShoppingBag, Star, ChevronRight, MessageSquare, RotateCcw, Clock, Phone, ChevronDown, ChevronUp } from "lucide-react";
+import { User, ShoppingBag, Star, ChevronRight, MessageSquare, RotateCcw, Clock, Phone, ChevronDown, ChevronUp, Pencil, Check, X } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useCart } from "@/contexts/CartContext";
@@ -126,10 +126,45 @@ export default function ProfilePage() {
   const [lookupPhone, setLookupPhone] = useState(storedCustomerExists ? storedPhone : "");
   const [lookupError, setLookupError] = useState("");
 
+  const [displayName, setDisplayName] = useState(storedName);
+  const [editing, setEditing] = useState(false);
+  const [editName, setEditName] = useState(storedName);
+  const [editPhone, setEditPhone] = useState(storedPhone);
+  const [editError, setEditError] = useState("");
+
   const customer = lookupPhone ? customerStore.getByPhone(lookupPhone) : null;
   const orders: Order[] = customer
     ? orderStore.getByCustomer(customer.id)
     : [];
+
+  const handleEditSave = () => {
+    const trimmedPhone = editPhone.trim();
+    const trimmedName = editName.trim();
+    if (!trimmedName) {
+      setEditError(t("Please enter your name", "أدخل اسمك"));
+      return;
+    }
+    setEditError("");
+    localStorage.setItem("customer_name", trimmedName);
+    setDisplayName(trimmedName);
+    if (trimmedPhone !== lookupPhone) {
+      if (trimmedPhone) {
+        localStorage.setItem("customer_phone", trimmedPhone);
+      } else {
+        localStorage.removeItem("customer_phone");
+      }
+      setLookupPhone(trimmedPhone);
+      setPhoneInput("");
+    }
+    setEditing(false);
+  };
+
+  const handleEditCancel = () => {
+    setEditName(displayName);
+    setEditPhone(lookupPhone || storedPhone);
+    setEditError("");
+    setEditing(false);
+  };
 
   const handleLookup = () => {
     const trimmed = phoneInput.trim();
@@ -201,18 +236,78 @@ export default function ProfilePage() {
     <div className="min-h-screen bg-[#0F0F0F] pt-20 pb-28">
       <div className="max-w-lg mx-auto px-4">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-          <div className="flex items-center gap-4 mb-8">
+          <div className="flex items-start gap-4 mb-8">
             <div className="w-16 h-16 rounded-2xl bg-primary/15 border border-primary/20 flex items-center justify-center flex-shrink-0">
               <User size={28} className="text-primary" />
             </div>
-            <div>
-              <h2 className="text-xl font-bold text-foreground">
-                {storedName || t("Guest", "زائر")}
-              </h2>
-              <p className="text-sm text-muted-foreground">
-                {lookupPhone ? lookupPhone : t("Welcome back!", "أهلاً وسهلاً!")}
-              </p>
-            </div>
+
+            {editing ? (
+              <div className="flex-1 min-w-0">
+                <div className="space-y-2">
+                  <input
+                    type="text"
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    placeholder={t("Your name", "اسمك")}
+                    className="w-full bg-background border border-white/10 rounded-xl px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/50"
+                  />
+                  <div className="relative">
+                    <Phone size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground rtl:left-auto rtl:right-3" />
+                    <input
+                      type="tel"
+                      value={editPhone}
+                      onChange={(e) => setEditPhone(e.target.value)}
+                      placeholder={t("Phone number", "رقم الجوال")}
+                      className="w-full bg-background border border-white/10 rounded-xl pl-8 pr-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/50 rtl:pl-3 rtl:pr-8"
+                    />
+                  </div>
+                  {editError && (
+                    <p className="text-xs text-destructive">{editError}</p>
+                  )}
+                  <div className="flex gap-2 pt-0.5">
+                    <button
+                      onClick={handleEditSave}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-white rounded-lg text-xs font-medium hover:bg-primary/90 transition"
+                    >
+                      <Check size={12} />
+                      {t("Save", "حفظ")}
+                    </button>
+                    <button
+                      onClick={handleEditCancel}
+                      className="flex items-center gap-1.5 px-3 py-1.5 border border-white/10 text-muted-foreground rounded-lg text-xs hover:text-foreground transition"
+                    >
+                      <X size={12} />
+                      {t("Cancel", "إلغاء")}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="flex-1 min-w-0">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <h2 className="text-xl font-bold text-foreground">
+                      {displayName || t("Guest", "زائر")}
+                    </h2>
+                    <p className="text-sm text-muted-foreground">
+                      {lookupPhone ? lookupPhone : t("Welcome back!", "أهلاً وسهلاً!")}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setEditName(displayName);
+                      setEditPhone(lookupPhone || storedPhone);
+                      setEditError("");
+                      setEditing(true);
+                    }}
+                    className="flex-shrink-0 p-1.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition mt-0.5"
+                    title={t("Edit profile", "تعديل الملف الشخصي")}
+                  >
+                    <Pencil size={15} />
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
           {lastOrderId && lastTotal && !lookupPhone && (
@@ -289,6 +384,9 @@ export default function ProfilePage() {
                 onClick={() => {
                   setLookupPhone("");
                   setPhoneInput("");
+                  setDisplayName("");
+                  setEditName("");
+                  setEditPhone("");
                   localStorage.removeItem("customer_phone");
                   localStorage.removeItem("customer_name");
                 }}
