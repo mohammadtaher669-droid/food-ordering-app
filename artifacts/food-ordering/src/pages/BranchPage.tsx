@@ -1,10 +1,13 @@
 import { useParams } from "wouter";
 import { useState, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { restaurantStore, branchStore, categoryStore, menuStore, offerStore } from "@/lib/store";
+import {
+  restaurantStore, branchStore, categoryStore, menuStore, offerStore,
+  branchItemOverrideStore, branchCategoryOverrideStore, checkSchedule,
+} from "@/lib/store";
 import WhatsAppSticky from "@/components/WhatsAppSticky";
 import HeroBannerSlider from "@/components/HeroBannerSlider";
-import type { MenuItem } from "@/lib/store";
+import type { MenuItem, BranchItemOverride } from "@/lib/store";
 import { useStore } from "@/hooks/useStore";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useCart } from "@/contexts/CartContext";
@@ -76,6 +79,8 @@ function MenuItemCard({
   added,
   onAdd,
   genStatus,
+  outOfStock,
+  displayPrice,
 }: {
   item: MenuItem;
   restaurantColor: string;
@@ -83,15 +88,19 @@ function MenuItemCard({
   added: boolean;
   onAdd: () => void;
   genStatus?: ItemStatus;
+  outOfStock?: boolean;
+  displayPrice?: number;
 }) {
   const { t } = useLanguage();
   const imgSrc = item.image_url || item.image;
   const isGenerating = genStatus === "generating" || genStatus === "queued";
+  const effectivePrice = displayPrice ?? item.price;
+  const isDisabled = !isOpen || outOfStock;
 
   return (
     <motion.div
       layout
-      className="bg-card border border-white/5 rounded-2xl overflow-hidden flex flex-col"
+      className={`bg-card border rounded-2xl overflow-hidden flex flex-col ${outOfStock ? "border-amber-500/15 opacity-80" : "border-white/5"}`}
       data-testid={`card-menuitem-${item.id}`}
       whileHover={{ y: -2 }}
     >
@@ -125,6 +134,13 @@ function MenuItemCard({
           <div className="w-full h-full flex items-center justify-center text-5xl opacity-30">🍽️</div>
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent pointer-events-none" />
+        {outOfStock && (
+          <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+            <span className="bg-amber-500/90 text-white text-[10px] font-bold px-3 py-1.5 rounded-full">
+              {t("Out of Stock", "غير متوفر حالياً")}
+            </span>
+          </div>
+        )}
         <div className="absolute top-2 left-2 flex gap-1 flex-wrap">
           {item.pinned && (
             <span className="text-[9px] bg-purple-600/90 text-white font-bold px-2 py-0.5 rounded-full flex items-center gap-0.5">
@@ -174,18 +190,23 @@ function MenuItemCard({
           </p>
         )}
         <div className="flex items-center justify-between mt-auto pt-2">
-          <span className="font-bold text-sm" style={{ color: restaurantColor }}>
-            {item.price} ﷼
-          </span>
+          <div className="flex flex-col">
+            <span className="font-bold text-sm" style={{ color: restaurantColor }}>
+              {effectivePrice} ﷼
+            </span>
+            {displayPrice && displayPrice !== item.price && (
+              <span className="text-[10px] text-muted-foreground/50 line-through">{item.price} ﷼</span>
+            )}
+          </div>
           <button
             onClick={onAdd}
-            disabled={!isOpen}
+            disabled={isDisabled}
             className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all flex-shrink-0 ${
-              !isOpen ? "opacity-30 cursor-not-allowed bg-white/5"
+              isDisabled ? "opacity-30 cursor-not-allowed bg-white/5"
               : added ? "bg-green-500 scale-95"
               : "hover:opacity-90 active:scale-95"
             }`}
-            style={isOpen && !added ? { background: restaurantColor } : {}}
+            style={!isDisabled && !added ? { background: restaurantColor } : {}}
             data-testid={`btn-add-${item.id}`}
           >
             {added ? <Check size={16} className="text-white" /> : <Plus size={16} className="text-white" />}
@@ -214,6 +235,14 @@ export default function BranchPage() {
     [params.restaurantId]
   ));
   const allOffers = useStore(useCallback(() => offerStore.getActive(), []));
+  const branchItemOverrides = useStore(useCallback(
+    () => branchItemOverrideStore.getForBranch(params.branchId),
+    [params.branchId]
+  ));
+  const branchCatOverrides = useStore(useCallback(
+    () => branchCategoryOverrideStore.getForBranch(params.branchId),
+    [params.branchId]
+  ));
 
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [addedItems, setAddedItems] = useState<Set<string>>(new Set());
@@ -236,13 +265,40 @@ export default function BranchPage() {
   }
 
   const isOpen = isBranchOpen(branch);
-  const visibleCategories = categories.filter((c) => !c.hidden);
+
+  // Build lookup maps for branch overrides (reactive via useStore)
+  const overrideMap: Record<string, BranchItemOverride> = {};
+  for (const o of branchItemOverrides) overrideMap[o.item_id] = o;
+  const catOverrideHidden: Set<string> = new Set(
+    branchCatOverrides.filter((o) => o.hidden).map((o) => o.category_id)
+  );
+
+  const visibleCategories = categories.filter((c) => !c.hidden && !catOverrideHidden.has(c.id));
   const displayCategory = activeCategory || (visibleCategories[0]?.id ?? null);
-  const filteredItems = allMenuItems.filter((m) => m.category_id === displayCategory && m.is_available && !m.hidden);
+
+  // Items: exclude globally hidden + branch-hidden; include OOS so they render as disabled
+  const filteredItems = allMenuItems.filter((m) => {
+    if (m.category_id !== displayCategory) return false;
+    if (!m.is_available) return false;
+    if (m.hidden) return false;
+    const ov = overrideMap[m.id];
+    if (ov?.status === "hidden") return false;
+    return true;
+  });
+
+  function getItemEffective(item: MenuItem): { outOfStock: boolean; displayPrice: number } {
+    const ov = overrideMap[item.id];
+    const price = ov?.price_override ?? item.price;
+    if (!ov) return { outOfStock: false, displayPrice: item.price };
+    if (ov.status === "out_of_stock") return { outOfStock: true, displayPrice: price };
+    if (ov.schedule?.enabled && !checkSchedule(ov.schedule)) return { outOfStock: true, displayPrice: price };
+    return { outOfStock: false, displayPrice: price };
+  }
+
   const hasDeliveryZone = branch.is_delivery_enabled && branch.delivery_type;
 
   const handleAddToCart = (item: MenuItem) => {
-    if (!isOpen) return;
+    if (!isOpen || getItemEffective(item).outOfStock) return;
     analyticsStore.track({ type: "add_to_cart", item_id: item.id, restaurant_id: item.restaurant_id });
     userBehaviorStore.trackView(item.id);
     const cartItem = {
@@ -365,17 +421,22 @@ export default function BranchPage() {
                 {t("No items in this category", "لا توجد عناصر في هذه الفئة")}
               </p>
             )}
-            {filteredItems.map((item) => (
-              <MenuItemCard
-                key={item.id}
-                item={item}
-                restaurantColor={restaurant.color}
-                isOpen={isOpen}
-                added={addedItems.has(item.id)}
-                onAdd={() => handleAddToCart(item)}
-                genStatus={statuses[item.id]}
-              />
-            ))}
+            {filteredItems.map((item) => {
+              const { outOfStock, displayPrice } = getItemEffective(item);
+              return (
+                <MenuItemCard
+                  key={item.id}
+                  item={item}
+                  restaurantColor={restaurant.color}
+                  isOpen={isOpen}
+                  added={addedItems.has(item.id)}
+                  onAdd={() => !outOfStock && handleAddToCart(item)}
+                  genStatus={statuses[item.id]}
+                  outOfStock={outOfStock}
+                  displayPrice={displayPrice !== item.price ? displayPrice : undefined}
+                />
+              );
+            })}
           </motion.div>
         </AnimatePresence>
       </div>

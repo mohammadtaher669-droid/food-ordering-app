@@ -123,6 +123,9 @@ export default function AdminAppearance() {
   const [fontFamily, setFontFamily] = useState(saved.font_family || "Plus Jakarta Sans");
   const [fontScale, setFontScale] = useState(saved.font_size_scale ?? 1);
   const [logoSize, setLogoSize] = useState<"sm" | "md" | "lg">(saved.logo_size || "md");
+  const [platformLogoUrl, setPlatformLogoUrl] = useState(saved.platform_logo_url || "");
+  const [platformNameEn, setPlatformNameEn] = useState(saved.platform_name_en || "");
+  const [platformNameAr, setPlatformNameAr] = useState(saved.platform_name_ar || "");
 
   const saveAll = () => {
     const updated: AppSettings = {
@@ -133,6 +136,9 @@ export default function AdminAppearance() {
       font_family: fontFamily,
       font_size_scale: fontScale,
       logo_size: logoSize,
+      platform_logo_url: platformLogoUrl || undefined,
+      platform_name_en: platformNameEn || undefined,
+      platform_name_ar: platformNameAr || undefined,
     };
     try {
       settingsStore.save(updated);
@@ -202,9 +208,9 @@ export default function AdminAppearance() {
             <span className="text-xs text-muted-foreground">{t("Live preview", "معاينة مباشرة")}</span>
           </div>
           <div className="p-5 flex items-center gap-4" style={{ background: bg, fontFamily: `'${fontFamily}', sans-serif`, fontSize: `${fontScale * 14}px` }}>
-            <img src={matAmiLogo} alt="" className={`${logoClasses[logoSize]} object-contain rounded-full flex-shrink-0`} />
+            <img src={platformLogoUrl || matAmiLogo} alt="" className={`${logoClasses[logoSize]} object-contain rounded-full flex-shrink-0`} onError={(e) => { (e.target as HTMLImageElement).src = matAmiLogo; }} />
             <div className="flex-1">
-              <p style={{ color: text, fontWeight: 700, fontSize: `${fontScale * 16}px` }}>Mat'ami</p>
+              <p style={{ color: text, fontWeight: 700, fontSize: `${fontScale * 16}px` }}>{platformNameEn || "Mat'ami"}</p>
               <p style={{ color: `${text}99`, fontSize: `${fontScale * 12}px` }}>{t("Order food from the best restaurants", "اطلب الطعام من أفضل المطاعم")}</p>
             </div>
             <span className="px-3 py-1 rounded-full text-xs font-bold text-white" style={{ background: primary, fontSize: `${fontScale * 11}px` }}>
@@ -290,6 +296,56 @@ export default function AdminAppearance() {
                 <span>{t("Small", "صغير")} 80%</span>
                 <span>{t("Default", "افتراضي")} 100%</span>
                 <span>{t("Large", "كبير")} 130%</span>
+              </div>
+            </div>
+          </div>
+        </SectionCard>
+      </motion.div>
+
+      {/* Platform Identity */}
+      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.18 }}>
+        <SectionCard title={t("🏷 Platform Identity", "🏷 هوية المنصة")} icon={<ImageIcon size={16} />}>
+          <div className="space-y-4">
+            <p className="text-xs text-muted-foreground">
+              {t("Customize the platform name and logo shown in the navbar. Leave blank to use defaults.", "خصص اسم وشعار المنصة في شريط التنقل. اتركه فارغاً للاستخدام الافتراضي.")}
+            </p>
+            <div>
+              <label className="text-xs text-muted-foreground mb-1.5 block">{t("Logo URL (optional)", "رابط الشعار (اختياري)")}</label>
+              <input
+                type="url"
+                value={platformLogoUrl}
+                onChange={(e) => setPlatformLogoUrl(e.target.value)}
+                placeholder="https://example.com/logo.png"
+                className="w-full bg-background border border-white/10 rounded-xl px-3 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary/50"
+              />
+              {platformLogoUrl && (
+                <div className="mt-2 flex items-center gap-2">
+                  <img src={platformLogoUrl} alt="" className="h-8 w-8 rounded-full object-contain border border-white/10" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                  <span className="text-[10px] text-muted-foreground">{t("Preview", "معاينة")}</span>
+                </div>
+              )}
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs text-muted-foreground mb-1.5 block">{t("Platform name (EN)", "اسم المنصة (إنجليزي)")}</label>
+                <input
+                  type="text"
+                  value={platformNameEn}
+                  onChange={(e) => setPlatformNameEn(e.target.value)}
+                  placeholder="Mat'ami"
+                  className="w-full bg-background border border-white/10 rounded-xl px-3 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary/50"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground mb-1.5 block">{t("Platform name (AR)", "اسم المنصة (عربي)")}</label>
+                <input
+                  type="text"
+                  value={platformNameAr}
+                  onChange={(e) => setPlatformNameAr(e.target.value)}
+                  placeholder="مطعمي"
+                  dir="rtl"
+                  className="w-full bg-background border border-white/10 rounded-xl px-3 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary/50"
+                />
               </div>
             </div>
           </div>

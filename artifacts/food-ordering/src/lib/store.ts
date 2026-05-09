@@ -173,6 +173,28 @@ export interface AppSettings {
   font_family?: string;
   font_size_scale?: number;
   logo_size?: "sm" | "md" | "lg";
+  platform_logo_url?: string;
+  platform_name_en?: string;
+  platform_name_ar?: string;
+}
+
+export interface BranchItemOverride {
+  branch_id: string;
+  item_id: string;
+  status: "available" | "out_of_stock" | "hidden";
+  price_override?: number;
+  schedule?: {
+    enabled: boolean;
+    days: number[];
+    time_start: string;
+    time_end: string;
+  };
+}
+
+export interface BranchCategoryOverride {
+  branch_id: string;
+  category_id: string;
+  hidden: boolean;
 }
 
 export interface AnalyticsEvent {
@@ -210,6 +232,8 @@ const KEYS = {
   analytics: "store_analytics_events",
   userBehavior: "store_user_behavior",
   initialized: "store_initialized",
+  branchItemOverrides: "store_branch_item_overrides",
+  branchCatOverrides: "store_branch_cat_overrides",
 };
 
 // ============================================================
@@ -630,6 +654,77 @@ export const userBehaviorStore = {
       .sort((a, b) => b.score - a.score);
 
     return scored.slice(0, limit).map((s) => s.m);
+  },
+};
+
+// ============================================================
+// BRANCH ITEM OVERRIDES
+// ============================================================
+export function checkSchedule(schedule?: BranchItemOverride["schedule"]): boolean {
+  if (!schedule?.enabled) return true;
+  const now = new Date();
+  const day = now.getDay();
+  if (schedule.days.length > 0 && !schedule.days.includes(day)) return false;
+  const nowTime = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+  if (schedule.time_start && nowTime < schedule.time_start) return false;
+  if (schedule.time_end && nowTime > schedule.time_end) return false;
+  return true;
+}
+
+export const branchItemOverrideStore = {
+  getAll: (): BranchItemOverride[] => read<BranchItemOverride>(KEYS.branchItemOverrides),
+  getForBranch: (branchId: string): BranchItemOverride[] =>
+    read<BranchItemOverride>(KEYS.branchItemOverrides).filter((o) => o.branch_id === branchId),
+  get: (branchId: string, itemId: string): BranchItemOverride | undefined =>
+    read<BranchItemOverride>(KEYS.branchItemOverrides).find((o) => o.branch_id === branchId && o.item_id === itemId),
+  set: (override: BranchItemOverride): void => {
+    const all = read<BranchItemOverride>(KEYS.branchItemOverrides);
+    const idx = all.findIndex((o) => o.branch_id === override.branch_id && o.item_id === override.item_id);
+    if (idx >= 0) all[idx] = override; else all.push(override);
+    write(KEYS.branchItemOverrides, all);
+    dispatch();
+  },
+  delete: (branchId: string, itemId: string): void => {
+    write(
+      KEYS.branchItemOverrides,
+      read<BranchItemOverride>(KEYS.branchItemOverrides).filter(
+        (o) => !(o.branch_id === branchId && o.item_id === itemId)
+      )
+    );
+    dispatch();
+  },
+  copyFromBranch: (sourceBranchId: string, targetBranchId: string): void => {
+    const all = read<BranchItemOverride>(KEYS.branchItemOverrides);
+    const withoutTarget = all.filter((o) => o.branch_id !== targetBranchId);
+    const copies = all
+      .filter((o) => o.branch_id === sourceBranchId)
+      .map((o) => ({ ...o, branch_id: targetBranchId }));
+    write(KEYS.branchItemOverrides, [...withoutTarget, ...copies]);
+    dispatch();
+  },
+};
+
+export const branchCategoryOverrideStore = {
+  getAll: (): BranchCategoryOverride[] => read<BranchCategoryOverride>(KEYS.branchCatOverrides),
+  getForBranch: (branchId: string): BranchCategoryOverride[] =>
+    read<BranchCategoryOverride>(KEYS.branchCatOverrides).filter((o) => o.branch_id === branchId),
+  get: (branchId: string, catId: string): BranchCategoryOverride | undefined =>
+    read<BranchCategoryOverride>(KEYS.branchCatOverrides).find((o) => o.branch_id === branchId && o.category_id === catId),
+  set: (override: BranchCategoryOverride): void => {
+    const all = read<BranchCategoryOverride>(KEYS.branchCatOverrides);
+    const idx = all.findIndex((o) => o.branch_id === override.branch_id && o.category_id === override.category_id);
+    if (idx >= 0) all[idx] = override; else all.push(override);
+    write(KEYS.branchCatOverrides, all);
+    dispatch();
+  },
+  delete: (branchId: string, catId: string): void => {
+    write(
+      KEYS.branchCatOverrides,
+      read<BranchCategoryOverride>(KEYS.branchCatOverrides).filter(
+        (o) => !(o.branch_id === branchId && o.category_id === catId)
+      )
+    );
+    dispatch();
   },
 };
 

@@ -19,6 +19,10 @@ export default function NavBar() {
   const isHome = location === "/";
   const logoClass = LOGO_SIZE[settings.logo_size || "md"];
 
+  const logoSrc = settings.platform_logo_url || matAmiLogo;
+  const platformNameEn = settings.platform_name_en || "Mat'ami";
+  const platformNameAr = settings.platform_name_ar || "مطعمي";
+
   return (
     <nav
       className="fixed top-0 left-0 right-0 z-50 print:hidden"
@@ -33,13 +37,13 @@ export default function NavBar() {
         <Link href="/">
           <div className="flex items-center gap-2 cursor-pointer" data-testid="nav-logo">
             <img
-              src={matAmiLogo}
-              alt="Mat'ami"
+              src={logoSrc}
+              alt={platformNameEn}
               className={`${logoClass} object-contain rounded-full transition-all duration-300`}
             />
             {isHome && (
               <span className="text-sm font-bold text-primary tracking-tight hidden sm:block">
-                {t("Mat'ami", "مطعمي")}
+                {t(platformNameEn, platformNameAr)}
               </span>
             )}
           </div>
