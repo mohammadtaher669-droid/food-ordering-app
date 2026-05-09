@@ -38,6 +38,7 @@ interface CartContextType {
   removeFromCart: (cartKey: string) => void;
   updateQuantity: (cartKey: string, quantity: number) => void;
   clearCart: () => void;
+  replaceCart: (items: CartItem[]) => void;
   cartCount: number;
   cartTotal: number;
   selectedRestaurantId: string | null;
@@ -60,6 +61,7 @@ const CartContext = createContext<CartContextType>({
   removeFromCart: () => {},
   updateQuantity: () => {},
   clearCart: () => {},
+  replaceCart: () => {},
   cartCount: 0,
   cartTotal: 0,
   selectedRestaurantId: null,
@@ -171,12 +173,20 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   const clearCart = () => setCartItems([]);
 
+  const replaceCart = (items: CartItem[]) => {
+    const normalized = items.map((ci) => ({
+      ...ci,
+      cartKey: makeCartKey(ci.item.id, ci.selectedOptions, ci.selectedAddOns, ci.customerNote),
+    }));
+    setCartItems(normalized);
+  };
+
   const cartCount = cartItems.reduce((sum, ci) => sum + ci.quantity, 0);
   const cartTotal = cartItems.reduce((sum, ci) => sum + computeItemPrice(ci) * ci.quantity, 0);
 
   return (
     <CartContext.Provider value={{
-      cartItems, addToCart, removeFromCart, updateQuantity, clearCart,
+      cartItems, addToCart, removeFromCart, updateQuantity, clearCart, replaceCart,
       cartCount, cartTotal, selectedRestaurantId, selectedBranchId,
       pendingAdd, confirmClearAndAdd, cancelPendingAdd
     }}>

@@ -88,6 +88,7 @@ export default function CheckoutPage() {
     localStorage.setItem("last_order_branch", JSON.stringify({ name_en: branch.name_en, name_ar: branch.name_ar }));
     localStorage.setItem("last_order_total", String(finalTotal));
     localStorage.setItem("last_order_whatsapp", whatsappUrl);
+    localStorage.setItem("last_order_items", JSON.stringify(cartItems));
 
     // CRM: save customer + order
     const itemIds = cartItems.map((ci) => ci.item.id);

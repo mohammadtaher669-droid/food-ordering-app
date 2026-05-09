@@ -1,16 +1,34 @@
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { motion } from "framer-motion";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { CheckCircle, MessageCircle, Home } from "lucide-react";
+import { useCart } from "@/contexts/CartContext";
+import type { CartItem } from "@/contexts/CartContext";
+import { CheckCircle, MessageCircle, Home, RotateCcw } from "lucide-react";
 
 export default function ConfirmationPage() {
   const { t } = useLanguage();
+  const { replaceCart } = useCart();
+  const [, setLocation] = useLocation();
 
   const orderId = localStorage.getItem("last_order_id") || "ORD-UNKNOWN";
   const finalTotal = localStorage.getItem("last_order_total") || "0";
   const whatsappUrl = localStorage.getItem("last_order_whatsapp") || "";
   const restaurant = (() => { try { return JSON.parse(localStorage.getItem("last_order_restaurant") || "{}"); } catch { return {}; } })();
   const branch = (() => { try { return JSON.parse(localStorage.getItem("last_order_branch") || "{}"); } catch { return {}; } })();
+
+  const lastOrderItems: CartItem[] = (() => {
+    try {
+      return JSON.parse(localStorage.getItem("last_order_items") || "[]");
+    } catch {
+      return [];
+    }
+  })();
+
+  const handleReorder = () => {
+    if (lastOrderItems.length === 0) return;
+    replaceCart(lastOrderItems);
+    setLocation("/cart");
+  };
 
   return (
     <div className="min-h-screen bg-background pt-16 pb-28 flex items-center justify-center px-4">
@@ -65,6 +83,18 @@ export default function ConfirmationPage() {
                 </button>
               </a>
             )}
+
+            {lastOrderItems.length > 0 && (
+              <button
+                onClick={handleReorder}
+                className="w-full py-3 bg-primary/10 hover:bg-primary/20 text-primary border border-primary/30 rounded-xl font-medium flex items-center justify-center gap-2 transition"
+                data-testid="btn-reorder"
+              >
+                <RotateCcw size={16} />
+                {t("Reorder Same Items", "إعادة نفس الطلب")}
+              </button>
+            )}
+
             <Link href="/">
               <button className="w-full py-3 border border-white/10 rounded-xl text-sm text-muted-foreground hover:text-foreground hover:border-white/20 transition flex items-center justify-center gap-2" data-testid="btn-back-home">
                 <Home size={16} />
