@@ -6,7 +6,6 @@ import { bannerStore, restaurantStore } from "@/lib/store";
 import type { Banner } from "@/lib/store";
 import { useStore } from "@/hooks/useStore";
 import { useToast } from "@/hooks/use-toast";
-import ImageUploader from "@/components/ImageUploader";
 import ImageWithFallback from "@/components/ImageWithFallback";
 
 const EMPTY: Omit<Banner, "id"> = {
@@ -70,7 +69,7 @@ export default function AdminBanners() {
     const saved: Banner = {
       id,
       ...form,
-      image: form.image_url ? undefined : form.image,
+      image: undefined,
       sort_order: form.sort_order || banners.length,
     };
     try {
@@ -82,7 +81,7 @@ export default function AdminBanners() {
       setVideoUrlError("");
       toast({ title: t("Banner saved!", "تم حفظ البانر!") });
     } catch (err) {
-      toast({ title: t("Save failed", "فشل الحفظ"), description: err instanceof Error ? err.message : t("Unknown error", "خطأ غير معروف"), variant: "destructive" });
+      toast({ title: t("Save failed", "فشل الحفظ"), description: err instanceof Error ? err.message : "", variant: "destructive" });
     }
   };
 
@@ -101,7 +100,7 @@ export default function AdminBanners() {
     offer: "#f59e0b",
   };
 
-  const mediaPreview = form.video_url || form.image_url || form.image;
+  const mediaPreview = form.video_url || form.image_url;
 
   return (
     <div className="max-w-3xl mx-auto space-y-5">
@@ -147,22 +146,24 @@ export default function AdminBanners() {
                   />
                 ) : (
                   <img
-                    src={form.image_url || form.image}
+                    src={form.image_url}
                     alt="preview"
                     className="w-full h-full object-cover"
                     onError={() => form.image_url && setImgUrlError(t("Image failed to load. Check the URL.", "تعذّر تحميل الصورة. تحقق من الرابط."))}
                   />
                 )}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent pointer-events-none" />
-                <span className="absolute bottom-2 left-2 text-[10px] text-white/70 bg-black/40 px-2 py-0.5 rounded-full">
-                  {form.video_url ? t("Video preview", "معاينة الفيديو") : t("Image preview", "معاينة الصورة")}
+                <span className="absolute bottom-2 left-2 text-[10px] text-white/70 bg-black/40 px-2 py-0.5 rounded-full flex items-center gap-1">
+                  <LinkIcon size={8} /> {form.video_url ? t("Video URL", "رابط فيديو") : t("Image URL", "رابط صورة")}
                 </span>
               </div>
             )}
 
             {/* Video URL */}
             <div className="space-y-1">
-              <label className="text-xs text-muted-foreground flex items-center gap-1"><Video size={11} /> {t("Promo Video URL (optional — highest priority)", "رابط فيديو ترويجي (اختياري — الأولوية القصوى)")}</label>
+              <label className="text-xs text-muted-foreground flex items-center gap-1.5">
+                <Video size={11} /> {t("Promo Video URL (optional — highest priority)", "رابط فيديو ترويجي (اختياري — الأولوية القصوى)")}
+              </label>
               <input
                 type="url"
                 placeholder="https://example.com/promo.mp4"
@@ -176,7 +177,9 @@ export default function AdminBanners() {
 
             {/* Image URL */}
             <div className="space-y-1">
-              <label className="text-xs text-muted-foreground flex items-center gap-1"><ImageIcon size={11} /> {t("Image URL (optional — used if no video)", "رابط الصورة (اختياري — يُستخدم إن لم يكن فيديو)")}</label>
+              <label className="text-xs text-muted-foreground flex items-center gap-1.5">
+                <ImageIcon size={11} /> {t("Image URL (optional — used if no video)", "رابط الصورة (اختياري — يُستخدم إن لم يكن فيديو)")}
+              </label>
               <input
                 type="url"
                 placeholder="https://example.com/banner.webp"
@@ -185,20 +188,8 @@ export default function AdminBanners() {
                 className="w-full bg-background border border-white/10 rounded-xl px-3 py-2 text-sm text-foreground focus:outline-none focus:border-primary/50"
               />
               {imgUrlError && <p className="text-xs text-red-400">{imgUrlError}</p>}
-              {form.image_url && !imgUrlError && !form.video_url && <p className="text-[11px] text-green-400">{t("URL image will be used (no file stored)", "سيتم استخدام رابط الصورة (لا يُخزَّن ملف)")}</p>}
+              {form.image_url && !imgUrlError && !form.video_url && <p className="text-[11px] text-green-400">{t("URL image will be used — no file stored", "سيتم استخدام رابط الصورة — لا يُخزَّن ملف")}</p>}
             </div>
-
-            {/* File Upload — only shown when no URL or video is set */}
-            {!form.image_url && !form.video_url && (
-              <ImageUploader
-                preset="hero_banner"
-                label={t("Upload Banner Image (fallback when no URL)", "رفع صورة البانر (احتياطي إن لم يكن رابط)")}
-                value={form.image}
-                onChange={(url) => setForm((f) => ({ ...f, image: url }))}
-                onDelete={() => setForm((f) => ({ ...f, image: undefined }))}
-                data-testid="uploader-banner-image"
-              />
-            )}
 
             <div className="grid grid-cols-2 gap-3">
               <div>
@@ -309,6 +300,7 @@ export default function AdminBanners() {
                     <p className="text-sm font-medium text-foreground line-clamp-1">{banner.title_en || banner.title_ar}</p>
                     <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full text-white" style={{ background: typeColors[banner.type] }}>{banner.type}</span>
                     {banner.video_url && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full text-white bg-purple-600">video</span>}
+                    {banner.image_url && <span className="text-[10px] px-1.5 py-0.5 rounded-full text-blue-400 bg-blue-500/10 flex items-center gap-0.5"><LinkIcon size={8} /> URL</span>}
                     {!banner.active && <span className="text-[10px] text-muted-foreground border border-white/10 px-1.5 py-0.5 rounded-full">{t("Inactive", "غير نشط")}</span>}
                   </div>
                   {(banner.subtitle_en || banner.subtitle_ar) && (

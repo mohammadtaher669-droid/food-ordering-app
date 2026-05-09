@@ -3,15 +3,74 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { restaurantStore } from "@/lib/store";
 import type { Restaurant } from "@/lib/store";
 import { useStore } from "@/hooks/useStore";
-import { Plus, Trash2, Edit2, Check, X } from "lucide-react";
+import { Plus, Trash2, Edit2, Check, X, Link, Image as ImageIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import ImageUploader from "@/components/ImageUploader";
 
 function Field({ label, value, onChange, ...props }: { label: string; value: string; onChange: (v: string) => void; [k: string]: any }) {
   return (
     <div>
       <label className="text-xs text-muted-foreground mb-1 block">{label}</label>
       <input value={value} onChange={(e) => onChange(e.target.value)} className="w-full bg-background border border-white/10 rounded-xl px-3 py-2 text-sm text-foreground focus:outline-none focus:border-primary/50" {...props} />
+    </div>
+  );
+}
+
+function UrlImageInput({
+  label,
+  value,
+  onChange,
+  placeholder,
+  previewHeight = 80,
+  testId,
+}: {
+  label: string;
+  value?: string;
+  onChange: (v: string | undefined) => void;
+  placeholder?: string;
+  previewHeight?: number;
+  testId?: string;
+}) {
+  const [error, setError] = useState("");
+
+  const handleChange = (url: string) => {
+    setError("");
+    onChange(url || undefined);
+  };
+
+  return (
+    <div className="space-y-2">
+      <label className="text-xs text-muted-foreground flex items-center gap-1.5">
+        <Link size={11} /> {label}
+      </label>
+      {value && (
+        <div className="relative rounded-xl overflow-hidden border border-white/10 group" style={{ height: previewHeight }}>
+          <img
+            src={value}
+            alt="preview"
+            className="w-full h-full object-cover"
+            onError={() => setError("Image failed to load. Check the URL.")}
+          />
+          <button
+            type="button"
+            onClick={() => { onChange(undefined); setError(""); }}
+            className="absolute top-2 right-2 w-6 h-6 bg-black/70 rounded-full flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition hover:text-red-400"
+          >
+            <X size={11} />
+          </button>
+        </div>
+      )}
+      <input
+        type="url"
+        placeholder={placeholder || "https://example.com/image.webp"}
+        value={value || ""}
+        onChange={(e) => handleChange(e.target.value)}
+        className="w-full bg-background border border-white/10 rounded-xl px-3 py-2 text-sm text-foreground focus:outline-none focus:border-primary/50"
+        data-testid={testId}
+      />
+      {error && <p className="text-xs text-red-400">{error}</p>}
+      {value && !error && (
+        <p className="text-[11px] text-green-400 flex items-center gap-1"><Link size={9} /> URL set — no file stored locally</p>
+      )}
     </div>
   );
 }
@@ -37,6 +96,7 @@ export default function AdminRestaurants() {
   const [showAdd, setShowAdd] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<Partial<Restaurant>>(emptyForm);
+
   const handleSave = () => {
     if (!form.name_en?.trim() || !form.name_ar?.trim()) {
       toast({ title: t("Required fields missing", "حقول مطلوبة مفقودة"), variant: "destructive" }); return;
@@ -61,7 +121,7 @@ export default function AdminRestaurants() {
       setEditingId(null);
       setForm(emptyForm);
     } catch (err) {
-      toast({ title: t("Save failed", "فشل الحفظ"), description: err instanceof Error ? err.message : t("Unknown error", "خطأ غير معروف"), variant: "destructive" });
+      toast({ title: t("Save failed", "فشل الحفظ"), description: err instanceof Error ? err.message : "", variant: "destructive" });
     }
   };
 
@@ -91,7 +151,7 @@ export default function AdminRestaurants() {
 
       {/* Form */}
       {showAdd && (
-        <form onSubmit={(e) => { e.preventDefault(); handleSave(); }} className="bg-card border border-white/10 rounded-2xl p-5 mb-6 space-y-4">
+        <form onSubmit={(e) => { e.preventDefault(); handleSave(); }} className="bg-card border border-white/10 rounded-2xl p-5 mb-6 space-y-5">
           <h3 className="font-semibold text-foreground">{editingId ? t("Edit Restaurant", "تعديل المطعم") : t("New Restaurant", "مطعم جديد")}</h3>
           <div className="grid grid-cols-2 gap-3">
             <Field label={t("Name (EN)", "الاسم (EN)")} value={form.name_en || ""} onChange={(v) => setForm({ ...form, name_en: v })} data-testid="input-rest-name-en" />
@@ -102,47 +162,58 @@ export default function AdminRestaurants() {
             <div className="col-span-2">
               <Field label={t("Description (AR)", "الوصف (AR)")} value={form.description_ar || ""} onChange={(v) => setForm({ ...form, description_ar: v })} />
             </div>
-            <Field label={t("Tagline (EN) — shown on card", "الشعار القصير (EN)")} value={form.tagline_en || ""} onChange={(v) => setForm({ ...form, tagline_en: v })} placeholder={t("e.g. Fresh & crispy everyday", "مثال: الأفضل دائماً")} />
-            <Field label={t("Tagline (AR) — shown on card", "الشعار القصير (AR)")} value={form.tagline_ar || ""} onChange={(v) => setForm({ ...form, tagline_ar: v })} placeholder="مثال: الأفضل دائماً" />
+            <Field label={t("Tagline (EN)", "الشعار القصير (EN)")} value={form.tagline_en || ""} onChange={(v) => setForm({ ...form, tagline_en: v })} placeholder="e.g. Fresh & crispy everyday" />
+            <Field label={t("Tagline (AR)", "الشعار القصير (AR)")} value={form.tagline_ar || ""} onChange={(v) => setForm({ ...form, tagline_ar: v })} placeholder="مثال: الأفضل دائماً" />
           </div>
 
-          {/* Cover Image */}
-          <ImageUploader
-            preset="restaurant_cover"
-            label={t("Cover Image (shown on restaurant card & page)", "صورة الغلاف (تظهر على بطاقة المطعم والصفحة)")}
-            value={form.cover_image}
-            onChange={(url) => setForm((f) => ({ ...f, cover_image: url }))}
-            onDelete={() => setForm((f) => ({ ...f, cover_image: undefined }))}
-            data-testid="uploader-cover-image"
-          />
+          {/* Cover Image URL */}
+          <div className="border border-white/10 rounded-2xl p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <ImageIcon size={13} className="text-muted-foreground" />
+              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{t("Cover Image", "صورة الغلاف")}</span>
+              <span className="text-[10px] text-muted-foreground/50">{t("shown on restaurant card & page", "تظهر على بطاقة المطعم والصفحة")}</span>
+            </div>
+            <UrlImageInput
+              label={t("Cover Image URL (optional)", "رابط صورة الغلاف (اختياري)")}
+              value={form.cover_image}
+              onChange={(v) => setForm((f) => ({ ...f, cover_image: v }))}
+              placeholder="https://example.com/restaurant-cover.webp"
+              previewHeight={110}
+              testId="input-cover-image-url"
+            />
+          </div>
 
           {/* Logo Section */}
-          <div>
-            <label className="text-xs text-muted-foreground mb-2 block">{t("Logo", "الشعار")}</label>
+          <div className="border border-white/10 rounded-2xl p-4 space-y-3">
+            <div className="flex items-center gap-2">
+              <ImageIcon size={13} className="text-muted-foreground" />
+              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{t("Logo", "الشعار")}</span>
+            </div>
             <div className="flex items-center gap-4">
-              <div className="w-16 h-16 rounded-xl border border-white/10 flex items-center justify-center overflow-hidden" style={{ background: `${form.color}20` }}>
+              <div className="w-16 h-16 rounded-xl border border-white/10 flex items-center justify-center overflow-hidden flex-shrink-0" style={{ background: `${form.color}20` }}>
                 {form.logoType === "image" && form.logo ? (
                   <img src={form.logo} alt="logo" className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
                 ) : (
                   <span className="text-3xl">{form.logo || "🍽️"}</span>
                 )}
               </div>
-              <div className="space-y-2 flex-1">
-                <div className="flex gap-2 flex-wrap items-center">
+              <div className="flex-1 space-y-2">
+                <div>
+                  <label className="text-xs text-muted-foreground mb-1 block">{t("Emoji logo", "إيموجي")}</label>
                   <input
-                    placeholder={t("Emoji (e.g. 🍗)", "إيموجي (مثل 🍗)")}
+                    placeholder={t("e.g. 🍗", "مثل 🍗")}
                     value={form.logoType === "emoji" ? form.logo || "" : ""}
                     onChange={(e) => setForm({ ...form, logo: e.target.value, logoType: "emoji" })}
-                    className="bg-background border border-white/10 rounded-xl px-3 py-2 text-sm text-foreground focus:outline-none w-36"
+                    className="w-full bg-background border border-white/10 rounded-xl px-3 py-2 text-sm text-foreground focus:outline-none"
                   />
-                  <span className="text-muted-foreground text-sm">{t("or upload:", "أو ارفع صورة:")}</span>
                 </div>
-                <ImageUploader
-                  preset="thumbnail"
+                <UrlImageInput
+                  label={t("or: Logo Image URL", "أو: رابط صورة الشعار")}
                   value={form.logoType === "image" ? form.logo : undefined}
-                  onChange={(url) => setForm((f) => ({ ...f, logo: url, logoType: "image" }))}
-                  onDelete={() => setForm((f) => ({ ...f, logo: "", logoType: "emoji" }))}
-                  data-testid="uploader-logo"
+                  onChange={(v) => setForm((f) => ({ ...f, logo: v || "", logoType: v ? "image" : "emoji" }))}
+                  placeholder="https://example.com/logo.png"
+                  previewHeight={60}
+                  testId="input-logo-url"
                 />
               </div>
             </div>
@@ -153,21 +224,13 @@ export default function AdminRestaurants() {
             <label className="text-xs text-muted-foreground mb-2 block">{t("Theme Color", "لون القالب")}</label>
             <div className="flex items-center gap-3 flex-wrap">
               {COLOR_PRESETS.map((c) => (
-                <button
-                  key={c}
-                  type="button"
-                  onClick={() => setForm({ ...form, color: c })}
+                <button key={c} type="button" onClick={() => setForm({ ...form, color: c })}
                   className={`w-8 h-8 rounded-full transition-transform ${form.color === c ? "scale-125 ring-2 ring-white/40" : "hover:scale-110"}`}
                   style={{ background: c }}
                 />
               ))}
-              <input
-                type="color"
-                value={form.color || "#FF7A00"}
-                onChange={(e) => setForm({ ...form, color: e.target.value })}
-                className="w-8 h-8 rounded-full border border-white/10 cursor-pointer"
-                title={t("Custom color", "لون مخصص")}
-              />
+              <input type="color" value={form.color || "#FF7A00"} onChange={(e) => setForm({ ...form, color: e.target.value })}
+                className="w-8 h-8 rounded-full border border-white/10 cursor-pointer" title={t("Custom color", "لون مخصص")} />
             </div>
           </div>
 
@@ -186,7 +249,6 @@ export default function AdminRestaurants() {
       <div className="space-y-4">
         {restaurants.map((restaurant) => (
           <div key={restaurant.id} className="bg-card border border-white/5 rounded-2xl overflow-hidden" data-testid={`admin-restaurant-${restaurant.id}`}>
-            {/* Cover image strip */}
             <div className="relative h-20 overflow-hidden">
               {restaurant.cover_image ? (
                 <img src={restaurant.cover_image} alt="" className="w-full h-full object-cover" loading="lazy" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
@@ -198,6 +260,11 @@ export default function AdminRestaurants() {
                 <div className="w-3 h-3 rounded-full" style={{ background: restaurant.color }} />
                 <span className="text-xs text-white/60">{restaurant.color}</span>
               </div>
+              {restaurant.cover_image && (
+                <span className="absolute top-2 left-2 text-[9px] bg-blue-600/80 text-white px-1.5 py-0.5 rounded-full flex items-center gap-0.5">
+                  <Link size={8} /> URL
+                </span>
+              )}
             </div>
             <div className="p-4 flex items-start gap-3">
               <div className="-mt-8 w-14 h-14 rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden border-2 border-[#1A1A1A] relative z-10" style={{ background: `${restaurant.color}20` }}>

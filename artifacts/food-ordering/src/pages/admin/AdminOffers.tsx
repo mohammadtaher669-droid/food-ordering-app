@@ -3,9 +3,8 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { restaurantStore, offerStore } from "@/lib/store";
 import type { Offer } from "@/lib/store";
 import { useStore } from "@/hooks/useStore";
-import { Plus, Trash2, Edit2, Check, X, ToggleLeft, ToggleRight, Percent, Truck, Banknote } from "lucide-react";
+import { Plus, Trash2, Edit2, Check, X, ToggleLeft, ToggleRight, Percent, Truck, Banknote, Link, Image as ImageIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import ImageUploader from "@/components/ImageUploader";
 
 function F({ label, value, onChange, ...p }: { label: string; value: string | number; onChange: (v: string) => void; [k: string]: any }) {
   return (
@@ -19,12 +18,24 @@ function F({ label, value, onChange, ...p }: { label: string; value: string | nu
 const emptyForm: Partial<Offer> = {
   title_en: "", title_ar: "", description_en: "", description_ar: "",
   type: "percentage", value: 10, restaurant_id: "global", active: true, code: "",
+  image: undefined, image_url: undefined,
 };
 
 function OfferTypeIcon({ type }: { type: Offer["type"] }) {
   if (type === "percentage") return <Percent size={16} className="text-primary" />;
   if (type === "free_delivery") return <Truck size={16} className="text-primary" />;
   return <Banknote size={16} className="text-primary" />;
+}
+
+function validateUrl(url: string): string {
+  if (!url) return "";
+  try {
+    const u = new URL(url);
+    if (!["http:", "https:"].includes(u.protocol)) return "URL must start with http:// or https://";
+    return "";
+  } catch {
+    return "Invalid URL format";
+  }
 }
 
 export default function AdminOffers() {
@@ -35,31 +46,49 @@ export default function AdminOffers() {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<Partial<Offer>>(emptyForm);
+  const [imgUrlError, setImgUrlError] = useState("");
+
+  const imgSrc = form.image_url || form.image;
+
   const handleSave = () => {
     if (!form.title_en?.trim() || !form.title_ar?.trim()) {
       toast({ title: t("Required: titles (EN & AR)", "مطلوب: العنوان بالعربي والإنجليزي"), variant: "destructive" }); return;
+    }
+    if (form.image_url) {
+      const err = validateUrl(form.image_url);
+      if (err) { setImgUrlError(err); return; }
     }
     const offer: Offer = {
       id: editingId || `offer-${Date.now()}`,
       title_en: form.title_en!, title_ar: form.title_ar!,
       description_en: form.description_en || "", description_ar: form.description_ar || "",
-      image: form.image,
+      image: form.image_url || form.image,
+      image_url: form.image_url,
       type: form.type || "percentage",
       value: form.value || 0,
       restaurant_id: form.restaurant_id || "global",
       active: form.active ?? true,
       code: form.code?.trim() || undefined,
+      expiry_date: form.expiry_date,
+      show_as_banner: form.show_as_banner,
+      banner_cta_en: form.banner_cta_en,
+      banner_cta_ar: form.banner_cta_ar,
     };
     try {
       offerStore.save(offer);
       toast({ title: editingId ? t("Offer updated!", "تم تحديث العرض!") : t("Offer added!", "تمت إضافة العرض!") });
-      setShowForm(false); setEditingId(null); setForm(emptyForm);
+      setShowForm(false); setEditingId(null); setForm(emptyForm); setImgUrlError("");
     } catch (err) {
-      toast({ title: t("Save failed", "فشل الحفظ"), description: err instanceof Error ? err.message : t("Unknown error", "خطأ غير معروف"), variant: "destructive" });
+      toast({ title: t("Save failed", "فشل الحفظ"), description: err instanceof Error ? err.message : "", variant: "destructive" });
     }
   };
 
-  const handleEdit = (o: Offer) => { setEditingId(o.id); setForm({ ...o }); setShowForm(true); };
+  const handleEdit = (o: Offer) => {
+    setEditingId(o.id);
+    setForm({ ...o, image_url: o.image_url || (o.image?.startsWith("http") ? o.image : undefined) });
+    setImgUrlError("");
+    setShowForm(true);
+  };
   const handleDelete = (id: string) => {
     if (!confirm(t("Delete this offer?", "حذف هذا العرض؟"))) return;
     offerStore.delete(id);
@@ -71,7 +100,7 @@ export default function AdminOffers() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-foreground">{t("Offers & Promotions", "العروض والترقيات")}</h1>
-        <button onClick={() => { setShowForm(true); setEditingId(null); setForm(emptyForm); }} className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-xl text-sm font-medium hover:bg-primary/90 transition" data-testid="btn-add-offer">
+        <button onClick={() => { setShowForm(true); setEditingId(null); setForm(emptyForm); setImgUrlError(""); }} className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-xl text-sm font-medium hover:bg-primary/90 transition" data-testid="btn-add-offer">
           <Plus size={14} /> {t("Add Offer", "إضافة عرض")}
         </button>
       </div>
@@ -109,15 +138,53 @@ export default function AdminOffers() {
             </div>
           </div>
 
-          {/* Banner Image */}
-          <ImageUploader
-            preset="offer"
-            label={t("Banner Image (optional)", "صورة البانر (اختياري)")}
-            value={form.image}
-            onChange={(url) => setForm((f) => ({ ...f, image: url }))}
-            onDelete={() => setForm((f) => ({ ...f, image: undefined }))}
-            data-testid="uploader-offer-image"
-          />
+          {/* Banner Image URL */}
+          <div className="border border-white/10 rounded-2xl p-4 space-y-3">
+            <div className="flex items-center gap-2">
+              <ImageIcon size={13} className="text-muted-foreground" />
+              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{t("Banner Image (optional)", "صورة البانر (اختياري)")}</span>
+            </div>
+
+            {imgSrc && (
+              <div className="relative rounded-xl overflow-hidden border border-white/10" style={{ height: 120 }}>
+                <img
+                  src={imgSrc}
+                  alt="preview"
+                  className="w-full h-full object-cover"
+                  onError={() => setImgUrlError(t("Image failed to load. Check the URL.", "تعذّر تحميل الصورة. تحقق من الرابط."))}
+                />
+                <button
+                  type="button"
+                  onClick={() => { setForm((f) => ({ ...f, image: undefined, image_url: undefined })); setImgUrlError(""); }}
+                  className="absolute top-2 right-2 w-6 h-6 bg-black/70 rounded-full flex items-center justify-center text-white hover:text-red-400 transition"
+                >
+                  <X size={11} />
+                </button>
+              </div>
+            )}
+
+            <div className="space-y-1">
+              <label className="text-xs text-muted-foreground flex items-center gap-1.5">
+                <Link size={11} /> {t("Image URL", "رابط الصورة")}
+              </label>
+              <input
+                type="url"
+                placeholder="https://example.com/offer-banner.webp"
+                value={form.image_url || ""}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setForm((f) => ({ ...f, image_url: v || undefined, image: v || undefined }));
+                  setImgUrlError("");
+                }}
+                className="w-full bg-background border border-white/10 rounded-xl px-3 py-2 text-sm text-foreground focus:outline-none focus:border-primary/50"
+                data-testid="input-offer-image-url"
+              />
+              {imgUrlError && <p className="text-xs text-red-400">{imgUrlError}</p>}
+              {imgSrc && !imgUrlError && (
+                <p className="text-[11px] text-green-400">{t("Image URL set — no file stored locally", "تم تعيين رابط الصورة — لا يُخزَّن ملف محلياً")}</p>
+              )}
+            </div>
+          </div>
 
           <label className="flex items-center gap-2 text-sm cursor-pointer">
             <input type="checkbox" checked={form.active ?? true} onChange={(e) => setForm({ ...form, active: e.target.checked })} className="accent-primary" />
@@ -125,7 +192,7 @@ export default function AdminOffers() {
           </label>
           <label className="flex items-center gap-2 text-sm cursor-pointer">
             <input type="checkbox" checked={form.show_as_banner ?? false} onChange={(e) => setForm({ ...form, show_as_banner: e.target.checked })} className="accent-primary" />
-            <span className="text-muted-foreground">{t("Show as Hero Banner on homepage (requires image)", "عرض كبانر رئيسي في الصفحة الرئيسية (يتطلب صورة)")}</span>
+            <span className="text-muted-foreground">{t("Show as Hero Banner on homepage (requires image URL)", "عرض كبانر رئيسي في الصفحة الرئيسية (يتطلب رابط صورة)")}</span>
           </label>
           {form.show_as_banner && (
             <div className="grid grid-cols-2 gap-3 mt-1">
@@ -141,7 +208,7 @@ export default function AdminOffers() {
           )}
           <div className="flex gap-2">
             <button type="submit" className="px-4 py-2 bg-primary text-primary-foreground rounded-xl text-sm font-medium" data-testid="btn-save-offer"><Check size={13} className="inline mr-1" />{t("Save", "حفظ")}</button>
-            <button type="button" onClick={() => { setShowForm(false); setEditingId(null); }} className="px-4 py-2 border border-white/10 rounded-xl text-sm text-muted-foreground"><X size={13} className="inline mr-1" />{t("Cancel", "إلغاء")}</button>
+            <button type="button" onClick={() => { setShowForm(false); setEditingId(null); setImgUrlError(""); }} className="px-4 py-2 border border-white/10 rounded-xl text-sm text-muted-foreground"><X size={13} className="inline mr-1" />{t("Cancel", "إلغاء")}</button>
           </div>
         </form>
       )}
@@ -149,11 +216,17 @@ export default function AdminOffers() {
       <div className="space-y-3">
         {offers.length === 0 && <p className="text-center text-muted-foreground py-8">{t("No offers yet", "لا توجد عروض بعد")}</p>}
         {offers.map((offer) => {
-          const restName = offer.restaurant_id === "global" ? t("All Restaurants", "جميع المطاعم") : t(restaurants.find((r) => r.id === offer.restaurant_id)?.name_en || "", restaurants.find((r) => r.id === offer.restaurant_id)?.name_ar || "");
+          const restName = offer.restaurant_id === "global"
+            ? t("All Restaurants", "جميع المطاعم")
+            : t(restaurants.find((r) => r.id === offer.restaurant_id)?.name_en || "", restaurants.find((r) => r.id === offer.restaurant_id)?.name_ar || "");
+          const offerImg = offer.image_url || offer.image;
           return (
             <div key={offer.id} className="bg-card border border-white/5 rounded-2xl p-4" data-testid={`admin-offer-${offer.id}`}>
               <div className="flex items-start gap-3">
-                {offer.image && <img src={offer.image} alt="" className="h-14 w-20 rounded-lg object-cover flex-shrink-0" />}
+                {offerImg && (
+                  <img src={offerImg} alt="" className="h-14 w-20 rounded-lg object-cover flex-shrink-0"
+                    onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                )}
                 <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
                   <OfferTypeIcon type={offer.type} />
                 </div>
@@ -168,6 +241,7 @@ export default function AdminOffers() {
                           <span className="text-xs font-bold text-primary">{offer.value}{offer.type === "percentage" ? "%" : " SAR"}</span>
                         )}
                         {offer.code && <code className="text-xs text-primary bg-primary/10 px-1.5 py-0.5 rounded font-mono">{offer.code}</code>}
+                        {offerImg && <span className="text-[10px] text-blue-400 bg-blue-500/10 px-1.5 py-0.5 rounded-full flex items-center gap-0.5"><Link size={8} /> URL</span>}
                         <span className={`text-xs px-2 py-0.5 rounded-full ${offer.active ? "bg-green-500/10 text-green-400" : "bg-white/5 text-muted-foreground"}`}>
                           {offer.active ? t("Active", "نشط") : t("Inactive", "غير نشط")}
                         </span>
