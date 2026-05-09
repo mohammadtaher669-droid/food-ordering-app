@@ -121,6 +121,7 @@ export interface Review {
 }
 
 export interface OrderItem {
+  item_id?: string;
   name_en: string;
   name_ar: string;
   price: number;
