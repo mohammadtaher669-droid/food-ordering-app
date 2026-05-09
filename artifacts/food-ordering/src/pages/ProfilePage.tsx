@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { User, ShoppingBag, Star, ChevronRight, MessageSquare, RotateCcw, Clock, Phone, ChevronDown, ChevronUp, Pencil, Check, X } from "lucide-react";
+import { User, ShoppingBag, Star, ChevronRight, MessageSquare, RotateCcw, Clock, Phone, ChevronDown, ChevronUp, Pencil, Check, X, Truck, Store, MapPin } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useCart } from "@/contexts/CartContext";
@@ -45,10 +45,27 @@ function OrderCard({ order, onReorder, lang, t }: {
       <div className="p-4">
         <div className="flex items-start justify-between gap-3 mb-3">
           <div className="min-w-0">
-            <p className="text-xs text-muted-foreground mb-0.5">
-              #{order.id} · {formatDate(order.date, lang)}
-            </p>
+            <div className="flex items-center gap-2 mb-0.5">
+              <p className="text-xs text-muted-foreground">
+                #{order.id} · {formatDate(order.date, lang)}
+              </p>
+              {order.type === "delivery" ? (
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[10px] font-medium">
+                  <Truck size={10} />
+                  {t("Delivery", "توصيل")}
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-medium">
+                  <Store size={10} />
+                  {t("Pickup", "استلام")}
+                </span>
+              )}
+            </div>
             <p className="font-semibold text-foreground text-sm truncate">{restaurantName}</p>
+            <p className="text-xs text-muted-foreground mt-0.5 truncate flex items-center gap-1">
+              <MapPin size={10} className="flex-shrink-0" />
+              {order.branch_name}
+            </p>
             <p className="text-xs text-muted-foreground mt-0.5 truncate">
               {itemSummary}
               {extraCount > 0 && ` +${extraCount} ${t("more", "أكثر")}`}
@@ -89,6 +106,23 @@ function OrderCard({ order, onReorder, lang, t }: {
             className="overflow-hidden border-t border-white/5"
           >
             <div className="px-4 py-3 space-y-2">
+              <div className="flex items-center justify-between text-xs pb-2 border-b border-white/5">
+                <div className="flex items-center gap-1.5 text-muted-foreground">
+                  <MapPin size={11} />
+                  <span>{order.branch_name}</span>
+                </div>
+                {order.type === "delivery" ? (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[10px] font-medium">
+                    <Truck size={10} />
+                    {t("Delivery", "توصيل")}
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-medium">
+                    <Store size={10} />
+                    {t("Pickup", "استلام")}
+                  </span>
+                )}
+              </div>
               {order.items.map((item, idx) => (
                 <div key={idx} className="flex items-center justify-between text-xs">
                   <span className="text-muted-foreground">
