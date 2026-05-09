@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { restaurantStore, branchStore, menuStore, reviewStore, couponStore } from "@/lib/store";
+import { restaurantStore, branchStore, menuStore, reviewStore, couponStore, modifierGroupStore, modifierOptionStore, addOnStore } from "@/lib/store";
 import { useStore } from "@/hooks/useStore";
 import { UtensilsCrossed, MapPin, BookOpen, Star, Tag, Download, Upload, RotateCcw } from "lucide-react";
 import { resetStore } from "@/lib/store";
@@ -42,6 +42,9 @@ export default function AdminDashboard() {
       menuItems: menuStore.getAll(),
       offers: (JSON.parse(localStorage.getItem("store_offers") || "[]")),
       coupons: couponStore.getAll(),
+      modifierGroups: modifierGroupStore.getAll(),
+      modifierOptions: modifierOptionStore.getAll(),
+      addOns: addOnStore.getAll(),
     };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
@@ -70,6 +73,9 @@ export default function AdminDashboard() {
           if (data.menuItems) menuStore.set(data.menuItems);
           if (data.offers) localStorage.setItem("store_offers", JSON.stringify(data.offers));
           if (data.coupons) couponStore.set(data.coupons);
+          if (data.modifierGroups) modifierGroupStore.set(data.modifierGroups);
+          if (data.modifierOptions) modifierOptionStore.set(data.modifierOptions);
+          if (data.addOns) addOnStore.set(data.addOns);
           markInitialized();
           toast({ title: t("Imported!", "تم الاستيراد!"), description: t("Data loaded successfully", "تم تحميل البيانات بنجاح") });
         } catch {

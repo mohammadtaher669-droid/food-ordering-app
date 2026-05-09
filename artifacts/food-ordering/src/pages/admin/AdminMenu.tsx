@@ -2,6 +2,7 @@ import { useState, useCallback, useRef } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { restaurantStore, categoryStore, menuStore } from "@/lib/store";
 import type { Category, MenuItem } from "@/lib/store";
+import ModifierGroupsPanel from "@/components/ModifierGroupsPanel";
 import { useStore } from "@/hooks/useStore";
 import { useImageQueue } from "@/hooks/useImageQueue";
 import { generateImageForItem } from "@/lib/aiImageUtils";
@@ -533,7 +534,8 @@ export default function AdminMenu() {
                   const imgSrc = item.image_url || item.image;
 
                   return (
-                    <div key={item.id} className={`bg-card border rounded-xl p-3 flex items-center gap-3 transition ${isGenerating ? "border-purple-500/30 bg-purple-600/5" : isDone ? "border-green-500/20" : isFailed ? "border-red-500/20" : "border-white/5"}`} data-testid={`admin-menu-item-${item.id}`}>
+                    <div key={item.id} className={`bg-card border rounded-xl overflow-hidden transition ${isGenerating ? "border-purple-500/30 bg-purple-600/5" : isDone ? "border-green-500/20" : isFailed ? "border-red-500/20" : "border-white/5"}`} data-testid={`admin-menu-item-${item.id}`}>
+                    <div className="p-3 flex items-center gap-3">
                       {/* Thumbnail */}
                       <div className="relative flex-shrink-0 w-12 h-12">
                         {isGenerating ? (
@@ -604,6 +606,12 @@ export default function AdminMenu() {
                         <button onClick={() => editItem(item)} className="p-1 rounded text-muted-foreground hover:text-foreground transition"><Edit2 size={13} /></button>
                         <button onClick={() => deleteItem(item.id)} className="p-1 rounded text-destructive/60 hover:text-destructive transition" data-testid={`btn-delete-item-${item.id}`}><Trash2 size={13} /></button>
                       </div>
+                    </div>
+                    <ModifierGroupsPanel
+                      menuItem={item}
+                      restaurantId={selectedRestaurant}
+                      color={restaurant?.color || "#FF7A00"}
+                    />
                     </div>
                   );
                 })}

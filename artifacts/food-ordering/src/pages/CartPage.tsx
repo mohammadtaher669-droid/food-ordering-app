@@ -3,9 +3,10 @@ import { Link, useLocation } from "wouter";
 import { motion } from "framer-motion";
 import { useCart } from "@/contexts/CartContext";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { restaurantStore, branchStore, couponStore } from "@/lib/store";
+import { restaurantStore, branchStore, couponStore, modifierGroupStore } from "@/lib/store";
 import RecommendationRow from "@/components/RecommendationRow";
-import { Trash2, Plus, Minus, ShoppingCart, Tag, ChevronRight, ChevronLeft } from "lucide-react";
+import { Trash2, Plus, Minus, ShoppingCart, Tag, ChevronRight, ChevronLeft, MessageSquare } from "lucide-react";
+import type { CartItem } from "@/contexts/CartContext";
 
 function calculateDiscounts(subtotal: number, deliveryFee: number, orderType: "delivery" | "pickup", couponCode: string) {
   const activeCoupons = couponStore.getAll();
@@ -36,9 +37,94 @@ function calculateDiscounts(subtotal: number, deliveryFee: number, orderType: "d
   return { couponDiscount, autoDiscount, totalDiscount, finalTotal, couponError, appliedCoupon };
 }
 
+function CartItemModifierSummary({ ci }: { ci: CartItem }) {
+  const { t, lang } = useLanguage();
+  const lines: string[] = [];
+
+  if (ci.selectedOptions) {
+    const allGroups = modifierGroupStore.getAll();
+    for (const [groupId, opts] of Object.entries(ci.selectedOptions)) {
+      if (opts.length === 0) continue;
+      const group = allGroups.find((g) => g.id === groupId);
+      const groupName = group ? (lang === "ar" ? group.name_ar : group.name_en) : "";
+      const optNames = opts.map((o) => lang === "ar" ? o.name_ar : o.name_en).join(", ");
+      lines.push(groupName ? `${groupName}: ${optNames}` : optNames);
+    }
+  }
+
+  if (ci.selectedAddOns && ci.selectedAddOns.length > 0) {
+    const addOnNames = ci.selectedAddOns.map((a) => lang === "ar" ? a.name_ar : a.name_en).join(", ");
+    lines.push(`${t("Add-ons", "إضافات")}: ${addOnNames}`);
+  }
+
+  if (ci.customerNote) {
+    lines.push(`📝 ${ci.customerNote}`);
+  }
+
+  if (lines.length === 0) return null;
+
+  return (
+    <div className="mt-1 space-y-0.5">
+      {lines.map((line, i) => (
+        <p key={i} className="text-[11px] text-muted-foreground leading-snug">{line}</p>
+      ))}
+    </div>
+  );
+}
+
+function buildWhatsAppMessage(cartItems: CartItem[], lang: string, restaurant: { name_en: string; name_ar: string } | undefined, branch: { name_en: string; name_ar: string; address_en: string; address_ar: string } | undefined, orderType: string, finalTotal: number, deliveryFee: number): string {
+  const isAr = lang === "ar";
+  const header = isAr
+    ? `🛒 طلب جديد — ${restaurant ? restaurant.name_ar : ""} / ${branch ? branch.name_ar : ""}`
+    : `🛒 New Order — ${restaurant ? restaurant.name_en : ""} / ${branch ? branch.name_en : ""}`;
+
+  const itemLines = cartItems.map((ci) => {
+    const name = isAr ? ci.item.name_ar : ci.item.name_en;
+    let line = `• ${name} x${ci.quantity} — ${(ci.item.price * ci.quantity).toFixed(0)} ﷼`;
+
+    if (ci.selectedOptions) {
+      const allGroups = modifierGroupStore.getAll();
+      for (const [groupId, opts] of Object.entries(ci.selectedOptions)) {
+        if (opts.length === 0) continue;
+        const group = allGroups.find((g) => g.id === groupId);
+        const groupName = group ? (isAr ? group.name_ar : group.name_en) : "";
+        const optNames = opts.map((o) => {
+          const n = isAr ? o.name_ar : o.name_en;
+          return o.price_addition > 0 ? `${n} (+${o.price_addition} ﷼)` : n;
+        }).join(", ");
+        line += `\n  — ${groupName}: ${optNames}`;
+      }
+    }
+
+    if (ci.selectedAddOns && ci.selectedAddOns.length > 0) {
+      const addOnStr = ci.selectedAddOns.map((a) => {
+        const n = isAr ? a.name_ar : a.name_en;
+        return a.is_free ? n : `${n} (+${a.price} ﷼)`;
+      }).join(", ");
+      line += `\n  — ${isAr ? "إضافات" : "Add-ons"}: ${addOnStr}`;
+    }
+
+    if (ci.customerNote) {
+      line += `\n  — 📝 ${ci.customerNote}`;
+    }
+
+    return line;
+  }).join("\n");
+
+  const orderTypeStr = isAr
+    ? (orderType === "delivery" ? "توصيل" : "استلام")
+    : (orderType === "delivery" ? "Delivery" : "Pickup");
+
+  const footer = isAr
+    ? `\n📦 نوع الطلب: ${orderTypeStr}\n${orderType === "delivery" ? `🚚 رسوم التوصيل: ${deliveryFee} ﷼\n` : ""}💰 الإجمالي: ${finalTotal.toFixed(0)} ﷼`
+    : `\n📦 Order type: ${orderTypeStr}\n${orderType === "delivery" ? `🚚 Delivery fee: ${deliveryFee} ﷼\n` : ""}💰 Total: ${finalTotal.toFixed(0)} ﷼`;
+
+  return `${header}\n\n${itemLines}${footer}`;
+}
+
 export default function CartPage() {
   const { cartItems, removeFromCart, updateQuantity, clearCart, cartTotal, selectedRestaurantId, selectedBranchId } = useCart();
-  const { t, isRTL } = useLanguage();
+  const { t, isRTL, lang } = useLanguage();
   const [, setLocation] = useLocation();
   const [couponCode, setCouponCode] = useState("");
   const [appliedCode, setAppliedCode] = useState("");
@@ -128,27 +214,34 @@ export default function CartPage() {
 
           {/* Items */}
           <div className="bg-card border border-white/5 rounded-2xl overflow-hidden mb-5">
-            {cartItems.map((ci, i) => (
-              <div
-                key={ci.item.id}
-                className={`flex items-center gap-4 p-4 ${i < cartItems.length - 1 ? "border-b border-white/5" : ""}`}
-                data-testid={`cart-item-${ci.item.id}`}
-              >
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium text-foreground text-sm">{t(ci.item.name_en, ci.item.name_ar)}</p>
-                  <p className="text-sm text-primary font-bold mt-0.5">{ci.item.price} ﷼</p>
+            {cartItems.map((ci, i) => {
+              const key = ci.cartKey || ci.item.id;
+              const lineTotal = ci.item.price * ci.quantity;
+              return (
+                <div
+                  key={key}
+                  className={`p-4 ${i < cartItems.length - 1 ? "border-b border-white/5" : ""}`}
+                  data-testid={`cart-item-${ci.item.id}`}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-foreground text-sm">{t(ci.item.name_en, ci.item.name_ar)}</p>
+                      <p className="text-sm text-primary font-bold mt-0.5">{ci.item.price} ﷼</p>
+                      <CartItemModifierSummary ci={ci} />
+                    </div>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <button onClick={() => updateQuantity(key, ci.quantity - 1)} className="w-7 h-7 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center transition" data-testid={`btn-decrease-${ci.item.id}`}><Minus size={12} /></button>
+                      <span className="text-sm font-bold w-5 text-center" data-testid={`qty-${ci.item.id}`}>{ci.quantity}</span>
+                      <button onClick={() => updateQuantity(key, ci.quantity + 1)} className="w-7 h-7 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center transition" data-testid={`btn-increase-${ci.item.id}`}><Plus size={12} /></button>
+                    </div>
+                    <div className="text-right min-w-[60px] flex-shrink-0">
+                      <p className="text-sm font-bold text-foreground">{lineTotal.toFixed(0)} ﷼</p>
+                      <button onClick={() => removeFromCart(key)} className="text-destructive/60 hover:text-destructive mt-1 transition" data-testid={`btn-remove-${ci.item.id}`}><Trash2 size={13} /></button>
+                    </div>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <button onClick={() => updateQuantity(ci.item.id, ci.quantity - 1)} className="w-7 h-7 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center transition" data-testid={`btn-decrease-${ci.item.id}`}><Minus size={12} /></button>
-                  <span className="text-sm font-bold w-5 text-center" data-testid={`qty-${ci.item.id}`}>{ci.quantity}</span>
-                  <button onClick={() => updateQuantity(ci.item.id, ci.quantity + 1)} className="w-7 h-7 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center transition" data-testid={`btn-increase-${ci.item.id}`}><Plus size={12} /></button>
-                </div>
-                <div className="text-right min-w-[60px]">
-                  <p className="text-sm font-bold text-foreground">{(ci.item.price * ci.quantity).toFixed(0)} ﷼</p>
-                  <button onClick={() => removeFromCart(ci.item.id)} className="text-destructive/60 hover:text-destructive mt-1 transition" data-testid={`btn-remove-${ci.item.id}`}><Trash2 size={13} /></button>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           {/* Coupon */}

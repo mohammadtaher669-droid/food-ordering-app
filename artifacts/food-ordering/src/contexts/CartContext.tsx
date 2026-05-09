@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState } from "react";
+import type { ModifierOption, AddOn } from "@/lib/store";
 
 export interface MenuItem {
   id: string;
@@ -6,11 +7,11 @@ export interface MenuItem {
   name_en: string;
   name_ar: string;
   price: number;
-  category_en: string;
-  category_ar: string;
+  category_id: string;
   description_en: string;
   description_ar: string;
   popular?: boolean;
+  image?: string;
 }
 
 export interface CartItem {
@@ -18,19 +19,37 @@ export interface CartItem {
   quantity: number;
   restaurantId: string;
   branchId: string;
+  selectedOptions?: Record<string, ModifierOption[]>;
+  selectedAddOns?: AddOn[];
+  customerNote?: string;
+  cartKey?: string;
 }
 
 interface CartContextType {
   cartItems: CartItem[];
-  addToCart: (item: MenuItem, restaurantId: string, branchId: string) => "added" | "confirm_clear";
-  removeFromCart: (itemId: string) => void;
-  updateQuantity: (itemId: string, quantity: number) => void;
+  addToCart: (
+    item: MenuItem,
+    restaurantId: string,
+    branchId: string,
+    selectedOptions?: Record<string, ModifierOption[]>,
+    selectedAddOns?: AddOn[],
+    customerNote?: string
+  ) => "added" | "confirm_clear";
+  removeFromCart: (cartKey: string) => void;
+  updateQuantity: (cartKey: string, quantity: number) => void;
   clearCart: () => void;
   cartCount: number;
   cartTotal: number;
   selectedRestaurantId: string | null;
   selectedBranchId: string | null;
-  pendingAdd: { item: MenuItem; restaurantId: string; branchId: string } | null;
+  pendingAdd: {
+    item: MenuItem;
+    restaurantId: string;
+    branchId: string;
+    selectedOptions?: Record<string, ModifierOption[]>;
+    selectedAddOns?: AddOn[];
+    customerNote?: string;
+  } | null;
   confirmClearAndAdd: () => void;
   cancelPendingAdd: () => void;
 }
@@ -50,6 +69,40 @@ const CartContext = createContext<CartContextType>({
   cancelPendingAdd: () => {},
 });
 
+function computeItemPrice(ci: CartItem): number {
+  let price = ci.item.price;
+  if (ci.selectedOptions) {
+    for (const opts of Object.values(ci.selectedOptions)) {
+      for (const opt of opts) {
+        price += opt.price_addition;
+      }
+    }
+  }
+  if (ci.selectedAddOns) {
+    for (const addOn of ci.selectedAddOns) {
+      if (!addOn.is_free) price += addOn.price;
+    }
+  }
+  return price;
+}
+
+function makeCartKey(
+  itemId: string,
+  selectedOptions?: Record<string, ModifierOption[]>,
+  selectedAddOns?: AddOn[],
+  customerNote?: string
+): string {
+  const opts = selectedOptions
+    ? Object.entries(selectedOptions)
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([gid, opts]) => `${gid}:${opts.map((o) => o.id).sort().join(",")}`)
+        .join("|")
+    : "";
+  const addons = selectedAddOns ? selectedAddOns.map((a) => a.id).sort().join(",") : "";
+  const note = customerNote || "";
+  return `${itemId}__${opts}__${addons}__${note}`;
+}
+
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [cartItems, setCartItems] = useState<CartItem[]>(() => {
     try {
@@ -58,7 +111,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       return [];
     }
   });
-  const [pendingAdd, setPendingAdd] = useState<{ item: MenuItem; restaurantId: string; branchId: string } | null>(null);
+  const [pendingAdd, setPendingAdd] = useState<CartContextType["pendingAdd"]>(null);
 
   useEffect(() => {
     localStorage.setItem("cart", JSON.stringify(cartItems));
@@ -67,46 +120,59 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const selectedRestaurantId = cartItems.length > 0 ? cartItems[0].restaurantId : null;
   const selectedBranchId = cartItems.length > 0 ? cartItems[0].branchId : null;
 
-  const addToCart = (item: MenuItem, restaurantId: string, branchId: string): "added" | "confirm_clear" => {
+  const addToCart = (
+    item: MenuItem,
+    restaurantId: string,
+    branchId: string,
+    selectedOptions?: Record<string, ModifierOption[]>,
+    selectedAddOns?: AddOn[],
+    customerNote?: string
+  ): "added" | "confirm_clear" => {
     if (cartItems.length > 0 && (cartItems[0].restaurantId !== restaurantId || cartItems[0].branchId !== branchId)) {
-      setPendingAdd({ item, restaurantId, branchId });
+      setPendingAdd({ item, restaurantId, branchId, selectedOptions, selectedAddOns, customerNote });
       return "confirm_clear";
     }
+    const cartKey = makeCartKey(item.id, selectedOptions, selectedAddOns, customerNote);
     setCartItems((prev) => {
-      const existing = prev.find((ci) => ci.item.id === item.id);
+      const existing = prev.find((ci) => ci.cartKey === cartKey);
       if (existing) {
-        return prev.map((ci) => ci.item.id === item.id ? { ...ci, quantity: ci.quantity + 1 } : ci);
+        return prev.map((ci) => ci.cartKey === cartKey ? { ...ci, quantity: ci.quantity + 1 } : ci);
       }
-      return [...prev, { item, quantity: 1, restaurantId, branchId }];
+      return [...prev, { item, quantity: 1, restaurantId, branchId, selectedOptions, selectedAddOns, customerNote, cartKey }];
     });
     return "added";
   };
 
   const confirmClearAndAdd = () => {
     if (!pendingAdd) return;
-    const { item, restaurantId, branchId } = pendingAdd;
-    setCartItems([{ item, quantity: 1, restaurantId, branchId }]);
+    const { item, restaurantId, branchId, selectedOptions, selectedAddOns, customerNote } = pendingAdd;
+    const cartKey = makeCartKey(item.id, selectedOptions, selectedAddOns, customerNote);
+    setCartItems([{ item, quantity: 1, restaurantId, branchId, selectedOptions, selectedAddOns, customerNote, cartKey }]);
     setPendingAdd(null);
   };
 
   const cancelPendingAdd = () => setPendingAdd(null);
 
-  const removeFromCart = (itemId: string) => {
-    setCartItems((prev) => prev.filter((ci) => ci.item.id !== itemId));
+  const removeFromCart = (cartKey: string) => {
+    setCartItems((prev) => prev.filter((ci) => ci.cartKey !== cartKey && ci.item.id !== cartKey));
   };
 
-  const updateQuantity = (itemId: string, quantity: number) => {
+  const updateQuantity = (cartKey: string, quantity: number) => {
     if (quantity <= 0) {
-      removeFromCart(itemId);
+      removeFromCart(cartKey);
       return;
     }
-    setCartItems((prev) => prev.map((ci) => ci.item.id === itemId ? { ...ci, quantity } : ci));
+    setCartItems((prev) =>
+      prev.map((ci) =>
+        (ci.cartKey === cartKey || ci.item.id === cartKey) ? { ...ci, quantity } : ci
+      )
+    );
   };
 
   const clearCart = () => setCartItems([]);
 
   const cartCount = cartItems.reduce((sum, ci) => sum + ci.quantity, 0);
-  const cartTotal = cartItems.reduce((sum, ci) => sum + ci.item.price * ci.quantity, 0);
+  const cartTotal = cartItems.reduce((sum, ci) => sum + computeItemPrice(ci) * ci.quantity, 0);
 
   return (
     <CartContext.Provider value={{

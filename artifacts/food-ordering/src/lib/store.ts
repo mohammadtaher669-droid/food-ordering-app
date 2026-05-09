@@ -214,6 +214,42 @@ export interface UserBehavior {
   last_seen: number;
 }
 
+export interface ModifierGroup {
+  id: string;
+  menu_item_id: string;
+  name_en: string;
+  name_ar: string;
+  type: "single" | "multi";
+  min_selections: number;
+  max_selections: number;
+  is_required: boolean;
+  sort_order: number;
+  is_active: boolean;
+}
+
+export interface ModifierOption {
+  id: string;
+  group_id: string;
+  name_en: string;
+  name_ar: string;
+  price_addition: number;
+  image?: string;
+  is_available: boolean;
+  sort_order: number;
+}
+
+export interface AddOn {
+  id: string;
+  menu_item_id: string;
+  name_en: string;
+  name_ar: string;
+  price: number;
+  image?: string;
+  is_free: boolean;
+  is_available: boolean;
+  sort_order: number;
+}
+
 // ============================================================
 // KEYS
 // ============================================================
@@ -234,6 +270,9 @@ const KEYS = {
   initialized: "store_initialized",
   branchItemOverrides: "store_branch_item_overrides",
   branchCatOverrides: "store_branch_cat_overrides",
+  modifierGroups: "store_modifier_groups",
+  modifierOptions: "store_modifier_options",
+  addOns: "store_add_ons",
 };
 
 // ============================================================
@@ -726,6 +765,82 @@ export const branchCategoryOverrideStore = {
     );
     dispatch();
   },
+};
+
+// ============================================================
+// MODIFIER GROUPS
+// ============================================================
+export const modifierGroupStore = {
+  getAll: (): ModifierGroup[] => read<ModifierGroup>(KEYS.modifierGroups),
+  getByItem: (menuItemId: string): ModifierGroup[] =>
+    read<ModifierGroup>(KEYS.modifierGroups)
+      .filter((g) => g.menu_item_id === menuItemId)
+      .sort((a, b) => a.sort_order - b.sort_order),
+  getById: (id: string): ModifierGroup | undefined =>
+    read<ModifierGroup>(KEYS.modifierGroups).find((g) => g.id === id),
+  save: (group: ModifierGroup): void => {
+    const all = read<ModifierGroup>(KEYS.modifierGroups);
+    const idx = all.findIndex((g) => g.id === group.id);
+    if (idx >= 0) all[idx] = group; else all.push(group);
+    write(KEYS.modifierGroups, all);
+    dispatch();
+  },
+  delete: (id: string): void => {
+    write(KEYS.modifierGroups, read<ModifierGroup>(KEYS.modifierGroups).filter((g) => g.id !== id));
+    write(KEYS.modifierOptions, read<ModifierOption>(KEYS.modifierOptions).filter((o) => o.group_id !== id));
+    dispatch();
+  },
+  set: (groups: ModifierGroup[]): void => { write(KEYS.modifierGroups, groups); dispatch(); },
+};
+
+// ============================================================
+// MODIFIER OPTIONS
+// ============================================================
+export const modifierOptionStore = {
+  getAll: (): ModifierOption[] => read<ModifierOption>(KEYS.modifierOptions),
+  getByGroup: (groupId: string): ModifierOption[] =>
+    read<ModifierOption>(KEYS.modifierOptions)
+      .filter((o) => o.group_id === groupId)
+      .sort((a, b) => a.sort_order - b.sort_order),
+  getById: (id: string): ModifierOption | undefined =>
+    read<ModifierOption>(KEYS.modifierOptions).find((o) => o.id === id),
+  save: (option: ModifierOption): void => {
+    const all = read<ModifierOption>(KEYS.modifierOptions);
+    const idx = all.findIndex((o) => o.id === option.id);
+    if (idx >= 0) all[idx] = option; else all.push(option);
+    write(KEYS.modifierOptions, all);
+    dispatch();
+  },
+  delete: (id: string): void => {
+    write(KEYS.modifierOptions, read<ModifierOption>(KEYS.modifierOptions).filter((o) => o.id !== id));
+    dispatch();
+  },
+  set: (options: ModifierOption[]): void => { write(KEYS.modifierOptions, options); dispatch(); },
+};
+
+// ============================================================
+// ADD-ONS
+// ============================================================
+export const addOnStore = {
+  getAll: (): AddOn[] => read<AddOn>(KEYS.addOns),
+  getByItem: (menuItemId: string): AddOn[] =>
+    read<AddOn>(KEYS.addOns)
+      .filter((a) => a.menu_item_id === menuItemId)
+      .sort((a, b) => a.sort_order - b.sort_order),
+  getById: (id: string): AddOn | undefined =>
+    read<AddOn>(KEYS.addOns).find((a) => a.id === id),
+  save: (addOn: AddOn): void => {
+    const all = read<AddOn>(KEYS.addOns);
+    const idx = all.findIndex((a) => a.id === addOn.id);
+    if (idx >= 0) all[idx] = addOn; else all.push(addOn);
+    write(KEYS.addOns, all);
+    dispatch();
+  },
+  delete: (id: string): void => {
+    write(KEYS.addOns, read<AddOn>(KEYS.addOns).filter((a) => a.id !== id));
+    dispatch();
+  },
+  set: (addOns: AddOn[]): void => { write(KEYS.addOns, addOns); dispatch(); },
 };
 
 // ============================================================

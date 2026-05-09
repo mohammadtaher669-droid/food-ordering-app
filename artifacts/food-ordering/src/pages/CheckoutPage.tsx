@@ -55,7 +55,26 @@ export default function CheckoutPage() {
     const orderTypeLine = orderType === "delivery" ? (lang === "ar" ? "توصيل 🚗" : "Delivery 🚗") : (lang === "ar" ? "استلام 🏪" : "Pickup 🏪");
 
     const itemsText = cartItems
-      .map((ci) => `• ${lang === "ar" ? ci.item.name_ar : ci.item.name_en} x${ci.quantity} — ${(ci.item.price * ci.quantity).toFixed(0)} ﷼`)
+      .map((ci) => {
+        const name = lang === "ar" ? ci.item.name_ar : ci.item.name_en;
+        let line = `• ${name} x${ci.quantity} — ${(ci.item.price * ci.quantity).toFixed(0)} ﷼`;
+        if (ci.selectedOptions) {
+          for (const opts of Object.values(ci.selectedOptions)) {
+            if (opts.length > 0) {
+              const optNames = opts.map((o) => lang === "ar" ? o.name_ar : o.name_en).join(", ");
+              line += `\n   — ${optNames}`;
+            }
+          }
+        }
+        if (ci.selectedAddOns && ci.selectedAddOns.length > 0) {
+          const addOnNames = ci.selectedAddOns.map((a) => lang === "ar" ? a.name_ar : a.name_en).join(", ");
+          line += `\n   + ${lang === "ar" ? "إضافات" : "Add-ons"}: ${addOnNames}`;
+        }
+        if (ci.customerNote) {
+          line += `\n   📝 ${ci.customerNote}`;
+        }
+        return line;
+      })
       .join("\n");
 
     const message = lang === "ar"

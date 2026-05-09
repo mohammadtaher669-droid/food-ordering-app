@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   restaurantStore, branchStore, categoryStore, menuStore, offerStore,
   branchItemOverrideStore, branchCategoryOverrideStore, checkSchedule,
+  modifierGroupStore,
 } from "@/lib/store";
 import WhatsAppSticky from "@/components/WhatsAppSticky";
 import HeroBannerSlider from "@/components/HeroBannerSlider";
@@ -12,12 +13,13 @@ import { useStore } from "@/hooks/useStore";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useCart } from "@/contexts/CartContext";
 import WorkingHoursStatus, { isBranchOpen } from "@/components/WorkingHoursStatus";
-import { Plus, Check, Sparkles, Navigation, CheckCircle, XCircle, Loader2, Wand2, Pin, Star, Trophy, TrendingUp } from "lucide-react";
+import { Plus, Check, Sparkles, Navigation, CheckCircle, XCircle, Loader2, Wand2, Pin, Star, Trophy, TrendingUp, ChevronDown } from "lucide-react";
 import ImageWithFallback from "@/components/ImageWithFallback";
 import { useToast } from "@/hooks/use-toast";
 import { isInsideZone } from "@/lib/deliveryZones";
 import { analyticsStore, userBehaviorStore } from "@/lib/store";
 import { useImageQueue, type ItemStatus } from "@/hooks/useImageQueue";
+import ItemDetailModal from "@/components/ItemDetailModal";
 
 type ZoneStatus = "idle" | "checking" | "inside" | "outside" | "error";
 
@@ -246,6 +248,8 @@ export default function BranchPage() {
 
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [addedItems, setAddedItems] = useState<Set<string>>(new Set());
+  const [modalItem, setModalItem] = useState<MenuItem | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
 
   const restaurant = restaurants.find((r) => r.id === params.restaurantId);
   const branch = allBranches.find((b) => b.id === params.branchId);
@@ -297,26 +301,33 @@ export default function BranchPage() {
 
   const hasDeliveryZone = branch.is_delivery_enabled && branch.delivery_type;
 
-  const handleAddToCart = (item: MenuItem) => {
+  const handleItemClick = (item: MenuItem) => {
     if (!isOpen || getItemEffective(item).outOfStock) return;
-    analyticsStore.track({ type: "add_to_cart", item_id: item.id, restaurant_id: item.restaurant_id });
+    analyticsStore.track({ type: "view", item_id: item.id, restaurant_id: item.restaurant_id });
     userBehaviorStore.trackView(item.id);
-    const cartItem = {
-      id: item.id,
-      restaurant_id: item.restaurant_id,
-      name_en: item.name_en,
-      name_ar: item.name_ar,
-      price: item.price,
-      category_id: item.category_id,
-      description_en: item.description_en,
-      description_ar: item.description_ar,
-      image: item.image_url || item.image,
-    };
-    const result = addToCart(cartItem as any, restaurant.id, branch.id);
-    if (result === "added") {
-      setAddedItems((prev) => new Set(prev).add(item.id));
-      setTimeout(() => setAddedItems((prev) => { const next = new Set(prev); next.delete(item.id); return next; }), 1500);
-      toast({ title: t("Added to cart", "تمت الإضافة"), description: t(item.name_en, item.name_ar) });
+    const groups = modifierGroupStore.getByItem(item.id).filter((g) => g.is_active);
+    if (groups.length > 0) {
+      setModalItem(item);
+      setModalOpen(true);
+    } else {
+      const cartItem = {
+        id: item.id,
+        restaurant_id: item.restaurant_id,
+        name_en: item.name_en,
+        name_ar: item.name_ar,
+        price: item.price,
+        category_id: item.category_id,
+        description_en: item.description_en,
+        description_ar: item.description_ar,
+        image: item.image_url || item.image,
+      };
+      analyticsStore.track({ type: "add_to_cart", item_id: item.id, restaurant_id: item.restaurant_id });
+      const result = addToCart(cartItem as any, restaurant.id, branch.id);
+      if (result === "added") {
+        setAddedItems((prev) => new Set(prev).add(item.id));
+        setTimeout(() => setAddedItems((prev) => { const next = new Set(prev); next.delete(item.id); return next; }), 1500);
+        toast({ title: t("Added to cart", "تمت الإضافة"), description: t(item.name_en, item.name_ar) });
+      }
     }
   };
 
@@ -430,7 +441,7 @@ export default function BranchPage() {
                   restaurantColor={restaurant.color}
                   isOpen={isOpen}
                   added={addedItems.has(item.id)}
-                  onAdd={() => !outOfStock && handleAddToCart(item)}
+                  onAdd={() => handleItemClick(item)}
                   genStatus={statuses[item.id]}
                   outOfStock={outOfStock}
                   displayPrice={displayPrice !== item.price ? displayPrice : undefined}
@@ -441,6 +452,14 @@ export default function BranchPage() {
         </AnimatePresence>
       </div>
       <WhatsAppSticky branchId={params.branchId} />
+      <ItemDetailModal
+        item={modalItem}
+        restaurantId={restaurant.id}
+        branchId={branch.id}
+        restaurantColor={restaurant.color}
+        isOpen={modalOpen}
+        onClose={() => { setModalOpen(false); setModalItem(null); }}
+      />
     </div>
   );
 }
