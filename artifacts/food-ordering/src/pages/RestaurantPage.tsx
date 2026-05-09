@@ -1,12 +1,13 @@
 import { useParams, Link } from "wouter";
 import { useCallback } from "react";
 import { motion } from "framer-motion";
-import { restaurantStore, branchStore, menuStore } from "@/lib/store";
+import { restaurantStore, branchStore, menuStore, offerStore } from "@/lib/store";
 import { useStore } from "@/hooks/useStore";
 import { useLanguage } from "@/contexts/LanguageContext";
 import WorkingHoursStatus, { isBranchOpen } from "@/components/WorkingHoursStatus";
 import { ChevronRight, ChevronLeft, MapPin, Star, Sparkles, ArrowLeft, ArrowRight } from "lucide-react";
 import ImageWithFallback from "@/components/ImageWithFallback";
+import HeroBannerSlider from "@/components/HeroBannerSlider";
 
 export default function RestaurantPage() {
   const params = useParams<{ restaurantId: string }>();
@@ -26,6 +27,12 @@ export default function RestaurantPage() {
   const newItems = useStore(useCallback(
     () => restaurant ? menuStore.getNew(restaurant.id) : [],
     [restaurant?.id]
+  ));
+  const restaurantOffers = useStore(useCallback(
+    () => offerStore.getActive().filter(
+      (o) => o.show_as_banner && o.image && (o.restaurant_id === params.restaurantId || o.restaurant_id === "global")
+    ),
+    [params.restaurantId]
   ));
 
   if (!restaurant) return (
@@ -100,6 +107,13 @@ export default function RestaurantPage() {
           </div>
         </div>
       </div>
+
+      {/* Restaurant Banner Slider */}
+      {restaurantOffers.length > 0 && (
+        <div className="max-w-5xl mx-auto px-4 pt-5">
+          <HeroBannerSlider offers={restaurantOffers} restaurantId={params.restaurantId} />
+        </div>
+      )}
 
       <div className="max-w-5xl mx-auto px-4 pt-8 pb-28">
         {/* New Items */}

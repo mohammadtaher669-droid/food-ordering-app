@@ -5,9 +5,10 @@ import type { Category, MenuItem } from "@/lib/store";
 import { useStore } from "@/hooks/useStore";
 import { useImageQueue } from "@/hooks/useImageQueue";
 import { generateImageForItem } from "@/lib/aiImageUtils";
+import { useTranslate } from "@/hooks/useTranslate";
 import {
   Plus, Trash2, Edit2, Check, X, FolderPlus, GripVertical, Star, Sparkles, Eye, EyeOff,
-  Wand2, RefreshCw, Lock, Unlock, Link, Image as ImageIcon, Loader2, Zap, StopCircle,
+  Wand2, RefreshCw, Lock, Unlock, Link, Image as ImageIcon, Loader2, Zap, StopCircle, Languages,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import ImageUploader from "@/components/ImageUploader";
@@ -26,6 +27,7 @@ function F({ label, value, onChange, ...p }: { label: string; value: string | nu
 export default function AdminMenu() {
   const { t } = useLanguage();
   const { toast } = useToast();
+  const { translate, loading: translating } = useTranslate();
   const restaurants = useStore(useCallback(() => restaurantStore.getAll(), []));
   const allCategories = useStore(useCallback(() => categoryStore.getAll(), []));
   const allItems = useStore(useCallback(() => menuStore.getAll(), []));
@@ -286,8 +288,28 @@ export default function AdminMenu() {
         <form onSubmit={(e) => { e.preventDefault(); saveCat(); }} className="bg-card border border-white/10 rounded-2xl p-4 mb-4 space-y-3">
           <h3 className="font-medium text-foreground text-sm">{editingCatId ? t("Edit Category", "تعديل الفئة") : t("New Category", "فئة جديدة")}</h3>
           <div className="grid grid-cols-2 gap-3">
-            <F label={t("Name (EN)", "الاسم (EN)")} value={catForm.name_en} onChange={(v) => setCatForm({ ...catForm, name_en: v })} />
-            <F label={t("Name (AR)", "الاسم (AR)")} value={catForm.name_ar} onChange={(v) => setCatForm({ ...catForm, name_ar: v })} />
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-xs text-muted-foreground">{t("Name (EN)", "الاسم (EN)")}</label>
+                <button type="button" disabled={translating || !catForm.name_ar}
+                  onClick={async () => { const r = await translate(catForm.name_ar, "ar", "en"); if (r) setCatForm(f => ({ ...f, name_en: r })); }}
+                  className="flex items-center gap-1 text-[10px] text-primary hover:opacity-80 disabled:opacity-40 transition">
+                  {translating ? <Loader2 size={9} className="animate-spin" /> : <Languages size={9} />} AR→EN
+                </button>
+              </div>
+              <input value={catForm.name_en} onChange={(e) => setCatForm({ ...catForm, name_en: e.target.value })} className="w-full bg-background border border-white/10 rounded-xl px-3 py-2 text-sm text-foreground focus:outline-none focus:border-primary/50" />
+            </div>
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-xs text-muted-foreground">{t("Name (AR)", "الاسم (AR)")}</label>
+                <button type="button" disabled={translating || !catForm.name_en}
+                  onClick={async () => { const r = await translate(catForm.name_en, "en", "ar"); if (r) setCatForm(f => ({ ...f, name_ar: r })); }}
+                  className="flex items-center gap-1 text-[10px] text-primary hover:opacity-80 disabled:opacity-40 transition">
+                  {translating ? <Loader2 size={9} className="animate-spin" /> : <Languages size={9} />} EN→AR
+                </button>
+              </div>
+              <input value={catForm.name_ar} onChange={(e) => setCatForm({ ...catForm, name_ar: e.target.value })} className="w-full bg-background border border-white/10 rounded-xl px-3 py-2 text-sm text-foreground focus:outline-none focus:border-primary/50" dir="rtl" />
+            </div>
           </div>
           <div className="flex gap-2">
             <button type="submit" className="px-4 py-2 bg-primary text-primary-foreground rounded-xl text-sm font-medium" data-testid="btn-save-category"><Check size={13} className="inline mr-1" /> {t("Save", "حفظ")}</button>
@@ -309,10 +331,59 @@ export default function AdminMenu() {
               </select>
             </div>
             <F label={t("Price (SAR)", "السعر (ريال)")} value={itemForm.price || ""} onChange={(v) => setItemForm({ ...itemForm, price: Number(v) })} type="number" step="0.5" min="0" />
-            <F label={t("Name (EN)", "الاسم (EN)")} value={itemForm.name_en || ""} onChange={(v) => setItemForm({ ...itemForm, name_en: v })} data-testid="input-item-name-en" />
-            <F label={t("Name (AR)", "الاسم (AR)")} value={itemForm.name_ar || ""} onChange={(v) => setItemForm({ ...itemForm, name_ar: v })} data-testid="input-item-name-ar" />
-            <F label={t("Description (EN)", "الوصف (EN)")} value={itemForm.description_en || ""} onChange={(v) => setItemForm({ ...itemForm, description_en: v })} />
-            <F label={t("Description (AR)", "الوصف (AR)")} value={itemForm.description_ar || ""} onChange={(v) => setItemForm({ ...itemForm, description_ar: v })} />
+
+            {/* Name EN */}
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-xs text-muted-foreground">{t("Name (EN)", "الاسم (EN)")}</label>
+                <button type="button" disabled={translating || !itemForm.name_ar}
+                  onClick={async () => { const r = await translate(itemForm.name_ar!, "ar", "en"); if (r) setItemForm(f => ({ ...f, name_en: r })); }}
+                  className="flex items-center gap-1 text-[10px] text-primary hover:opacity-80 disabled:opacity-40 transition">
+                  {translating ? <Loader2 size={9} className="animate-spin" /> : <Languages size={9} />} AR→EN
+                </button>
+              </div>
+              <input value={itemForm.name_en || ""} onChange={(e) => setItemForm({ ...itemForm, name_en: e.target.value })} className="w-full bg-background border border-white/10 rounded-xl px-3 py-2 text-sm text-foreground focus:outline-none focus:border-primary/50" data-testid="input-item-name-en" />
+            </div>
+
+            {/* Name AR */}
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-xs text-muted-foreground">{t("Name (AR)", "الاسم (AR)")}</label>
+                <button type="button" disabled={translating || !itemForm.name_en}
+                  onClick={async () => { const r = await translate(itemForm.name_en!, "en", "ar"); if (r) setItemForm(f => ({ ...f, name_ar: r })); }}
+                  className="flex items-center gap-1 text-[10px] text-primary hover:opacity-80 disabled:opacity-40 transition">
+                  {translating ? <Loader2 size={9} className="animate-spin" /> : <Languages size={9} />} EN→AR
+                </button>
+              </div>
+              <input value={itemForm.name_ar || ""} onChange={(e) => setItemForm({ ...itemForm, name_ar: e.target.value })} className="w-full bg-background border border-white/10 rounded-xl px-3 py-2 text-sm text-foreground focus:outline-none focus:border-primary/50" dir="rtl" data-testid="input-item-name-ar" />
+            </div>
+
+            {/* Description EN */}
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-xs text-muted-foreground">{t("Description (EN)", "الوصف (EN)")}</label>
+                <button type="button" disabled={translating || !itemForm.description_ar}
+                  onClick={async () => { const r = await translate(itemForm.description_ar!, "ar", "en"); if (r) setItemForm(f => ({ ...f, description_en: r })); }}
+                  className="flex items-center gap-1 text-[10px] text-primary hover:opacity-80 disabled:opacity-40 transition">
+                  {translating ? <Loader2 size={9} className="animate-spin" /> : <Languages size={9} />} AR→EN
+                </button>
+              </div>
+              <input value={itemForm.description_en || ""} onChange={(e) => setItemForm({ ...itemForm, description_en: e.target.value })} className="w-full bg-background border border-white/10 rounded-xl px-3 py-2 text-sm text-foreground focus:outline-none focus:border-primary/50" />
+            </div>
+
+            {/* Description AR */}
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-xs text-muted-foreground">{t("Description (AR)", "الوصف (AR)")}</label>
+                <button type="button" disabled={translating || !itemForm.description_en}
+                  onClick={async () => { const r = await translate(itemForm.description_en!, "en", "ar"); if (r) setItemForm(f => ({ ...f, description_ar: r })); }}
+                  className="flex items-center gap-1 text-[10px] text-primary hover:opacity-80 disabled:opacity-40 transition">
+                  {translating ? <Loader2 size={9} className="animate-spin" /> : <Languages size={9} />} EN→AR
+                </button>
+              </div>
+              <input value={itemForm.description_ar || ""} onChange={(e) => setItemForm({ ...itemForm, description_ar: e.target.value })} className="w-full bg-background border border-white/10 rounded-xl px-3 py-2 text-sm text-foreground focus:outline-none focus:border-primary/50" dir="rtl" />
+            </div>
+
             <F label={t("Calories (optional)", "السعرات الحرارية (اختياري)")} value={itemForm.calories || ""} onChange={(v) => setItemForm({ ...itemForm, calories: v ? Number(v) : undefined })} type="number" min="0" placeholder="e.g. 650" data-testid="input-item-calories" />
           </div>
 
