@@ -153,9 +153,6 @@ importers:
       '@dnd-kit/utilities':
         specifier: ^3.2.2
         version: 3.2.2(react@19.1.0)
-      '@types/leaflet':
-        specifier: ^1.9.21
-        version: 1.9.21
       leaflet:
         specifier: ^1.9.4
         version: 1.9.4
@@ -265,6 +262,9 @@ importers:
       '@tanstack/react-query':
         specifier: 'catalog:'
         version: 5.90.21(react@19.1.0)
+      '@types/leaflet':
+        specifier: ^1.9.21
+        version: 1.9.21
       '@types/node':
         specifier: 'catalog:'
         version: 25.3.5

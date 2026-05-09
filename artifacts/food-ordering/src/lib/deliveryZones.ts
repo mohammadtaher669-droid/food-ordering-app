@@ -51,6 +51,19 @@ export function isInsideZone(
   return true;
 }
 
+/** Returns delivery fee for a given distance. Returns -1 if outside all tiers (too far). */
+export function getDeliveryFee(branch: Branch, distanceKm: number): number {
+  const tiers = branch.delivery_fee_tiers;
+  if (tiers && tiers.length > 0) {
+    const sorted = [...tiers].sort((a, b) => a.max_km - b.max_km);
+    for (const tier of sorted) {
+      if (distanceKm <= tier.max_km) return tier.fee;
+    }
+    return -1; // beyond all tiers = not serviceable
+  }
+  return branch.delivery_fee ?? 0;
+}
+
 export function getBranchZoneSummary(branch: Branch): string | null {
   if (!branch.is_delivery_enabled || !branch.delivery_type) return null;
   if (branch.delivery_type === "radius" && branch.delivery_radius_km) {

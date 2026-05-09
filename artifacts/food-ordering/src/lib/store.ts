@@ -19,6 +19,11 @@ export interface Restaurant {
   overlay_opacity?: number;
 }
 
+export interface DeliveryFeeTier {
+  max_km: number;
+  fee: number;
+}
+
 export interface Branch {
   id: string;
   restaurant_id: string;
@@ -32,6 +37,10 @@ export interface Branch {
   address_en: string;
   address_ar: string;
   is_delivery_enabled?: boolean;
+  pickup_enabled?: boolean;
+  pickup_time?: number;
+  min_order_delivery?: number;
+  delivery_fee_tiers?: DeliveryFeeTier[];
   delivery_type?: "radius" | "polygon";
   center_lat?: number;
   center_lng?: number;

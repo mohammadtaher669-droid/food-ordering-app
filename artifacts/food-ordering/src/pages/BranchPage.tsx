@@ -8,71 +8,19 @@ import {
 } from "@/lib/store";
 import WhatsAppSticky from "@/components/WhatsAppSticky";
 import HeroBannerSlider from "@/components/HeroBannerSlider";
+import DeliveryModeSelector from "@/components/DeliveryModeSelector";
 import type { MenuItem, BranchItemOverride } from "@/lib/store";
 import { useStore } from "@/hooks/useStore";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useCart } from "@/contexts/CartContext";
 import WorkingHoursStatus, { isBranchOpen } from "@/components/WorkingHoursStatus";
-import { Plus, Check, Sparkles, Navigation, CheckCircle, XCircle, Loader2, Wand2, Pin, Star, Trophy, TrendingUp, ChevronDown } from "lucide-react";
+import { Plus, Check, Sparkles, Wand2, Pin, Star, Trophy, TrendingUp } from "lucide-react";
 import ImageWithFallback from "@/components/ImageWithFallback";
 import { useToast } from "@/hooks/use-toast";
-import { isInsideZone } from "@/lib/deliveryZones";
 import { analyticsStore, userBehaviorStore } from "@/lib/store";
 import { useImageQueue, type ItemStatus } from "@/hooks/useImageQueue";
 import ItemDetailModal from "@/components/ItemDetailModal";
-
-type ZoneStatus = "idle" | "checking" | "inside" | "outside" | "error";
-
-function DeliveryZoneChecker({ branchId }: { branchId: string }) {
-  const { t } = useLanguage();
-  const [status, setStatus] = useState<ZoneStatus>("idle");
-
-  const handleCheck = () => {
-    if (!navigator.geolocation) { setStatus("error"); return; }
-    setStatus("checking");
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const branch = branchStore.getById(branchId);
-        if (!branch) { setStatus("error"); return; }
-        const inside = isInsideZone(pos.coords.latitude, pos.coords.longitude, branch);
-        setStatus(inside ? "inside" : "outside");
-      },
-      () => setStatus("error"),
-      { timeout: 10000 }
-    );
-  };
-
-  if (status === "idle") return (
-    <button onClick={handleCheck} className="flex items-center gap-1.5 text-xs text-primary hover:text-primary/80 transition font-medium" data-testid="btn-check-zone">
-      <Navigation size={13} />
-      {t("Check delivery to my location", "تحقق من التوصيل لموقعي")}
-    </button>
-  );
-  if (status === "checking") return (
-    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-      <Loader2 size={13} className="animate-spin" />
-      {t("Checking...", "جاري التحقق...")}
-    </div>
-  );
-  if (status === "inside") return (
-    <div className="flex items-center gap-1.5 text-xs text-green-400">
-      <CheckCircle size={13} />
-      {t("Delivery available to your location!", "التوصيل متاح لموقعك!")}
-    </div>
-  );
-  if (status === "outside") return (
-    <div className="flex items-center gap-1.5 text-xs text-destructive">
-      <XCircle size={13} />
-      {t("Delivery not available in your area", "التوصيل غير متوفر في منطقتك")}
-    </div>
-  );
-  return (
-    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-      <XCircle size={13} />
-      {t("Could not get your location", "تعذر الحصول على موقعك")}
-    </div>
-  );
-}
+import type { DeliveryMode } from "@/hooks/useDeliveryMode";
 
 function MenuItemCard({
   item,
@@ -250,6 +198,7 @@ export default function BranchPage() {
   const [addedItems, setAddedItems] = useState<Set<string>>(new Set());
   const [modalItem, setModalItem] = useState<MenuItem | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [deliveryMode, setDeliveryMode] = useState<DeliveryMode>("delivery");
 
   const restaurant = restaurants.find((r) => r.id === params.restaurantId);
   const branch = allBranches.find((b) => b.id === params.branchId);
@@ -299,7 +248,7 @@ export default function BranchPage() {
     return { outOfStock: false, displayPrice: price };
   }
 
-  const hasDeliveryZone = branch.is_delivery_enabled && branch.delivery_type;
+  const showDeliverySelector = !!(branch.is_delivery_enabled || branch.pickup_enabled);
 
   const handleItemClick = (item: MenuItem) => {
     if (!isOpen || getItemEffective(item).outOfStock) return;
@@ -360,10 +309,13 @@ export default function BranchPage() {
                 {t("This branch is currently closed. Orders are not available.", "هذا الفرع مغلق حالياً. الطلبات غير متاحة.")}
               </div>
             )}
-            {hasDeliveryZone && (
-              <div className="mt-3">
-                <DeliveryZoneChecker branchId={branch.id} />
-              </div>
+            {showDeliverySelector && (
+              <DeliveryModeSelector
+                branch={branch}
+                restaurantColor={restaurant.color}
+                restaurantId={restaurant.id}
+                onModeChange={setDeliveryMode}
+              />
             )}
           </div>
         </motion.div>
