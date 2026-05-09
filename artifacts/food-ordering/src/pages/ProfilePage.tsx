@@ -128,6 +128,23 @@ function OrderCard({ order, onReorder, lang, t }: {
                   </span>
                 )}
               </div>
+              <div className="flex items-start gap-1.5 text-xs pb-2 border-b border-white/5">
+                {order.type === "delivery" ? (
+                  <>
+                    <Truck size={11} className="mt-0.5 flex-shrink-0 text-blue-400" />
+                    <span className="text-muted-foreground">
+                      {order.delivery_address
+                        ? order.delivery_address
+                        : t("No address recorded", "لم يُسجَّل عنوان")}
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <Store size={11} className="mt-0.5 flex-shrink-0 text-emerald-400" />
+                    <span className="text-muted-foreground">{t("In-store pickup", "استلام من الفرع")}</span>
+                  </>
+                )}
+              </div>
               {order.items.map((item, idx) => (
                 <div key={idx} className="flex items-center justify-between text-xs">
                   <span className="text-muted-foreground">

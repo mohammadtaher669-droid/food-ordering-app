@@ -139,6 +139,7 @@ export interface Order {
   total: number;
   date: string;
   type: "delivery" | "pickup";
+  delivery_address?: string;
 }
 
 export interface Customer {

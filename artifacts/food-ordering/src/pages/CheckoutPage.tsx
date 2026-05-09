@@ -110,6 +110,7 @@ export default function CheckoutPage() {
       total: finalTotal,
       date: new Date().toISOString(),
       type: orderType,
+      delivery_address: orderType === "delivery" ? location : undefined,
     });
 
     // Analytics: track order events
