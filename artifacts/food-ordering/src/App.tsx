@@ -37,6 +37,7 @@ import AdminAnalytics from "@/pages/admin/AdminAnalytics";
 import AdminBanners from "@/pages/admin/AdminBanners";
 import AdminBackgrounds from "@/pages/admin/AdminBackgrounds";
 import AdminAppearance from "@/pages/admin/AdminAppearance";
+import AdminMenuSorting from "@/pages/admin/AdminMenuSorting";
 import OffersPage from "@/pages/OffersPage";
 import NotFound from "@/pages/not-found";
 
@@ -102,6 +103,9 @@ function AppRoutes() {
         </Route>
         <Route path="/admin/appearance">
           <AdminGuard><AdminAppearance /></AdminGuard>
+        </Route>
+        <Route path="/admin/sorting">
+          <AdminGuard><AdminMenuSorting /></AdminGuard>
         </Route>
 
         <Route>

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { LayoutDashboard, UtensilsCrossed, MapPin, BookOpen, Tag, Star, LogOut, Menu, X, Percent, Settings, Navigation, Users, BarChart2, Image, Megaphone, Printer, Palette } from "lucide-react";
+import { LayoutDashboard, UtensilsCrossed, MapPin, BookOpen, Tag, Star, LogOut, Menu, X, Percent, Settings, Navigation, Users, BarChart2, Image, Megaphone, Printer, Palette, ListOrdered } from "lucide-react";
 import matAmiLogo from "@assets/لوجو_الموقع_مطعمي_1776635393637.png";
 
 const NAV = [
@@ -9,6 +9,7 @@ const NAV = [
   { path: "/admin/restaurants", label_en: "Restaurants", label_ar: "المطاعم", icon: UtensilsCrossed },
   { path: "/admin/branches", label_en: "Branches", label_ar: "الفروع", icon: MapPin },
   { path: "/admin/menu", label_en: "Menu Builder", label_ar: "قائمة الطعام", icon: BookOpen },
+  { path: "/admin/sorting", label_en: "Menu Sorting", label_ar: "ترتيب المنيو", icon: ListOrdered },
   { path: "/admin/offers", label_en: "Offers", label_ar: "العروض", icon: Percent },
   { path: "/admin/coupons", label_en: "Coupons", label_ar: "الأكواد", icon: Tag },
   { path: "/admin/reviews", label_en: "Reviews", label_ar: "التقييمات", icon: Star },

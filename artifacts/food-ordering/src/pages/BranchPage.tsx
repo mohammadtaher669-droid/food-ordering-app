@@ -9,7 +9,7 @@ import { useStore } from "@/hooks/useStore";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useCart } from "@/contexts/CartContext";
 import WorkingHoursStatus, { isBranchOpen } from "@/components/WorkingHoursStatus";
-import { Plus, Check, Sparkles, Navigation, CheckCircle, XCircle, Loader2, Wand2 } from "lucide-react";
+import { Plus, Check, Sparkles, Navigation, CheckCircle, XCircle, Loader2, Wand2, Pin, Star, Trophy, TrendingUp } from "lucide-react";
 import ImageWithFallback from "@/components/ImageWithFallback";
 import { useToast } from "@/hooks/use-toast";
 import { isInsideZone } from "@/lib/deliveryZones";
@@ -126,14 +126,29 @@ function MenuItemCard({
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent pointer-events-none" />
         <div className="absolute top-2 left-2 flex gap-1 flex-wrap">
+          {item.pinned && (
+            <span className="text-[9px] bg-purple-600/90 text-white font-bold px-2 py-0.5 rounded-full flex items-center gap-0.5">
+              <Pin size={7} /> {t("Pinned", "مثبت")}
+            </span>
+          )}
+          {item.is_best_seller && (
+            <span className="text-[9px] bg-red-500/90 text-white font-bold px-2 py-0.5 rounded-full flex items-center gap-0.5">
+              <Trophy size={7} /> {t("Best Seller", "الأكثر مبيعاً")}
+            </span>
+          )}
+          {item.featured && !item.pinned && !item.is_best_seller && (
+            <span className="text-[9px] bg-amber-500/90 text-white font-bold px-2 py-0.5 rounded-full flex items-center gap-0.5">
+              <Star size={7} /> {t("Featured", "مميز")}
+            </span>
+          )}
           {item.is_new && (
             <span className="text-[9px] bg-yellow-400/90 text-black font-bold px-2 py-0.5 rounded-full flex items-center gap-0.5">
               <Sparkles size={8} /> {t("New", "جديد")}
             </span>
           )}
-          {item.is_popular && (
-            <span className="text-[9px] bg-primary/90 text-white font-bold px-2 py-0.5 rounded-full">
-              ⭐ {t("Popular", "الأكثر")}
+          {item.is_popular && !item.featured && !item.is_best_seller && (
+            <span className="text-[9px] bg-primary/90 text-white font-bold px-2 py-0.5 rounded-full flex items-center gap-0.5">
+              <TrendingUp size={7} /> {t("Popular", "الأكثر")}
             </span>
           )}
           {item.image_ai_generated && imgSrc && (
@@ -221,8 +236,9 @@ export default function BranchPage() {
   }
 
   const isOpen = isBranchOpen(branch);
-  const displayCategory = activeCategory || (categories[0]?.id ?? null);
-  const filteredItems = allMenuItems.filter((m) => m.category_id === displayCategory && m.is_available);
+  const visibleCategories = categories.filter((c) => !c.hidden);
+  const displayCategory = activeCategory || (visibleCategories[0]?.id ?? null);
+  const filteredItems = allMenuItems.filter((m) => m.category_id === displayCategory && m.is_available && !m.hidden);
   const hasDeliveryZone = branch.is_delivery_enabled && branch.delivery_type;
 
   const handleAddToCart = (item: MenuItem) => {
@@ -320,7 +336,7 @@ export default function BranchPage() {
 
         {/* Category Tabs */}
         <div className="flex gap-2 overflow-x-auto pb-2 mb-6 no-scrollbar" style={{ direction: "ltr" }}>
-          {categories.map((cat) => (
+          {visibleCategories.map((cat) => (
             <button
               key={cat.id}
               onClick={() => setActiveCategory(cat.id)}

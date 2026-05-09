@@ -45,6 +45,8 @@ export interface Category {
   name_en: string;
   name_ar: string;
   sort_order: number;
+  hidden?: boolean;
+  featured?: boolean;
 }
 
 export interface MenuItem {
@@ -62,6 +64,11 @@ export interface MenuItem {
   is_available: boolean;
   is_popular: boolean;
   is_new: boolean;
+  is_best_seller?: boolean;
+  sort_order?: number;
+  hidden?: boolean;
+  featured?: boolean;
+  pinned?: boolean;
   image_ai_generated?: boolean;
   image_locked?: boolean;
 }
@@ -73,6 +80,7 @@ export interface Offer {
   description_en: string;
   description_ar: string;
   image?: string;
+  image_url?: string;
   type: "percentage" | "fixed" | "free_delivery";
   value: number;
   restaurant_id: string | "global";
@@ -82,6 +90,7 @@ export interface Offer {
   banner_cta_en?: string;
   banner_cta_ar?: string;
   expiry_date?: string;
+  sort_order?: number;
 }
 
 export interface Coupon {
@@ -316,10 +325,20 @@ export const categoryStore = {
 // ============================================================
 // MENU ITEMS
 // ============================================================
+function sortItems(items: MenuItem[]): MenuItem[] {
+  return [...items].sort((a, b) => {
+    if (a.pinned && !b.pinned) return -1;
+    if (!a.pinned && b.pinned) return 1;
+    if (a.featured && !b.featured) return -1;
+    if (!a.featured && b.featured) return 1;
+    return (a.sort_order ?? 999) - (b.sort_order ?? 999);
+  });
+}
+
 export const menuStore = {
   getAll: (): MenuItem[] => read<MenuItem>(KEYS.menuItems),
-  getByRestaurant: (restaurantId: string): MenuItem[] => read<MenuItem>(KEYS.menuItems).filter((m) => m.restaurant_id === restaurantId),
-  getByCategory: (categoryId: string): MenuItem[] => read<MenuItem>(KEYS.menuItems).filter((m) => m.category_id === categoryId),
+  getByRestaurant: (restaurantId: string): MenuItem[] => sortItems(read<MenuItem>(KEYS.menuItems).filter((m) => m.restaurant_id === restaurantId)),
+  getByCategory: (categoryId: string): MenuItem[] => sortItems(read<MenuItem>(KEYS.menuItems).filter((m) => m.category_id === categoryId)),
   getPopular: (restaurantId: string): MenuItem[] => read<MenuItem>(KEYS.menuItems).filter((m) => m.restaurant_id === restaurantId && m.is_popular),
   getNew: (restaurantId: string): MenuItem[] => read<MenuItem>(KEYS.menuItems).filter((m) => m.restaurant_id === restaurantId && m.is_new),
   getById: (id: string): MenuItem | undefined => read<MenuItem>(KEYS.menuItems).find((m) => m.id === id),
