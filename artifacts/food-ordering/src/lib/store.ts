@@ -62,6 +62,8 @@ export interface MenuItem {
   is_available: boolean;
   is_popular: boolean;
   is_new: boolean;
+  image_ai_generated?: boolean;
+  image_locked?: boolean;
 }
 
 export interface Offer {
