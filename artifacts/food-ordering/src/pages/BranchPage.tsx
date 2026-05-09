@@ -1,5 +1,5 @@
 import { useParams } from "wouter";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { restaurantStore, branchStore, categoryStore, menuStore, offerStore } from "@/lib/store";
 import WhatsAppSticky from "@/components/WhatsAppSticky";
@@ -9,11 +9,12 @@ import { useStore } from "@/hooks/useStore";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useCart } from "@/contexts/CartContext";
 import WorkingHoursStatus, { isBranchOpen } from "@/components/WorkingHoursStatus";
-import { Plus, Check, Sparkles, Navigation, CheckCircle, XCircle, Loader2 } from "lucide-react";
+import { Plus, Check, Sparkles, Navigation, CheckCircle, XCircle, Loader2, Wand2 } from "lucide-react";
 import ImageWithFallback from "@/components/ImageWithFallback";
 import { useToast } from "@/hooks/use-toast";
 import { isInsideZone } from "@/lib/deliveryZones";
 import { analyticsStore, userBehaviorStore } from "@/lib/store";
+import { useImageQueue, type ItemStatus } from "@/hooks/useImageQueue";
 
 type ZoneStatus = "idle" | "checking" | "inside" | "outside" | "error";
 
@@ -36,46 +37,30 @@ function DeliveryZoneChecker({ branchId }: { branchId: string }) {
     );
   };
 
-  if (status === "idle") {
-    return (
-      <button
-        onClick={handleCheck}
-        className="flex items-center gap-1.5 text-xs text-primary hover:text-primary/80 transition font-medium"
-        data-testid="btn-check-zone"
-      >
-        <Navigation size={13} />
-        {t("Check delivery to my location", "تحقق من التوصيل لموقعي")}
-      </button>
-    );
-  }
-
-  if (status === "checking") {
-    return (
-      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-        <Loader2 size={13} className="animate-spin" />
-        {t("Checking...", "جاري التحقق...")}
-      </div>
-    );
-  }
-
-  if (status === "inside") {
-    return (
-      <div className="flex items-center gap-1.5 text-xs text-green-400">
-        <CheckCircle size={13} />
-        {t("Delivery available to your location!", "التوصيل متاح لموقعك!")}
-      </div>
-    );
-  }
-
-  if (status === "outside") {
-    return (
-      <div className="flex items-center gap-1.5 text-xs text-destructive">
-        <XCircle size={13} />
-        {t("Delivery not available in your area", "التوصيل غير متوفر في منطقتك")}
-      </div>
-    );
-  }
-
+  if (status === "idle") return (
+    <button onClick={handleCheck} className="flex items-center gap-1.5 text-xs text-primary hover:text-primary/80 transition font-medium" data-testid="btn-check-zone">
+      <Navigation size={13} />
+      {t("Check delivery to my location", "تحقق من التوصيل لموقعي")}
+    </button>
+  );
+  if (status === "checking") return (
+    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+      <Loader2 size={13} className="animate-spin" />
+      {t("Checking...", "جاري التحقق...")}
+    </div>
+  );
+  if (status === "inside") return (
+    <div className="flex items-center gap-1.5 text-xs text-green-400">
+      <CheckCircle size={13} />
+      {t("Delivery available to your location!", "التوصيل متاح لموقعك!")}
+    </div>
+  );
+  if (status === "outside") return (
+    <div className="flex items-center gap-1.5 text-xs text-destructive">
+      <XCircle size={13} />
+      {t("Delivery not available in your area", "التوصيل غير متوفر في منطقتك")}
+    </div>
+  );
   return (
     <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
       <XCircle size={13} />
@@ -90,14 +75,19 @@ function MenuItemCard({
   isOpen,
   added,
   onAdd,
+  genStatus,
 }: {
   item: MenuItem;
   restaurantColor: string;
   isOpen: boolean;
   added: boolean;
   onAdd: () => void;
+  genStatus?: ItemStatus;
 }) {
   const { t } = useLanguage();
+  const imgSrc = item.image_url || item.image;
+  const isGenerating = genStatus === "generating" || genStatus === "queued";
+
   return (
     <motion.div
       layout
@@ -109,20 +99,32 @@ function MenuItemCard({
         className="relative overflow-hidden flex-shrink-0"
         style={{ height: 160, background: `${restaurantColor}15` }}
       >
-        {item.image ? (
+        {isGenerating && !imgSrc ? (
+          <div className="w-full h-full flex flex-col items-center justify-center gap-2">
+            <div className="w-full h-full absolute inset-0 bg-gradient-to-r from-white/5 via-white/10 to-white/5 animate-pulse" />
+            <div className="relative z-10 flex flex-col items-center gap-1.5">
+              <Wand2 size={20} className="text-purple-400 animate-pulse" />
+              <span className="text-[10px] text-purple-400/80 font-medium">
+                {genStatus === "queued" ? t("Queued…", "في الانتظار…") : t("Generating…", "جارٍ الإنشاء…")}
+              </span>
+            </div>
+          </div>
+        ) : imgSrc ? (
           <motion.img
-            src={item.image}
+            src={imgSrc}
             alt={t(item.name_en, item.name_ar)}
             className="w-full h-full object-cover"
             loading="lazy"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.4 }}
             whileHover={{ scale: 1.07 }}
-            transition={{ duration: 0.35 }}
             onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-5xl opacity-40">🍽️</div>
+          <div className="w-full h-full flex items-center justify-center text-5xl opacity-30">🍽️</div>
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent pointer-events-none" />
         <div className="absolute top-2 left-2 flex gap-1 flex-wrap">
           {item.is_new && (
             <span className="text-[9px] bg-yellow-400/90 text-black font-bold px-2 py-0.5 rounded-full flex items-center gap-0.5">
@@ -132,6 +134,11 @@ function MenuItemCard({
           {item.is_popular && (
             <span className="text-[9px] bg-primary/90 text-white font-bold px-2 py-0.5 rounded-full">
               ⭐ {t("Popular", "الأكثر")}
+            </span>
+          )}
+          {item.image_ai_generated && imgSrc && (
+            <span className="text-[9px] bg-purple-600/80 text-white px-1.5 py-0.5 rounded-full flex items-center gap-0.5">
+              <Wand2 size={7} /> AI
             </span>
           )}
         </div>
@@ -179,6 +186,7 @@ export default function BranchPage() {
   const { t, isRTL } = useLanguage();
   const { addToCart } = useCart();
   const { toast } = useToast();
+  const { statuses, isRunning, total, completed, addToQueue } = useImageQueue();
 
   const restaurants = useStore(useCallback(() => restaurantStore.getAll(), []));
   const allBranches = useStore(useCallback(() => branchStore.getAll(), []));
@@ -197,6 +205,16 @@ export default function BranchPage() {
 
   const restaurant = restaurants.find((r) => r.id === params.restaurantId);
   const branch = allBranches.find((b) => b.id === params.branchId);
+
+  // Auto-generate images for items that don't have one
+  useEffect(() => {
+    if (allMenuItems.length === 0) return;
+    const needsImage = allMenuItems.filter(
+      (m) => !m.image_url && !m.image && !m.image_locked
+    );
+    if (needsImage.length === 0) return;
+    addToQueue(needsImage.map((item) => ({ item })));
+  }, [params.restaurantId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!restaurant || !branch) {
     return <div className="pt-16 text-center text-muted-foreground">{t("Branch not found", "الفرع غير موجود")}</div>;
@@ -220,7 +238,7 @@ export default function BranchPage() {
       category_id: item.category_id,
       description_en: item.description_en,
       description_ar: item.description_ar,
-      image: item.image,
+      image: item.image_url || item.image,
     };
     const result = addToCart(cartItem as any, restaurant.id, branch.id);
     if (result === "added") {
@@ -267,7 +285,33 @@ export default function BranchPage() {
           </div>
         </motion.div>
 
-        {/* Restaurant banners for this branch */}
+        {/* AI Image generation progress bar */}
+        {isRunning && total > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-4 bg-purple-600/10 border border-purple-500/20 rounded-xl px-4 py-3"
+          >
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <Wand2 size={13} className="text-purple-400 animate-pulse" />
+                <span className="text-xs text-purple-300 font-medium">
+                  {t(`Generating AI food photos… ${completed} / ${total}`, `جارٍ إنشاء صور الطعام… ${completed} / ${total}`)}
+                </span>
+              </div>
+              <span className="text-[10px] text-purple-400/60">{Math.round((completed / total) * 100)}%</span>
+            </div>
+            <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
+              <motion.div
+                className="h-full bg-purple-500 rounded-full"
+                animate={{ width: `${total > 0 ? (completed / total) * 100 : 0}%` }}
+                transition={{ duration: 0.4 }}
+              />
+            </div>
+          </motion.div>
+        )}
+
+        {/* Restaurant banners */}
         {allOffers.some((o) => o.show_as_banner && o.image && (o.restaurant_id === restaurant.id || o.restaurant_id === "global")) && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-6">
             <HeroBannerSlider offers={allOffers} restaurantId={restaurant.id} />
@@ -313,6 +357,7 @@ export default function BranchPage() {
                 isOpen={isOpen}
                 added={addedItems.has(item.id)}
                 onAdd={() => handleAddToCart(item)}
+                genStatus={statuses[item.id]}
               />
             ))}
           </motion.div>

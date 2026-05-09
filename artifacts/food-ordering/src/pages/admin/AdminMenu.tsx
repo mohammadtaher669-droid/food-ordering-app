@@ -3,12 +3,16 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { restaurantStore, categoryStore, menuStore } from "@/lib/store";
 import type { Category, MenuItem } from "@/lib/store";
 import { useStore } from "@/hooks/useStore";
-import { Plus, Trash2, Edit2, Check, X, FolderPlus, GripVertical, Star, Sparkles, Eye, EyeOff, Wand2, RefreshCw, Lock, Unlock, Link, Image as ImageIcon, Loader2 } from "lucide-react";
+import { useImageQueue } from "@/hooks/useImageQueue";
+import { generateImageForItem } from "@/lib/aiImageUtils";
+import {
+  Plus, Trash2, Edit2, Check, X, FolderPlus, GripVertical, Star, Sparkles, Eye, EyeOff,
+  Wand2, RefreshCw, Lock, Unlock, Link, Image as ImageIcon, Loader2, Zap, StopCircle,
+} from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import ImageUploader from "@/components/ImageUploader";
 import ImageWithFallback from "@/components/ImageWithFallback";
-
-// ─── helpers ──────────────────────────────────────────────────────────────────
+import { motion, AnimatePresence } from "framer-motion";
 
 function F({ label, value, onChange, ...p }: { label: string; value: string | number; onChange: (v: string) => void; [k: string]: any }) {
   return (
@@ -18,51 +22,6 @@ function F({ label, value, onChange, ...p }: { label: string; value: string | nu
     </div>
   );
 }
-
-function buildPrompt(item: Partial<MenuItem>, categoryName: string, restaurantName: string): string {
-  const name = item.name_en || item.name_ar || "food dish";
-  const desc = item.description_en || item.description_ar || "";
-  const parts = [`Professional food photography of ${name}`];
-  if (desc) parts.push(desc.slice(0, 80));
-  if (categoryName) parts.push(`${categoryName} dish`);
-  if (restaurantName) parts.push(`served at ${restaurantName}`);
-  parts.push("cinematic lighting, 45-degree angle, realistic, ultra high quality, restaurant menu style, clean minimal background, vibrant appetizing colors, shallow depth of field");
-  return parts.join(", ");
-}
-
-async function compressB64ToDataUrl(b64: string, w = 500, h = 500): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const img = new window.Image();
-    img.onload = () => {
-      const canvas = document.createElement("canvas");
-      canvas.width = w;
-      canvas.height = h;
-      const ctx = canvas.getContext("2d")!;
-      const scale = Math.max(w / img.width, h / img.height);
-      const sw = img.width * scale;
-      const sh = img.height * scale;
-      ctx.drawImage(img, (w - sw) / 2, (h - sh) / 2, sw, sh);
-      const url = canvas.toDataURL("image/webp", 0.82);
-      resolve(url);
-    };
-    img.onerror = reject;
-    img.src = `data:image/png;base64,${b64}`;
-  });
-}
-
-async function generateAndCompress(prompt: string, cacheKey: string, size: "1024x1024" | "1024x1536" = "1024x1024"): Promise<string> {
-  const res = await fetch("/api/generate-image", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ prompt, cacheKey, size }),
-  });
-  if (!res.ok) throw new Error(`API error ${res.status}`);
-  const { b64_json } = await res.json() as { b64_json: string };
-  const [tw, th] = size === "1024x1536" ? [400, 500] : [500, 500];
-  return compressB64ToDataUrl(b64_json, tw, th);
-}
-
-// ─── main component ────────────────────────────────────────────────────────────
 
 export default function AdminMenu() {
   const { t } = useLanguage();
@@ -83,10 +42,10 @@ export default function AdminMenu() {
     image_locked: false, image_ai_generated: false,
   });
   const [urlError, setUrlError] = useState("");
-  const [generatingIds, setGeneratingIds] = useState<Set<string>>(new Set());
-  const [formGenerating, setFormGenerating] = useState(false);
   const [showUrlInput, setShowUrlInput] = useState(false);
-  const formRef = useRef<HTMLDivElement>(null);
+  const [formGenerating, setFormGenerating] = useState(false);
+
+  const { statuses, isRunning, total, completed, failed, addToQueue, stop, reset } = useImageQueue();
 
   const categories = allCategories.filter((c) => c.restaurant_id === selectedRestaurant);
   const items = allItems.filter((m) => m.restaurant_id === selectedRestaurant);
@@ -97,54 +56,52 @@ export default function AdminMenu() {
     return cat ? t(cat.name_en, cat.name_ar) : "";
   };
 
-  // ─────────────────── AI IMAGE ───────────────────
+  // ─── Bulk Generate All ───────────────────────────────────────────────────────
+  const handleGenerateAll = () => {
+    const needsImage = items.filter((m) => !m.image_url && !m.image && !m.image_locked);
+    if (needsImage.length === 0) {
+      toast({ title: t("All items already have images!", "جميع الأصناف لديها صور بالفعل!") });
+      return;
+    }
+    reset();
+    addToQueue(needsImage.map((item) => ({ item })));
+    toast({ title: t(`Queued ${needsImage.length} items for AI generation`, `تم إضافة ${needsImage.length} صنف لقائمة الإنشاء`) });
+  };
+
+  // ─── Single Item AI ──────────────────────────────────────────────────────────
   const generateForItem = async (item: MenuItem, force = false) => {
     if (item.image_locked && !force) return;
-    if (generatingIds.has(item.id)) return;
-
-    setGeneratingIds((prev) => new Set(prev).add(item.id));
-    try {
-      const catName = getCategoryName(item.category_id);
-      const restName = t(restaurant?.name_en || "", restaurant?.name_ar || "");
-      const prompt = buildPrompt(item, catName, restName);
-      const cacheKey = force ? `regen_${item.id}_${Date.now()}` : item.id;
-      const dataUrl = await generateAndCompress(prompt, cacheKey);
-      const updated: MenuItem = {
-        ...item,
-        image: dataUrl,
-        image_url: undefined,
-        image_ai_generated: true,
-      };
-      menuStore.save(updated);
-      toast({ title: t("✓ Image generated", "✓ تم إنشاء الصورة") });
-    } catch (err) {
-      toast({
-        title: t("Image generation failed", "فشل إنشاء الصورة"),
-        description: err instanceof Error ? err.message : t("Unknown error", "خطأ"),
-        variant: "destructive",
-      });
-    } finally {
-      setGeneratingIds((prev) => { const s = new Set(prev); s.delete(item.id); return s; });
-    }
+    addToQueue([{ item, force }]);
   };
 
   const generateForForm = async (force = false) => {
     if (itemForm.image_locked && !force) return;
+    if (!itemForm.name_en && !itemForm.name_ar) {
+      toast({ title: t("Enter item name first", "أدخل اسم الصنف أولاً"), variant: "destructive" });
+      return;
+    }
     setFormGenerating(true);
     try {
-      const catName = getCategoryName(itemForm.category_id || "");
-      const restName = t(restaurant?.name_en || "", restaurant?.name_ar || "");
-      const prompt = buildPrompt(itemForm, catName, restName);
-      const cacheKey = force ? `regen_form_${Date.now()}` : `form_${itemForm.name_en || "item"}`;
-      const dataUrl = await generateAndCompress(prompt, cacheKey);
-      setItemForm((f) => ({ ...f, image: dataUrl, image_url: undefined, image_ai_generated: true }));
+      const tempItem: MenuItem = {
+        id: editingItemId || `temp-${Date.now()}`,
+        restaurant_id: selectedRestaurant,
+        category_id: itemForm.category_id || categories[0]?.id || "",
+        name_en: itemForm.name_en || "",
+        name_ar: itemForm.name_ar || "",
+        description_en: itemForm.description_en || "",
+        description_ar: itemForm.description_ar || "",
+        price: itemForm.price || 0,
+        is_available: true,
+        is_popular: false,
+        is_new: false,
+        image_ai_generated: false,
+        image_locked: false,
+      };
+      const url = await generateImageForItem(tempItem, { force });
+      setItemForm((f) => ({ ...f, image_url: url, image: undefined, image_ai_generated: true }));
       toast({ title: t("✓ Image generated", "✓ تم إنشاء الصورة") });
     } catch (err) {
-      toast({
-        title: t("Image generation failed", "فشل إنشاء الصورة"),
-        description: err instanceof Error ? err.message : t("Unknown error", "خطأ"),
-        variant: "destructive",
-      });
+      toast({ title: t("Generation failed", "فشل الإنشاء"), description: err instanceof Error ? err.message : "", variant: "destructive" });
     } finally {
       setFormGenerating(false);
     }
@@ -152,7 +109,7 @@ export default function AdminMenu() {
 
   const hasImage = (item: Partial<MenuItem>) => !!(item.image || item.image_url);
 
-  // ─────────────────── CATEGORY CRUD ───────────────────
+  // ─── Category CRUD ────────────────────────────────────────────────────────────
   const saveCat = () => {
     if (!catForm.name_en.trim() || !catForm.name_ar.trim()) {
       toast({ title: t("Required: name in EN and AR", "مطلوب: الاسم بالعربي والإنجليزي"), variant: "destructive" }); return;
@@ -168,7 +125,7 @@ export default function AdminMenu() {
       toast({ title: editingCatId ? t("Category updated", "تم تحديث الفئة") : t("Category added", "تمت إضافة الفئة") });
       setShowCatForm(false); setEditingCatId(null); setCatForm({ name_en: "", name_ar: "" });
     } catch (err) {
-      toast({ title: t("Save failed", "فشل الحفظ"), description: err instanceof Error ? err.message : t("Unknown error", "خطأ غير معروف"), variant: "destructive" });
+      toast({ title: t("Save failed", "فشل الحفظ"), description: err instanceof Error ? err.message : "", variant: "destructive" });
     }
   };
   const deleteCat = (id: string) => {
@@ -178,7 +135,7 @@ export default function AdminMenu() {
   };
   const editCat = (cat: Category) => { setEditingCatId(cat.id); setCatForm({ name_en: cat.name_en, name_ar: cat.name_ar }); setShowCatForm(true); };
 
-  // ─────────────────── ITEM CRUD ───────────────────
+  // ─── Item CRUD ────────────────────────────────────────────────────────────────
   const validateUrl = (url: string): string => {
     if (!url) return "";
     try {
@@ -195,11 +152,10 @@ export default function AdminMenu() {
       toast({ title: t("Required: name (EN, AR) and category", "مطلوب: الاسم والفئة"), variant: "destructive" }); return;
     }
     const rawUrl = itemForm.image_url?.trim() || "";
-    if (rawUrl) {
+    if (rawUrl && !rawUrl.startsWith("/api/images/")) {
       const err = validateUrl(rawUrl);
       if (err) { setUrlError(err); return; }
     }
-    const usingUrl = !!rawUrl;
     const newItem: MenuItem = {
       id: editingItemId || `item-${Date.now()}`,
       restaurant_id: selectedRestaurant,
@@ -207,8 +163,8 @@ export default function AdminMenu() {
       name_en: itemForm.name_en!, name_ar: itemForm.name_ar!,
       description_en: itemForm.description_en || "", description_ar: itemForm.description_ar || "",
       price: itemForm.price || 0,
-      image_url: usingUrl ? rawUrl : undefined,
-      image: usingUrl ? undefined : itemForm.image,
+      image_url: rawUrl || undefined,
+      image: rawUrl ? undefined : itemForm.image,
       calories: itemForm.calories || undefined,
       is_available: itemForm.is_available ?? true,
       is_popular: itemForm.is_popular || false,
@@ -222,7 +178,7 @@ export default function AdminMenu() {
       setShowItemForm(false); setEditingItemId(null); setUrlError(""); setShowUrlInput(false);
       setItemForm({ name_en: "", name_ar: "", price: 0, description_en: "", description_ar: "", is_available: true, is_popular: false, is_new: false, category_id: "", image_url: undefined, image_locked: false, image_ai_generated: false });
     } catch (err) {
-      toast({ title: t("Save failed", "فشل الحفظ"), description: err instanceof Error ? err.message : t("Unknown error", "خطأ غير معروف"), variant: "destructive" });
+      toast({ title: t("Save failed", "فشل الحفظ"), description: err instanceof Error ? err.message : "", variant: "destructive" });
     }
   };
 
@@ -230,7 +186,7 @@ export default function AdminMenu() {
     setEditingItemId(item.id);
     setItemForm({ ...item });
     setUrlError("");
-    setShowUrlInput(!!item.image_url);
+    setShowUrlInput(!!(item.image_url && !item.image_url.startsWith("/api/images/")));
     setShowItemForm(true);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -244,6 +200,8 @@ export default function AdminMenu() {
     toast({ title: updated.image_locked ? t("Image locked 🔒", "الصورة مقفلة 🔒") : t("Image unlocked 🔓", "الصورة غير مقفلة 🔓") });
   };
 
+  const itemsWithoutImages = items.filter((m) => !m.image_url && !m.image && !m.image_locked).length;
+
   return (
     <div>
       {/* Header */}
@@ -256,13 +214,66 @@ export default function AdminMenu() {
           <button onClick={() => { setShowItemForm(true); setEditingItemId(null); setShowUrlInput(false); setItemForm({ name_en: "", name_ar: "", price: 0, description_en: "", description_ar: "", is_available: true, is_popular: false, is_new: false, category_id: categories[0]?.id || "", image_locked: false, image_ai_generated: false }); }} className="flex items-center gap-1.5 px-4 py-2 bg-primary text-primary-foreground rounded-xl text-sm font-medium" data-testid="btn-add-menu-item">
             <Plus size={14} /> {t("Add Item", "إضافة عنصر")}
           </button>
+          {!isRunning ? (
+            <button
+              onClick={handleGenerateAll}
+              disabled={itemsWithoutImages === 0}
+              className="flex items-center gap-1.5 px-4 py-2 bg-purple-600 text-white rounded-xl text-sm font-medium disabled:opacity-40 hover:bg-purple-700 transition"
+              data-testid="btn-generate-all"
+            >
+              <Zap size={14} /> {t(`Generate All (${itemsWithoutImages})`, `إنشاء الكل (${itemsWithoutImages})`)}
+            </button>
+          ) : (
+            <button
+              onClick={stop}
+              className="flex items-center gap-1.5 px-4 py-2 bg-red-600/80 text-white rounded-xl text-sm font-medium hover:bg-red-600 transition"
+            >
+              <StopCircle size={14} /> {t("Stop", "إيقاف")}
+            </button>
+          )}
         </div>
       </div>
+
+      {/* Bulk progress bar */}
+      <AnimatePresence>
+        {(isRunning || (total > 0 && completed < total)) && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="mb-5 bg-purple-600/10 border border-purple-500/20 rounded-2xl px-5 py-4"
+          >
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <Wand2 size={14} className="text-purple-400 animate-pulse" />
+                <span className="text-sm font-medium text-purple-300">
+                  {t("AI Image Generation in Progress", "جارٍ إنشاء صور الذكاء الاصطناعي")}
+                </span>
+              </div>
+              <span className="text-xs text-purple-400 font-mono">
+                {completed}/{total} {failed > 0 && <span className="text-red-400 ml-2">({failed} {t("failed", "فشل")})</span>}
+              </span>
+            </div>
+            <div className="h-2 bg-white/5 rounded-full overflow-hidden">
+              <motion.div
+                className="h-full bg-gradient-to-r from-purple-600 to-purple-400 rounded-full"
+                animate={{ width: `${total > 0 ? (completed / total) * 100 : 0}%` }}
+                transition={{ duration: 0.5 }}
+              />
+            </div>
+            <div className="flex gap-4 mt-2 text-[11px] text-muted-foreground">
+              <span>✅ {t("Done", "منجز")}: {completed}</span>
+              <span>⏳ {t("Pending", "معلق")}: {total - completed - failed}</span>
+              {failed > 0 && <span>❌ {t("Failed", "فشل")}: {failed}</span>}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Restaurant Filter */}
       <div className="flex gap-2 mb-6 overflow-x-auto pb-1">
         {restaurants.map((r) => (
-          <button key={r.id} onClick={() => setSelectedRestaurant(r.id)}
+          <button key={r.id} onClick={() => { setSelectedRestaurant(r.id); reset(); }}
             className={`flex-shrink-0 px-3 py-1.5 rounded-xl text-xs font-medium transition ${selectedRestaurant === r.id ? "text-white" : "bg-card border border-white/5 text-muted-foreground hover:text-foreground"}`}
             style={selectedRestaurant === r.id ? { background: r.color } : {}}>
             {t(r.name_en, r.name_ar)}
@@ -287,7 +298,7 @@ export default function AdminMenu() {
 
       {/* Item Form */}
       {showItemForm && (
-        <div ref={formRef} className="bg-card border border-white/10 rounded-2xl p-5 mb-6 space-y-4">
+        <div className="bg-card border border-white/10 rounded-2xl p-5 mb-6 space-y-4">
           <h3 className="font-semibold text-foreground">{editingItemId ? t("Edit Item", "تعديل العنصر") : t("New Menu Item", "عنصر جديد")}</h3>
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -305,34 +316,32 @@ export default function AdminMenu() {
             <F label={t("Calories (optional)", "السعرات الحرارية (اختياري)")} value={itemForm.calories || ""} onChange={(v) => setItemForm({ ...itemForm, calories: v ? Number(v) : undefined })} type="number" min="0" placeholder="e.g. 650" data-testid="input-item-calories" />
           </div>
 
-          {/* ─── Image Section ─── */}
+          {/* Image Section */}
           <div className="border border-white/10 rounded-2xl p-4 space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{t("Item Image", "صورة العنصر")}</span>
-              {/* Lock toggle */}
               <button
                 type="button"
                 onClick={() => setItemForm((f) => ({ ...f, image_locked: !f.image_locked }))}
                 className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs transition border ${itemForm.image_locked ? "border-yellow-500/40 bg-yellow-500/10 text-yellow-400" : "border-white/10 text-muted-foreground hover:text-foreground"}`}
-                title={t("Lock image to prevent auto-regeneration", "قفل الصورة لمنع إعادة التوليد")}
               >
                 {itemForm.image_locked ? <Lock size={11} /> : <Unlock size={11} />}
                 {itemForm.image_locked ? t("Locked", "مقفل") : t("Lock", "قفل")}
               </button>
             </div>
 
-            {/* Image preview */}
+            {/* Preview */}
             {hasImage(itemForm) && (
               <div className="relative">
                 <img
                   src={itemForm.image_url || itemForm.image}
                   alt="preview"
-                  className="w-full h-44 object-cover rounded-xl border border-white/10"
+                  className="w-full h-48 object-cover rounded-xl border border-white/10"
                   onError={() => setUrlError(t("Image failed to load", "تعذّر تحميل الصورة"))}
                 />
                 {itemForm.image_ai_generated && (
                   <span className="absolute top-2 left-2 bg-purple-600/90 text-white text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
-                    <Wand2 size={9} /> AI
+                    <Wand2 size={9} /> AI Generated
                   </span>
                 )}
                 {itemForm.image_locked && (
@@ -344,93 +353,59 @@ export default function AdminMenu() {
                   type="button"
                   onClick={() => setItemForm((f) => ({ ...f, image: undefined, image_url: undefined, image_ai_generated: false }))}
                   className="absolute bottom-2 right-2 p-1.5 bg-black/60 rounded-lg text-white/70 hover:text-red-400 transition"
-                  title={t("Remove image", "حذف الصورة")}
                 >
                   <X size={12} />
                 </button>
               </div>
             )}
 
-            {/* AI Generate buttons */}
+            {/* AI Buttons */}
             <div className="flex gap-2 flex-wrap">
               {!hasImage(itemForm) ? (
-                <button
-                  type="button"
-                  disabled={formGenerating || itemForm.image_locked}
-                  onClick={() => generateForForm(false)}
-                  className="flex items-center gap-1.5 px-3 py-2 bg-purple-600/90 text-white rounded-xl text-xs font-medium disabled:opacity-50 hover:bg-purple-600 transition"
-                  data-testid="btn-generate-image"
-                >
+                <button type="button" disabled={formGenerating || !!itemForm.image_locked} onClick={() => generateForForm(false)}
+                  className="flex items-center gap-1.5 px-3 py-2 bg-purple-600/90 text-white rounded-xl text-xs font-medium disabled:opacity-50 hover:bg-purple-600 transition" data-testid="btn-generate-image">
                   {formGenerating ? <Loader2 size={12} className="animate-spin" /> : <Wand2 size={12} />}
                   {t("Generate Image (AI)", "إنشاء صورة بالذكاء الاصطناعي")}
                 </button>
               ) : (
-                <button
-                  type="button"
-                  disabled={formGenerating || itemForm.image_locked}
-                  onClick={() => generateForForm(true)}
-                  className="flex items-center gap-1.5 px-3 py-2 bg-purple-600/20 border border-purple-500/30 text-purple-400 rounded-xl text-xs font-medium disabled:opacity-50 hover:bg-purple-600/30 transition"
-                  data-testid="btn-regenerate-image"
-                >
+                <button type="button" disabled={formGenerating || !!itemForm.image_locked} onClick={() => generateForForm(true)}
+                  className="flex items-center gap-1.5 px-3 py-2 bg-purple-600/20 border border-purple-500/30 text-purple-400 rounded-xl text-xs font-medium disabled:opacity-50 hover:bg-purple-600/30 transition" data-testid="btn-regenerate-image">
                   {formGenerating ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
                   {t("Regenerate (AI)", "إعادة إنشاء (AI)")}
                 </button>
               )}
-
-              {/* Toggle URL input */}
-              <button
-                type="button"
-                onClick={() => { setShowUrlInput((v) => !v); setUrlError(""); }}
-                className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs border transition ${showUrlInput ? "border-primary/50 bg-primary/10 text-primary" : "border-white/10 text-muted-foreground hover:text-foreground"}`}
-              >
+              <button type="button" onClick={() => { setShowUrlInput((v) => !v); setUrlError(""); }}
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs border transition ${showUrlInput ? "border-primary/50 bg-primary/10 text-primary" : "border-white/10 text-muted-foreground hover:text-foreground"}`}>
                 <Link size={11} /> {t("Image URL", "رابط الصورة")}
               </button>
-
-              {/* Upload */}
-              {!itemForm.image_url && !showUrlInput && (
-                <span className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs border border-white/10 text-muted-foreground">
-                  <ImageIcon size={11} /> {t("or upload below", "أو ارفع أدناه")}
-                </span>
-              )}
             </div>
-
             {formGenerating && (
-              <div className="flex items-center gap-2 text-xs text-purple-400">
-                <Loader2 size={12} className="animate-spin" />
+              <p className="text-xs text-purple-400 flex items-center gap-1.5">
+                <Loader2 size={11} className="animate-spin" />
                 {t("Generating professional food photo…", "جارٍ إنشاء صورة احترافية…")}
-              </div>
+              </p>
             )}
 
-            {/* URL input */}
+            {/* URL Input */}
             {showUrlInput && (
               <div className="space-y-1">
                 <label className="text-xs text-muted-foreground block">{t("Image URL", "رابط الصورة")}</label>
-                <input
-                  type="url"
-                  placeholder="https://example.com/image.webp"
-                  value={itemForm.image_url || ""}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    setItemForm((f) => ({ ...f, image_url: val || undefined, image: val ? undefined : f.image, image_ai_generated: false }));
-                    setUrlError("");
-                  }}
+                <input type="url" placeholder="https://example.com/image.webp"
+                  value={itemForm.image_url?.startsWith("/api/images/") ? "" : (itemForm.image_url || "")}
+                  onChange={(e) => { const val = e.target.value; setItemForm((f) => ({ ...f, image_url: val || undefined, image: val ? undefined : f.image, image_ai_generated: false })); setUrlError(""); }}
                   className="w-full bg-background border border-white/10 rounded-xl px-3 py-2 text-sm text-foreground focus:outline-none focus:border-primary/50"
-                  data-testid="input-item-image-url"
-                />
+                  data-testid="input-item-image-url" />
                 {urlError && <p className="text-xs text-red-400">{urlError}</p>}
               </div>
             )}
 
-            {/* File Upload — only when no image and no URL mode */}
+            {/* File Upload */}
             {!hasImage(itemForm) && !showUrlInput && (
-              <ImageUploader
-                preset="product"
-                label={t("Upload Image (optional)", "رفع صورة (اختياري)")}
+              <ImageUploader preset="product" label={t("Upload Image (optional)", "رفع صورة (اختياري)")}
                 value={itemForm.image}
                 onChange={(url) => setItemForm((f) => ({ ...f, image: url, image_ai_generated: false }))}
                 onDelete={() => setItemForm((f) => ({ ...f, image: undefined }))}
-                data-testid="uploader-item-image"
-              />
+                data-testid="uploader-item-image" />
             )}
           </div>
 
@@ -438,7 +413,7 @@ export default function AdminMenu() {
           <div className="flex gap-4 flex-wrap">
             {[
               { field: "is_available" as const, label_en: "Available", label_ar: "متاح" },
-              { field: "is_popular" as const, label_en: "Popular (Most Ordered)", label_ar: "الأكثر طلباً" },
+              { field: "is_popular" as const, label_en: "Popular", label_ar: "الأكثر طلباً" },
               { field: "is_new" as const, label_en: "New Item", label_ar: "عنصر جديد" },
             ].map(({ field, label_en, label_ar }) => (
               <label key={field} className="flex items-center gap-2 text-sm cursor-pointer">
@@ -454,7 +429,7 @@ export default function AdminMenu() {
         </div>
       )}
 
-      {/* Categories & Items */}
+      {/* Item List */}
       <div className="space-y-6">
         {categories.length === 0 && (
           <div className="text-center py-12 text-muted-foreground">
@@ -472,33 +447,40 @@ export default function AdminMenu() {
                   <span className="text-xs text-muted-foreground bg-white/5 px-2 py-0.5 rounded-full">{catItems.length} {t("items", "عناصر")}</span>
                 </div>
                 <div className="flex gap-1">
-                  <button onClick={() => editCat(cat)} className="p-1.5 rounded-lg hover:bg-white/5 text-muted-foreground hover:text-foreground transition">
-                    <Edit2 size={13} />
-                  </button>
-                  <button onClick={() => deleteCat(cat.id)} className="p-1.5 rounded-lg hover:bg-destructive/10 text-destructive/60 hover:text-destructive transition" data-testid={`btn-delete-cat-${cat.id}`}>
-                    <Trash2 size={13} />
-                  </button>
+                  <button onClick={() => editCat(cat)} className="p-1.5 rounded-lg hover:bg-white/5 text-muted-foreground hover:text-foreground transition"><Edit2 size={13} /></button>
+                  <button onClick={() => deleteCat(cat.id)} className="p-1.5 rounded-lg hover:bg-destructive/10 text-destructive/60 hover:text-destructive transition" data-testid={`btn-delete-cat-${cat.id}`}><Trash2 size={13} /></button>
                 </div>
               </div>
               <div className="space-y-2 pl-5">
                 {catItems.length === 0 && <p className="text-sm text-muted-foreground">{t("No items in this category", "لا توجد عناصر في هذه الفئة")}</p>}
                 {catItems.map((item) => {
-                  const isGenerating = generatingIds.has(item.id);
-                  const itemHasImage = !!(item.image || item.image_url);
+                  const genStatus = statuses[item.id];
+                  const isGenerating = genStatus === "generating";
+                  const isQueued = genStatus === "queued";
+                  const isDone = genStatus === "done";
+                  const isFailed = genStatus === "failed";
+                  const imgSrc = item.image_url || item.image;
+
                   return (
-                    <div key={item.id} className="bg-card border border-white/5 rounded-xl p-3 flex items-center gap-3" data-testid={`admin-menu-item-${item.id}`}>
+                    <div key={item.id} className={`bg-card border rounded-xl p-3 flex items-center gap-3 transition ${isGenerating ? "border-purple-500/30 bg-purple-600/5" : isDone ? "border-green-500/20" : isFailed ? "border-red-500/20" : "border-white/5"}`} data-testid={`admin-menu-item-${item.id}`}>
                       {/* Thumbnail */}
-                      <div className="relative flex-shrink-0">
-                        <ImageWithFallback src={item.image_url || item.image} alt={item.name_en} className="w-12 h-12 rounded-lg object-cover" preset="thumbnail" />
-                        {item.image_ai_generated && (
-                          <span className="absolute -top-1 -right-1 bg-purple-600 text-white rounded-full p-0.5">
-                            <Wand2 size={8} />
-                          </span>
+                      <div className="relative flex-shrink-0 w-12 h-12">
+                        {isGenerating ? (
+                          <div className="w-12 h-12 rounded-lg bg-purple-600/20 flex items-center justify-center">
+                            <Loader2 size={16} className="text-purple-400 animate-spin" />
+                          </div>
+                        ) : isQueued ? (
+                          <div className="w-12 h-12 rounded-lg bg-purple-600/10 flex items-center justify-center">
+                            <Wand2 size={14} className="text-purple-400/50" />
+                          </div>
+                        ) : (
+                          <ImageWithFallback src={imgSrc} alt={item.name_en} className="w-12 h-12 rounded-lg object-cover" preset="thumbnail" />
+                        )}
+                        {item.image_ai_generated && imgSrc && !isGenerating && (
+                          <span className="absolute -top-1 -right-1 bg-purple-600 text-white rounded-full p-0.5"><Wand2 size={8} /></span>
                         )}
                         {item.image_locked && (
-                          <span className="absolute -bottom-1 -right-1 bg-yellow-500 text-black rounded-full p-0.5">
-                            <Lock size={8} />
-                          </span>
+                          <span className="absolute -bottom-1 -right-1 bg-yellow-500 text-black rounded-full p-0.5"><Lock size={8} /></span>
                         )}
                       </div>
 
@@ -508,62 +490,48 @@ export default function AdminMenu() {
                           <p className="text-sm font-medium text-foreground">{item.name_en}</p>
                           <p className="text-xs text-muted-foreground">/ {item.name_ar}</p>
                           {item.is_new && <span className="text-[10px] bg-yellow-400/15 text-yellow-400 px-1.5 rounded-full">{t("New", "جديد")}</span>}
-                          {item.is_popular && <span className="text-[10px] bg-primary/15 text-primary px-1.5 rounded-full">⭐ {t("Popular", "شهير")}</span>}
-                          {!item.is_available && <span className="text-[10px] bg-red-500/15 text-red-400 px-1.5 rounded-full">{t("Unavailable", "غير متاح")}</span>}
+                          {item.is_popular && <span className="text-[10px] bg-primary/15 text-primary px-1.5 rounded-full">⭐</span>}
+                          {!item.is_available && <span className="text-[10px] bg-red-500/15 text-red-400 px-1.5 rounded-full">{t("Off", "مغلق")}</span>}
+                          {isGenerating && <span className="text-[10px] bg-purple-500/15 text-purple-400 px-1.5 rounded-full flex items-center gap-0.5"><Loader2 size={8} className="animate-spin" /> {t("Generating", "جارٍ الإنشاء")}</span>}
+                          {isQueued && <span className="text-[10px] bg-purple-500/10 text-purple-400/70 px-1.5 rounded-full">{t("Queued", "في الانتظار")}</span>}
+                          {isDone && !imgSrc && <span className="text-[10px] bg-green-500/15 text-green-400 px-1.5 rounded-full">{t("✓ Generated", "✓ تم")}</span>}
+                          {isFailed && <span className="text-[10px] bg-red-500/15 text-red-400 px-1.5 rounded-full">{t("✗ Failed", "✗ فشل")}</span>}
                         </div>
                       </div>
 
                       <span className="font-bold text-sm flex-shrink-0" style={{ color: restaurant?.color || "#FF7A00" }}>{item.price} ﷼</span>
 
-                      {/* Action buttons */}
+                      {/* Actions */}
                       <div className="flex gap-1 flex-shrink-0 items-center">
-                        {/* AI generate / regenerate */}
-                        {!itemHasImage ? (
-                          <button
-                            onClick={() => generateForItem(item, false)}
-                            disabled={isGenerating}
-                            className="p-1.5 rounded-lg bg-purple-600/20 text-purple-400 hover:bg-purple-600/30 transition disabled:opacity-50"
-                            title={t("Generate AI image", "إنشاء صورة بالذكاء الاصطناعي")}
-                            data-testid={`btn-generate-${item.id}`}
-                          >
+                        {!imgSrc ? (
+                          <button onClick={() => generateForItem(item)} disabled={isGenerating || isQueued}
+                            className="p-1.5 rounded-lg bg-purple-600/20 text-purple-400 hover:bg-purple-600/30 transition disabled:opacity-40"
+                            title={t("Generate AI image", "إنشاء صورة بالذكاء الاصطناعي")} data-testid={`btn-generate-${item.id}`}>
                             {isGenerating ? <Loader2 size={13} className="animate-spin" /> : <Wand2 size={13} />}
                           </button>
                         ) : (
-                          <button
-                            onClick={() => generateForItem(item, true)}
-                            disabled={isGenerating || item.image_locked}
+                          <button onClick={() => generateForItem(item, true)} disabled={isGenerating || isQueued || item.image_locked}
                             className="p-1.5 rounded-lg bg-purple-600/10 text-purple-400/70 hover:bg-purple-600/20 transition disabled:opacity-30"
-                            title={item.image_locked ? t("Image locked", "الصورة مقفلة") : t("Regenerate AI image", "إعادة إنشاء الصورة")}
-                            data-testid={`btn-regen-${item.id}`}
-                          >
+                            title={item.image_locked ? t("Locked", "مقفل") : t("Regenerate", "إعادة إنشاء")} data-testid={`btn-regen-${item.id}`}>
                             {isGenerating ? <Loader2 size={13} className="animate-spin" /> : <RefreshCw size={13} />}
                           </button>
                         )}
-
-                        {/* Lock */}
-                        <button
-                          onClick={() => toggleLock(item)}
-                          className={`p-1.5 rounded-lg transition ${item.image_locked ? "text-yellow-400 hover:text-yellow-300 bg-yellow-500/10" : "text-muted-foreground hover:text-yellow-400"}`}
-                          title={item.image_locked ? t("Unlock image", "إلغاء قفل الصورة") : t("Lock image", "قفل الصورة")}
-                        >
+                        <button onClick={() => toggleLock(item)}
+                          className={`p-1.5 rounded-lg transition ${item.image_locked ? "text-yellow-400 bg-yellow-500/10" : "text-muted-foreground hover:text-yellow-400"}`}
+                          title={item.image_locked ? t("Unlock", "إلغاء القفل") : t("Lock", "قفل")}>
                           {item.image_locked ? <Lock size={13} /> : <Unlock size={13} />}
                         </button>
-
-                        <button onClick={() => toggleField(item, "is_available")} className={`p-1 rounded transition ${item.is_available ? "text-green-400 hover:text-red-400" : "text-red-400 hover:text-green-400"}`} title={t("Toggle availability", "تبديل التوفر")}>
+                        <button onClick={() => toggleField(item, "is_available")} className={`p-1 rounded transition ${item.is_available ? "text-green-400 hover:text-red-400" : "text-red-400 hover:text-green-400"}`}>
                           {item.is_available ? <Eye size={13} /> : <EyeOff size={13} />}
                         </button>
-                        <button onClick={() => toggleField(item, "is_popular")} className={`p-1 rounded transition ${item.is_popular ? "text-primary" : "text-muted-foreground hover:text-primary"}`} title={t("Toggle popular", "تبديل الشهرة")}>
+                        <button onClick={() => toggleField(item, "is_popular")} className={`p-1 rounded transition ${item.is_popular ? "text-primary" : "text-muted-foreground hover:text-primary"}`}>
                           <Star size={13} fill={item.is_popular ? "currentColor" : "none"} />
                         </button>
-                        <button onClick={() => toggleField(item, "is_new")} className={`p-1 rounded transition ${item.is_new ? "text-yellow-400" : "text-muted-foreground hover:text-yellow-400"}`} title={t("Toggle new", "تبديل جديد")}>
+                        <button onClick={() => toggleField(item, "is_new")} className={`p-1 rounded transition ${item.is_new ? "text-yellow-400" : "text-muted-foreground hover:text-yellow-400"}`}>
                           <Sparkles size={13} />
                         </button>
-                        <button onClick={() => editItem(item)} className="p-1 rounded text-muted-foreground hover:text-foreground transition">
-                          <Edit2 size={13} />
-                        </button>
-                        <button onClick={() => deleteItem(item.id)} className="p-1 rounded text-destructive/60 hover:text-destructive transition" data-testid={`btn-delete-item-${item.id}`}>
-                          <Trash2 size={13} />
-                        </button>
+                        <button onClick={() => editItem(item)} className="p-1 rounded text-muted-foreground hover:text-foreground transition"><Edit2 size={13} /></button>
+                        <button onClick={() => deleteItem(item.id)} className="p-1 rounded text-destructive/60 hover:text-destructive transition" data-testid={`btn-delete-item-${item.id}`}><Trash2 size={13} /></button>
                       </div>
                     </div>
                   );
