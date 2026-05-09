@@ -8,6 +8,123 @@ import type { MenuItem, ModifierGroup, ModifierOption, AddOn } from "@/lib/store
 import type { MenuItem as CartMenuItem } from "@/contexts/CartContext";
 import { useToast } from "@/hooks/use-toast";
 
+interface PriceBreakdownProps {
+  basePrice: number;
+  selectedOptions: Record<string, ModifierOption[]>;
+  selectedAddOns: AddOn[];
+  quantity: number;
+  totalPrice: number;
+  restaurantColor: string;
+  t: (en: string, ar: string) => string;
+}
+
+function PriceBreakdown({ basePrice, selectedOptions, selectedAddOns, quantity, totalPrice, restaurantColor, t }: PriceBreakdownProps) {
+  const allSelectedOptions = Object.values(selectedOptions).flat().filter((o) => o.price_addition > 0);
+  const paidAddOns = selectedAddOns.filter((a) => !a.is_free && a.price > 0);
+  const hasExtras = allSelectedOptions.length > 0 || paidAddOns.length > 0 || quantity > 1;
+
+  if (!hasExtras) return null;
+
+  const rowVariants = {
+    hidden: { opacity: 0, height: 0, marginBottom: 0 },
+    visible: { opacity: 1, height: "auto", marginBottom: 4 },
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 8 }}
+      transition={{ duration: 0.25 }}
+      className="mb-5 rounded-2xl bg-white/4 border border-white/8 overflow-hidden"
+    >
+      <div className="px-4 py-3">
+        <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+          {t("Price Breakdown", "تفاصيل السعر")}
+        </p>
+
+        {/* Base price row */}
+        <div className="flex items-center justify-between mb-1">
+          <span className="text-sm text-muted-foreground">{t("Base price", "السعر الأساسي")}</span>
+          <span className="text-sm text-foreground font-medium">{basePrice.toFixed(0)} ﷼</span>
+        </div>
+
+        {/* Selected modifier options */}
+        <AnimatePresence initial={false}>
+          {allSelectedOptions.map((opt) => (
+            <motion.div
+              key={opt.id}
+              variants={rowVariants}
+              initial="hidden"
+              animate="visible"
+              exit="hidden"
+              transition={{ duration: 0.2 }}
+              className="flex items-center justify-between"
+            >
+              <span className="text-sm text-muted-foreground truncate flex-1 pr-2">{t(opt.name_en, opt.name_ar)}</span>
+              <span className="text-sm font-medium flex-shrink-0" style={{ color: restaurantColor }}>
+                +{opt.price_addition.toFixed(0)} ﷼
+              </span>
+            </motion.div>
+          ))}
+        </AnimatePresence>
+
+        {/* Selected paid add-ons */}
+        <AnimatePresence initial={false}>
+          {paidAddOns.map((addOn) => (
+            <motion.div
+              key={addOn.id}
+              variants={rowVariants}
+              initial="hidden"
+              animate="visible"
+              exit="hidden"
+              transition={{ duration: 0.2 }}
+              className="flex items-center justify-between"
+            >
+              <span className="text-sm text-muted-foreground truncate flex-1 pr-2">{t(addOn.name_en, addOn.name_ar)}</span>
+              <span className="text-sm font-medium flex-shrink-0" style={{ color: restaurantColor }}>
+                +{addOn.price.toFixed(0)} ﷼
+              </span>
+            </motion.div>
+          ))}
+        </AnimatePresence>
+
+        {/* Quantity multiplier */}
+        {quantity > 1 && (
+          <motion.div
+            key="qty-row"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.2 }}
+            className="flex items-center justify-between mt-1"
+          >
+            <span className="text-sm text-muted-foreground">
+              {t(`Quantity × ${quantity}`, `الكمية × ${quantity}`)}
+            </span>
+            <span className="text-sm text-muted-foreground">×{quantity}</span>
+          </motion.div>
+        )}
+
+        {/* Divider + Total */}
+        <div className="mt-3 pt-3 border-t border-white/10 flex items-center justify-between">
+          <span className="text-sm font-bold text-foreground">{t("Total", "الإجمالي")}</span>
+          <motion.span
+            key={totalPrice}
+            initial={{ scale: 1.12, opacity: 0.7 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ type: "spring", stiffness: 400, damping: 20 }}
+            className="text-base font-bold"
+            style={{ color: restaurantColor }}
+          >
+            {totalPrice.toFixed(0)} ﷼
+          </motion.span>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
 interface Props {
   item: MenuItem | null;
   restaurantId: string;
@@ -275,6 +392,17 @@ export default function ItemDetailModal({ item, restaurantId, branchId, restaura
                   className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50 resize-none"
                 />
               </div>
+
+              {/* Price Breakdown */}
+              <PriceBreakdown
+                basePrice={basePrice}
+                selectedOptions={selectedOptions}
+                selectedAddOns={selectedAddOns}
+                quantity={quantity}
+                totalPrice={totalPrice}
+                restaurantColor={restaurantColor}
+                t={t}
+              />
             </div>
 
             {/* Sticky bottom bar */}
