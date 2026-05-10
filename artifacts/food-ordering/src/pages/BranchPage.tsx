@@ -95,8 +95,8 @@ function AddBtn({
   isDisabled: boolean; added: boolean; onAdd: (e: React.MouseEvent) => void;
   restaurantColor: string; size?: "sm" | "md"; testId: string;
 }) {
-  const dim = size === "sm" ? "w-7 h-7" : "w-9 h-9";
-  const iconSize = size === "sm" ? 13 : 16;
+  const dim = size === "sm" ? "w-8 h-8" : "w-9 h-9";
+  const iconSize = size === "sm" ? 14 : 16;
   return (
     <button
       onClick={onAdd}
@@ -117,13 +117,38 @@ function AddBtn({
   );
 }
 
+// ─── Mobile add button — pill-shaped, clearly labelled, min 44 px hit area ────
+
+function MobileAddBtn({
+  isDisabled, added, onAdd, restaurantColor, testId,
+}: {
+  isDisabled: boolean; added: boolean; onAdd: (e: React.MouseEvent) => void;
+  restaurantColor: string; testId: string;
+}) {
+  const { t } = useLanguage();
+  return (
+    <motion.button
+      whileTap={{ scale: 0.88 }}
+      onClick={onAdd}
+      disabled={isDisabled}
+      data-testid={testId}
+      className={`flex items-center gap-1.5 rounded-xl font-bold shadow-lg flex-shrink-0 transition-colors
+        px-3.5 py-2 text-[12px] text-white ${isDisabled ? "opacity-30 cursor-not-allowed" : ""}`}
+      style={{ background: isDisabled ? "rgba(0,0,0,0.4)" : added ? "#22c55e" : restaurantColor, minHeight: 36 }}
+    >
+      {added ? <Check size={13} /> : <Plus size={13} />}
+      <span>{added ? t("Added", "أضيف") : t("Add", "أضف")}</span>
+    </motion.button>
+  );
+}
+
 // ─── Main grid card (premium, image-first) ────────────────────────────────────
 
 function MenuItemCard({
-  item, restaurantColor, isOpen, added, onAdd, outOfStock, displayPrice,
+  item, restaurantColor, isOpen, added, onAdd, onView, outOfStock, displayPrice,
 }: {
   item: MenuItem; restaurantColor: string; isOpen: boolean;
-  added: boolean; onAdd: () => void; outOfStock?: boolean; displayPrice?: number;
+  added: boolean; onAdd: () => void; onView: () => void; outOfStock?: boolean; displayPrice?: number;
 }) {
   const { t } = useLanguage();
   const [imgLoaded, setImgLoaded] = useState(false);
@@ -141,7 +166,7 @@ function MenuItemCard({
       initial="rest"
       whileHover={!outOfStock ? "hovered" : "rest"}
       data-testid={`card-menuitem-${item.id}`}
-      onClick={!isDisabled ? onAdd : undefined}
+      onClick={!isDisabled ? onView : undefined}
       className={`relative aspect-square rounded-2xl overflow-hidden cursor-pointer select-none ${
         outOfStock ? "opacity-70" : ""
       }`}
@@ -238,7 +263,7 @@ function MenuItemCard({
             <span className="text-[12px] font-bold drop-shadow" style={{ color: restaurantColor }}>{effectivePrice} ﷼</span>
           </div>
           {!outOfStock && (
-            <AddBtn isDisabled={isDisabled} added={added} onAdd={handleAdd} restaurantColor={restaurantColor} size="sm" testId={`btn-add-${item.id}`} />
+            <MobileAddBtn isDisabled={isDisabled} added={added} onAdd={handleAdd} restaurantColor={restaurantColor} testId={`btn-add-${item.id}`} />
           )}
         </div>
       </div>
@@ -249,10 +274,10 @@ function MenuItemCard({
 // ─── Compact grid card ────────────────────────────────────────────────────────
 
 function MenuItemCompactCard({
-  item, restaurantColor, isOpen, added, onAdd, outOfStock, displayPrice,
+  item, restaurantColor, isOpen, added, onAdd, onView, outOfStock, displayPrice,
 }: {
   item: MenuItem; restaurantColor: string; isOpen: boolean;
-  added: boolean; onAdd: () => void; outOfStock?: boolean; displayPrice?: number;
+  added: boolean; onAdd: () => void; onView: () => void; outOfStock?: boolean; displayPrice?: number;
 }) {
   const { t } = useLanguage();
   const [imgLoaded, setImgLoaded] = useState(false);
@@ -268,7 +293,7 @@ function MenuItemCompactCard({
       initial="rest"
       whileHover={!outOfStock ? "hovered" : "rest"}
       data-testid={`card-menuitem-${item.id}`}
-      onClick={!isDisabled ? onAdd : undefined}
+      onClick={!isDisabled ? onView : undefined}
       className={`relative aspect-square rounded-xl overflow-hidden cursor-pointer select-none ${outOfStock ? "opacity-70" : ""}`}
       style={{ boxShadow: "0 4px 16px rgba(0,0,0,0.4)" }}
     >
@@ -317,12 +342,17 @@ function MenuItemCompactCard({
         </div>
       </motion.div>
 
-      {/* Mobile bottom bar */}
+      {/* Mobile bottom bar — always shows name + Add button */}
       <div className="absolute inset-x-0 bottom-0 z-20 md:hidden">
-        <div className="h-16 bg-gradient-to-t from-black/85 to-transparent" />
-        <div className="absolute bottom-0 inset-x-0 px-2 pb-2 flex items-end justify-between gap-1">
-          <p className="text-white text-[11px] font-bold line-clamp-1 flex-1">{name}</p>
-          <span className="text-[11px] font-bold flex-shrink-0" style={{ color: restaurantColor }}>{effectivePrice} ﷼</span>
+        <div className="h-20 bg-gradient-to-t from-black/90 to-transparent" />
+        <div className="absolute bottom-0 inset-x-0 px-2 pb-2 flex items-end justify-between gap-1.5">
+          <div className="flex-1 min-w-0">
+            <p className="text-white text-[10px] font-bold line-clamp-1 drop-shadow">{name}</p>
+            <span className="text-[10px] font-bold drop-shadow" style={{ color: restaurantColor }}>{effectivePrice} ﷼</span>
+          </div>
+          {!outOfStock && (
+            <MobileAddBtn isDisabled={isDisabled} added={added} onAdd={handleAdd} restaurantColor={restaurantColor} testId={`btn-add-${item.id}`} />
+          )}
         </div>
       </div>
     </motion.div>
@@ -332,10 +362,10 @@ function MenuItemCompactCard({
 // ─── List card (horizontal, text always visible) ──────────────────────────────
 
 function MenuItemListCard({
-  item, restaurantColor, isOpen, added, onAdd, outOfStock, displayPrice,
+  item, restaurantColor, isOpen, added, onAdd, onView, outOfStock, displayPrice,
 }: {
   item: MenuItem; restaurantColor: string; isOpen: boolean;
-  added: boolean; onAdd: () => void; outOfStock?: boolean; displayPrice?: number;
+  added: boolean; onAdd: () => void; onView: () => void; outOfStock?: boolean; displayPrice?: number;
 }) {
   const { t } = useLanguage();
   const [imgLoaded, setImgLoaded] = useState(false);
@@ -347,7 +377,7 @@ function MenuItemListCard({
   return (
     <motion.div
       layout
-      onClick={!isDisabled ? onAdd : undefined}
+      onClick={!isDisabled ? onView : undefined}
       data-testid={`card-menuitem-${item.id}`}
       className={`relative flex flex-row items-center gap-3 p-3 rounded-2xl cursor-pointer select-none transition-colors ${
         outOfStock ? "opacity-70" : "hover:bg-white/[0.03]"
@@ -409,7 +439,7 @@ function MenuItemListCard({
             <p className="text-[10px] text-muted-foreground/50 line-through">{item.price} ﷼</p>
           )}
         </div>
-        <AddBtn isDisabled={isDisabled} added={added} onAdd={handleAdd} restaurantColor={restaurantColor} size="sm" testId={`btn-add-${item.id}`} />
+        <MobileAddBtn isDisabled={isDisabled} added={added} onAdd={handleAdd} restaurantColor={restaurantColor} testId={`btn-add-${item.id}`} />
       </div>
     </motion.div>
   );
@@ -480,6 +510,22 @@ export default function BranchPage() {
     userBehaviorStore.trackView(item.id);
     setModalItem(item);
     setModalOpen(true);
+  };
+
+  const handleDirectAdd = (item: MenuItem) => {
+    if (!isOpen || getEffective(item).outOfStock) return;
+    const result = addToCart(
+      item,
+      restaurant.id,
+      branch.id,
+      {},
+      [],
+      ""
+    );
+    if (result === "confirm_clear") return; // cart conflict — let CartContext handle the dialog
+    markAdded(item.id);
+    analyticsStore.track({ type: "add_to_cart", item_id: item.id, restaurant_id: item.restaurant_id });
+    toast({ title: t("Added to cart", "تمت الإضافة للسلة"), description: t(item.name_en, item.name_ar) });
   };
 
   const markAdded = (itemId: string) => {
@@ -589,7 +635,8 @@ export default function BranchPage() {
                 restaurantColor: restaurant.color,
                 isOpen,
                 added: addedItems.has(item.id),
-                onAdd: () => handleItemClick(item),
+                onAdd:  () => handleDirectAdd(item),
+                onView: () => handleItemClick(item),
                 outOfStock,
                 displayPrice: displayPrice !== item.price ? displayPrice : undefined,
               };
