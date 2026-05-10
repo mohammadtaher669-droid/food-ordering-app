@@ -46,6 +46,7 @@ export interface Branch {
   center_lng?: number;
   delivery_radius_km?: number;
   polygon_coordinates?: { lat: number; lng: number }[];
+  google_maps_url?: string;
 }
 
 export interface Category {

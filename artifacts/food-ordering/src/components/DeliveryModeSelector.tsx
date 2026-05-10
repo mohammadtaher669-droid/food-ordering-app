@@ -48,12 +48,14 @@ export default function DeliveryModeSelector({
     .getByRestaurant(restaurantId)
     .filter((b) => b.id !== branch.id && b.id !== branch.id);
 
-  const mapsUrl =
-    branch.center_lat != null && branch.center_lng != null
+  const mapsUrl: string | null =
+    branch.google_maps_url?.trim()
+      ? branch.google_maps_url
+      : branch.center_lat != null && branch.center_lng != null
       ? `https://maps.google.com/?q=${branch.center_lat},${branch.center_lng}`
-      : `https://maps.google.com/?q=${encodeURIComponent(
-          (branch.address_en || branch.name_en || "").trim()
-        )}`;
+      : branch.address_en || branch.address_ar
+      ? `https://maps.google.com/?q=${encodeURIComponent((branch.address_en || branch.address_ar || "").trim())}`
+      : null;
 
   const showTabs = canPickup || (!hasZoneConfig && canPickup);
   const deliveryUnavailable = hasZoneConfig && hasLocation && canDeliver === false;
@@ -157,43 +159,66 @@ export default function DeliveryModeSelector({
             initial={{ opacity: 0, y: -4 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
-            className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-3 space-y-2"
+            className="bg-blue-500/10 border border-blue-500/20 rounded-xl overflow-hidden"
           >
-            <div className="flex items-center gap-2">
-              <Store size={13} className="text-blue-400 flex-shrink-0" />
-              <span className="text-xs font-semibold text-blue-300">
-                {t("Pickup from Branch", "الاستلام من الفرع")}
-              </span>
+            {/* Header */}
+            <div className="flex items-center gap-2.5 px-4 py-3 border-b border-blue-500/10">
+              <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center flex-shrink-0">
+                <Store size={14} className="text-blue-400" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs font-semibold text-blue-300">{t("Pickup from Branch", "الاستلام من الفرع")}</p>
+                <p className="text-[11px] text-muted-foreground truncate">{t(branch.name_en, branch.name_ar)}</p>
+              </div>
             </div>
-            <div className="space-y-1 text-xs text-muted-foreground">
+
+            {/* Details */}
+            <div className="px-4 py-3 space-y-2">
               {(branch.address_en || branch.address_ar) && (
-                <div className="flex items-start gap-1.5">
-                  <MapPin size={11} className="mt-0.5 flex-shrink-0" />
+                <div className="flex items-start gap-2 text-xs text-muted-foreground">
+                  <MapPin size={11} className="mt-0.5 flex-shrink-0 text-blue-400/70" />
                   <span>{t(branch.address_en, branch.address_ar)}</span>
                 </div>
               )}
-              <div className="flex items-center gap-1.5">
-                <Clock size={11} className="flex-shrink-0" />
-                <span>
-                  {t(`Ready in ~${pickupTime} min`, `جاهز خلال ~${pickupTime} دقيقة`)}
-                </span>
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Clock size={11} className="flex-shrink-0 text-blue-400/70" />
+                <span>{t(`Ready in ~${pickupTime} min`, `جاهز خلال ~${pickupTime} دقيقة`)}</span>
               </div>
               {branch.whatsapp && (
-                <div className="flex items-center gap-1.5">
-                  <Phone size={11} className="flex-shrink-0" />
-                  <span dir="ltr">{branch.whatsapp}</span>
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <Phone size={11} className="flex-shrink-0 text-blue-400/70" />
+                  <span dir="ltr">+{branch.whatsapp}</span>
                 </div>
               )}
             </div>
-            <a
-              href={mapsUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1.5 text-xs text-blue-400 hover:text-blue-300 font-medium w-fit"
-            >
-              <ExternalLink size={11} />
-              {t("Get directions", "الحصول على الاتجاهات")}
-            </a>
+
+            {/* Action Buttons */}
+            {(mapsUrl || branch.whatsapp) && (
+              <div className="flex gap-2 px-4 pb-4">
+                {mapsUrl && (
+                  <a
+                    href={mapsUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-blue-500/25 rounded-xl text-xs font-semibold text-blue-300 hover:bg-blue-500/35 transition"
+                  >
+                    <Navigation size={12} />
+                    {t("Open in Maps", "فتح في الخرائط")}
+                  </a>
+                )}
+                {branch.whatsapp && (
+                  <a
+                    href={`https://wa.me/${branch.whatsapp}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-white/5 border border-white/10 rounded-xl text-xs font-semibold text-muted-foreground hover:text-foreground hover:border-white/20 transition"
+                  >
+                    <Phone size={12} />
+                    {t("WhatsApp", "واتساب")}
+                  </a>
+                )}
+              </div>
+            )}
           </motion.div>
         )}
 
@@ -239,15 +264,17 @@ export default function DeliveryModeSelector({
                   {t("Pickup from Branch", "استلم من الفرع")}
                 </button>
               )}
-              <a
-                href={mapsUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-1.5 px-3 py-2 bg-card border border-white/10 rounded-xl text-xs font-semibold text-muted-foreground hover:text-foreground hover:border-white/20 transition"
-              >
-                <ExternalLink size={12} />
-                {t("View on Map", "عرض على الخريطة")}
-              </a>
+              {mapsUrl && (
+                <a
+                  href={mapsUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 px-3 py-2 bg-card border border-white/10 rounded-xl text-xs font-semibold text-muted-foreground hover:text-foreground hover:border-white/20 transition"
+                >
+                  <ExternalLink size={12} />
+                  {t("View on Map", "عرض على الخريطة")}
+                </a>
+              )}
               <button
                 onClick={() => { try { sessionStorage.removeItem("matami_user_location"); } catch {} requestLocation(); }}
                 className="flex items-center gap-1.5 px-3 py-2 bg-card border border-white/10 rounded-xl text-xs font-semibold text-muted-foreground hover:text-foreground hover:border-white/20 transition"

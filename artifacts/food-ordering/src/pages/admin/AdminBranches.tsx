@@ -4,8 +4,37 @@ import { restaurantStore, branchStore } from "@/lib/store";
 import type { Branch } from "@/lib/store";
 import { useStore } from "@/hooks/useStore";
 import WorkingHoursStatus from "@/components/WorkingHoursStatus";
-import { Phone, MapPin, DollarSign, Plus, Trash2, Edit2, Check, X } from "lucide-react";
+import {
+  Phone, MapPin, DollarSign, Plus, Trash2, Edit2,
+  Check, X, ExternalLink, AlertCircle, Navigation,
+} from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+
+function extractCoordsFromMapsUrl(url: string): { lat: number; lng: number } | null {
+  try {
+    const atMatch = url.match(/@(-?\d+\.?\d*),(-?\d+\.?\d*)/);
+    if (atMatch) return { lat: Number(atMatch[1]), lng: Number(atMatch[2]) };
+    const qMatch = url.match(/[?&](?:q|ll)=(-?\d+\.?\d*),(-?\d+\.?\d*)/);
+    if (qMatch) return { lat: Number(qMatch[1]), lng: Number(qMatch[2]) };
+    return null;
+  } catch { return null; }
+}
+
+function isValidMapsUrl(url: string): boolean {
+  if (!url.trim()) return true;
+  try { new URL(url); } catch { return false; }
+  return (
+    url.includes("google.com/maps") ||
+    url.includes("maps.google.com") ||
+    url.includes("goo.gl/maps") ||
+    url.includes("maps.app.goo.gl")
+  );
+}
+
+function getOsmPreviewUrl(lat: number, lng: number): string {
+  const d = 0.006;
+  return `https://www.openstreetmap.org/export/embed.html?bbox=${lng - d}%2C${lat - d}%2C${lng + d}%2C${lat + d}&layer=mapnik&marker=${lat}%2C${lng}`;
+}
 
 function F({ label, value, onChange, ...p }: { label: string; value: string | number; onChange: (v: string) => void; [k: string]: any }) {
   return (
@@ -20,6 +49,7 @@ const emptyForm: Partial<Branch> = {
   restaurant_id: "", name_en: "", name_ar: "",
   whatsapp: "", open: "09:00", close: "00:00",
   delivery_fee: 10, address_en: "", address_ar: "",
+  google_maps_url: "",
 };
 
 export default function AdminBranches() {
@@ -30,9 +60,24 @@ export default function AdminBranches() {
   const [showAdd, setShowAdd] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<Partial<Branch>>({ ...emptyForm, restaurant_id: "" });
+
+  const urlValid = !form.google_maps_url || isValidMapsUrl(form.google_maps_url);
+
+  const handleMapsUrlChange = (url: string) => {
+    const coords = url ? extractCoordsFromMapsUrl(url) : null;
+    setForm((f) => ({
+      ...f,
+      google_maps_url: url,
+      ...(coords ? { center_lat: coords.lat, center_lng: coords.lng } : {}),
+    }));
+  };
+
   const handleSave = () => {
     if (!form.restaurant_id || !form.name_en?.trim() || !form.name_ar?.trim() || !form.whatsapp?.trim()) {
       toast({ title: t("Required fields missing", "حقول مطلوبة مفقودة"), variant: "destructive" }); return;
+    }
+    if (form.google_maps_url && !isValidMapsUrl(form.google_maps_url)) {
+      toast({ title: t("Invalid Google Maps URL", "رابط Google Maps غير صحيح"), variant: "destructive" }); return;
     }
     const branch: Branch = {
       id: editingId || `branch-${Date.now()}`,
@@ -43,6 +88,8 @@ export default function AdminBranches() {
       delivery_fee: form.delivery_fee || 0,
       delivery_time: form.delivery_time,
       address_en: form.address_en || "", address_ar: form.address_ar || "",
+      center_lat: form.center_lat, center_lng: form.center_lng,
+      google_maps_url: form.google_maps_url?.trim() || undefined,
     };
     try {
       branchStore.save(branch);
@@ -96,7 +143,88 @@ export default function AdminBranches() {
             </div>
             <F label={t("Address (EN)", "العنوان (EN)")} value={form.address_en || ""} onChange={(v) => setForm({ ...form, address_en: v })} />
             <F label={t("Address (AR)", "العنوان (AR)")} value={form.address_ar || ""} onChange={(v) => setForm({ ...form, address_ar: v })} />
+
+            {/* ─── Google Maps URL ─── */}
+            <div className="col-span-2">
+              <label className="text-xs text-muted-foreground mb-1 block flex items-center gap-1">
+                <Navigation size={11} />
+                {t("Google Maps URL", "رابط Google Maps")}
+                <span className="text-muted-foreground/50 ml-1">{t("(optional)", "(اختياري)")}</span>
+              </label>
+              <div className="flex gap-2">
+                <input
+                  value={form.google_maps_url || ""}
+                  onChange={(e) => handleMapsUrlChange(e.target.value)}
+                  placeholder="https://maps.google.com/..."
+                  dir="ltr"
+                  className={`flex-1 bg-background border rounded-xl px-3 py-2 text-sm text-foreground focus:outline-none focus:border-primary/50 font-mono ${
+                    form.google_maps_url && !urlValid ? "border-red-500/50" : "border-white/10"
+                  }`}
+                />
+                {form.google_maps_url && urlValid && (
+                  <a
+                    href={form.google_maps_url} target="_blank" rel="noopener noreferrer"
+                    className="px-3 py-2 bg-blue-500/20 text-blue-400 rounded-xl hover:bg-blue-500/30 transition flex items-center gap-1.5 text-xs font-medium flex-shrink-0"
+                  >
+                    <ExternalLink size={12} /> {t("Test", "اختبر")}
+                  </a>
+                )}
+              </div>
+              {form.google_maps_url && !urlValid && (
+                <p className="text-xs text-red-400 mt-1.5 flex items-center gap-1">
+                  <AlertCircle size={11} />
+                  {t("Must be a valid Google Maps link (maps.google.com or goo.gl/maps)", "يجب أن يكون رابط Google Maps صحيحاً")}
+                </p>
+              )}
+              {form.google_maps_url && urlValid && (
+                <p className="text-xs text-muted-foreground/60 mt-1">
+                  {t("Paste the link from Google Maps → Share → Copy Link", "الصق الرابط من Google Maps ← مشاركة ← نسخ الرابط")}
+                </p>
+              )}
+            </div>
+
+            {/* ─── Auto-extracted Coordinates ─── */}
+            {form.center_lat && form.center_lng ? (
+              <div className="col-span-2 flex items-center gap-2 px-3 py-2 bg-green-500/10 border border-green-500/20 rounded-xl">
+                <Check size={13} className="text-green-400 flex-shrink-0" />
+                <div className="text-xs text-green-400">
+                  {t("Coordinates extracted from URL:", "الإحداثيات مستخرجة من الرابط:")}
+                  {" "}<span dir="ltr" className="font-mono">{form.center_lat.toFixed(6)}, {form.center_lng.toFixed(6)}</span>
+                </div>
+              </div>
+            ) : (
+              <div className="col-span-2 grid grid-cols-2 gap-3">
+                <F label={t("Latitude (auto-filled from URL)", "خط العرض (يُملأ تلقائياً)")} value={form.center_lat || ""} onChange={(v) => setForm({ ...form, center_lat: v ? Number(v) : undefined })} type="number" step="any" placeholder="24.7136" />
+                <F label={t("Longitude (auto-filled from URL)", "خط الطول (يُملأ تلقائياً)")} value={form.center_lng || ""} onChange={(v) => setForm({ ...form, center_lng: v ? Number(v) : undefined })} type="number" step="any" placeholder="46.6753" />
+              </div>
+            )}
+
+            {/* ─── Map Preview ─── */}
+            {form.center_lat && form.center_lng && (
+              <div className="col-span-2">
+                <label className="text-xs text-muted-foreground mb-1.5 block">{t("Location Preview", "معاينة الموقع")}</label>
+                <div className="rounded-xl overflow-hidden border border-white/10 h-44 relative">
+                  <iframe
+                    src={getOsmPreviewUrl(form.center_lat, form.center_lng)}
+                    width="100%"
+                    height="100%"
+                    className="border-0"
+                    title="Map preview"
+                    loading="lazy"
+                  />
+                  {form.google_maps_url && urlValid && (
+                    <a
+                      href={form.google_maps_url} target="_blank" rel="noopener noreferrer"
+                      className="absolute bottom-2 right-2 flex items-center gap-1 px-2.5 py-1.5 bg-black/70 backdrop-blur-sm text-white text-xs rounded-lg hover:bg-black/90 transition"
+                    >
+                      <ExternalLink size={10} /> Google Maps
+                    </a>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
+
           <div className="flex gap-2">
             <button type="submit" className="px-4 py-2 bg-primary text-primary-foreground rounded-xl text-sm font-medium" data-testid="btn-save-branch">
               <Check size={14} className="inline mr-1" /> {t("Save", "حفظ")}
@@ -156,6 +284,18 @@ export default function AdminBranches() {
                         <span>{t(branch.address_en, branch.address_ar)}</span>
                       </div>
                     </div>
+                    {branch.google_maps_url && (
+                      <div className="mt-3 pt-3 border-t border-white/5">
+                        <a
+                          href={branch.google_maps_url} target="_blank" rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 text-xs text-blue-400 hover:text-blue-300 transition font-medium"
+                        >
+                          <Navigation size={11} />
+                          {t("Open in Google Maps", "فتح في Google Maps")}
+                          <ExternalLink size={9} className="opacity-60" />
+                        </a>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
