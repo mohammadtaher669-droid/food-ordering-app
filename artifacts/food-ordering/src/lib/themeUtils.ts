@@ -7,8 +7,24 @@ export const FONT_OPTIONS = [
   { label: "Nunito", value: "Nunito", url: "https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" },
   { label: "DM Sans", value: "DM Sans", url: "https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,600;9..40,700;9..40,800&display=swap" },
   { label: "Raleway", value: "Raleway", url: "https://fonts.googleapis.com/css2?family=Raleway:wght@400;600;700;800&display=swap" },
-  { label: "Cairo (Arabic)", value: "Cairo", url: "https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" },
-  { label: "Tajawal (Arabic)", value: "Tajawal", url: "https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" },
+  { label: "Montserrat", value: "Montserrat", url: "https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap" },
+  { label: "Urbanist", value: "Urbanist", url: "https://fonts.googleapis.com/css2?family=Urbanist:wght@400;600;700;800&display=swap" },
+  { label: "Sora", value: "Sora", url: "https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&display=swap" },
+];
+
+export const AR_FONT_OPTIONS = [
+  { label: "Cairo (القاهرة)", value: "Cairo", url: "https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" },
+  { label: "Tajawal (تجوال)", value: "Tajawal", url: "https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" },
+  { label: "Noto Kufi Arabic", value: "Noto Kufi Arabic", url: "https://fonts.googleapis.com/css2?family=Noto+Kufi+Arabic:wght@400;600;700;800&display=swap" },
+  { label: "Readex Pro", value: "Readex Pro", url: "https://fonts.googleapis.com/css2?family=Readex+Pro:wght@300;400;600;700&display=swap" },
+  { label: "IBM Plex Arabic", value: "IBM Plex Arabic", url: "https://fonts.googleapis.com/css2?family=IBM+Plex+Arabic:wght@400;500;600;700&display=swap" },
+  { label: "Almarai (المرعي)", value: "Almarai", url: "https://fonts.googleapis.com/css2?family=Almarai:wght@400;700;800&display=swap" },
+  { label: "Baloo Bhaijaan 2", value: "Baloo Bhaijaan 2", url: "https://fonts.googleapis.com/css2?family=Baloo+Bhaijaan+2:wght@400;600;700;800&display=swap" },
+];
+
+export const ALL_FONTS = [
+  ...FONT_OPTIONS.map((f) => ({ ...f, type: "en" as const })),
+  ...AR_FONT_OPTIONS.map((f) => ({ ...f, type: "ar" as const })),
 ];
 
 export function hexToHsl(hex: string): string {
@@ -60,9 +76,10 @@ export function hslToHex(hsl: string): string {
 }
 
 export function loadFont(family: string): void {
+  const allFonts = [...FONT_OPTIONS, ...AR_FONT_OPTIONS];
   const id = `gfont-${family.replace(/\s+/g, "-").toLowerCase()}`;
   if (document.getElementById(id)) return;
-  const font = FONT_OPTIONS.find((f) => f.value === family);
+  const font = allFonts.find((f) => f.value === family);
   if (!font) return;
   const link = document.createElement("link");
   link.id = id;
@@ -71,21 +88,71 @@ export function loadFont(family: string): void {
   document.head.appendChild(link);
 }
 
+const RADIUS_MAP: Record<string, string> = {
+  sharp: "0.25rem",
+  rounded: "0.75rem",
+  pill: "1.25rem",
+};
+
+const DENSITY_MAP: Record<string, { gap: string; p: string }> = {
+  compact: { gap: "0.5rem", p: "0.75rem" },
+  normal:  { gap: "1rem",   p: "1rem"    },
+  spacious:{ gap: "1.5rem", p: "1.25rem" },
+};
+
+const BORDER_MAP: Record<string, string> = {
+  none:   "0 0% 100% / 0.02",
+  subtle: "0 0% 100% / 0.06",
+  strong: "0 0% 100% / 0.18",
+};
+
 export function applyTheme(settings: AppSettings): void {
   const root = document.documentElement;
+
   if (settings.primary_color) root.style.setProperty("--primary", hexToHsl(settings.primary_color));
+
   if (settings.bg_color) {
     root.style.setProperty("--background", hexToHsl(settings.bg_color));
     root.style.setProperty("--sidebar", hexToHsl(settings.bg_color));
   }
+
   if (settings.text_color) {
     root.style.setProperty("--foreground", hexToHsl(settings.text_color));
     root.style.setProperty("--card-foreground", hexToHsl(settings.text_color));
   }
+
+  if (settings.card_color) {
+    root.style.setProperty("--card", hexToHsl(settings.card_color));
+  }
+
   if (settings.font_family) {
     loadFont(settings.font_family);
     root.style.setProperty("--font-sans", `'${settings.font_family}', sans-serif`);
   }
+
+  if (settings.ar_font_family) {
+    loadFont(settings.ar_font_family);
+    root.style.setProperty("--font-ar", `'${settings.ar_font_family}', sans-serif`);
+    let styleEl = document.getElementById("matami-ar-font") as HTMLStyleElement | null;
+    if (!styleEl) {
+      styleEl = document.createElement("style");
+      styleEl.id = "matami-ar-font";
+      document.head.appendChild(styleEl);
+    }
+    styleEl.textContent = `[dir="rtl"] * { font-family: var(--font-ar, var(--font-sans, sans-serif)); }`;
+  }
+
   const scale = settings.font_size_scale ?? 1;
   root.style.fontSize = `${Math.round(scale * 15)}px`;
+
+  const radius = settings.card_radius ?? "rounded";
+  root.style.setProperty("--radius", RADIUS_MAP[radius] ?? RADIUS_MAP.rounded);
+
+  const density = settings.layout_density ?? "normal";
+  const d = DENSITY_MAP[density] ?? DENSITY_MAP.normal;
+  root.style.setProperty("--density-gap", d.gap);
+  root.style.setProperty("--density-p", d.p);
+
+  const border = settings.border_style ?? "subtle";
+  root.style.setProperty("--border", BORDER_MAP[border] ?? BORDER_MAP.subtle);
 }

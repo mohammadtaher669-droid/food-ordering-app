@@ -182,12 +182,20 @@ export interface AppSettings {
   show_calories?: boolean;
   bg_color?: string;
   text_color?: string;
+  card_color?: string;
   font_family?: string;
+  ar_font_family?: string;
   font_size_scale?: number;
   logo_size?: "sm" | "md" | "lg";
   platform_logo_url?: string;
   platform_name_en?: string;
   platform_name_ar?: string;
+  card_radius?: "sharp" | "rounded" | "pill";
+  layout_density?: "compact" | "normal" | "spacious";
+  menu_display_mode?: "grid" | "list" | "compact_grid";
+  image_quality?: number;
+  border_style?: "none" | "subtle" | "strong";
+  active_template?: string;
 }
 
 export interface BranchItemOverride {

@@ -6,7 +6,17 @@ export interface ImagePresetConfig {
   label: string;
 }
 
-const QUALITY = 0.80;
+function getImageQuality(): number {
+  try {
+    const raw = localStorage.getItem("app:settings");
+    if (!raw) return 0.80;
+    const s = JSON.parse(raw) as { image_quality?: number };
+    if (typeof s.image_quality === "number" && s.image_quality >= 60 && s.image_quality <= 100) {
+      return s.image_quality / 100;
+    }
+  } catch { /* ignore */ }
+  return 0.80;
+}
 
 export const IMAGE_PRESETS: Record<ImagePreset, ImagePresetConfig> = {
   hero_banner:       { width: 900,  height: 300,  label: "900 × 300 px"  },
@@ -78,15 +88,16 @@ export async function processImage(file: File, preset: ImagePreset): Promise<str
         const ctx = canvas.getContext("2d")!;
         ctx.drawImage(img, cropX, cropY, cropW, cropH, 0, 0, targetW, targetH);
 
+        const quality = getImageQuality();
         if (webpSupported) {
-          const webpUrl = canvas.toDataURL("image/webp", QUALITY);
+          const webpUrl = canvas.toDataURL("image/webp", quality);
           if (webpUrl.startsWith("data:image/webp")) {
             resolve(webpUrl);
             return;
           }
         }
 
-        const jpegUrl = canvas.toDataURL("image/jpeg", QUALITY);
+        const jpegUrl = canvas.toDataURL("image/jpeg", quality);
         resolve(jpegUrl);
       };
 
