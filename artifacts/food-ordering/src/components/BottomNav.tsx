@@ -3,19 +3,43 @@ import { Home, ShoppingCart, Heart, User, Tag } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { motion, AnimatePresence } from "framer-motion";
+import { useCallback } from "react";
+import { settingsStore, NAV_ITEM_META } from "@/lib/store";
+import { useStore } from "@/hooks/useStore";
+
+const ICON_MAP: Record<string, React.ComponentType<{ size?: number; strokeWidth?: number; className?: string }>> = {
+  home:      Home,
+  cart:      ShoppingCart,
+  offers:    Tag,
+  favorites: Heart,
+  profile:   User,
+};
 
 export default function BottomNav() {
   const [location] = useLocation();
   const { cartCount } = useCart();
   const { t } = useLanguage();
+  const settings = useStore(useCallback(() => settingsStore.get(), []));
 
-  const tabs = [
-    { href: "/", icon: Home, label: t("Home", "الرئيسية") },
-    { href: "/cart", icon: ShoppingCart, label: t("Cart", "السلة"), count: cartCount },
-    { href: "/offers", icon: Tag, label: t("Offers", "العروض") },
-    { href: "/favorites", icon: Heart, label: t("Saved", "المحفوظة") },
-    { href: "/profile", icon: User, label: t("Profile", "حسابي") },
-  ];
+  // Build ordered, filtered nav items from config
+  const effectiveTabs = [...NAV_ITEM_META]
+    .map((meta) => {
+      const saved = settings.nav_items_config?.find((c) => c.id === meta.id);
+      return {
+        ...meta,
+        sort_order: saved?.sort_order ?? NAV_ITEM_META.findIndex((m) => m.id === meta.id),
+        hidden: meta.essential ? false : (saved?.hidden ?? false),
+      };
+    })
+    .filter((item) => !item.hidden)
+    .sort((a, b) => a.sort_order - b.sort_order)
+    .map((item) => ({
+      id: item.id,
+      href: item.href,
+      icon: ICON_MAP[item.id] ?? Home,
+      label: t(item.label_en, item.label_ar),
+      count: item.id === "cart" ? cartCount : undefined,
+    }));
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 pointer-events-none print:hidden">
@@ -30,11 +54,9 @@ export default function BottomNav() {
             boxShadow: "0 -2px 40px rgba(0,0,0,0.5), 0 8px 32px rgba(0,0,0,0.4)",
           }}
         >
-          {tabs.map((tab) => {
-            const isCart = tab.href === "/cart";
-            const isActive =
-              location === tab.href ||
-              (tab.href !== "/" && location.startsWith(tab.href));
+          {effectiveTabs.map((tab) => {
+            const isCart = tab.id === "cart";
+            const isActive = location === tab.href || (tab.href !== "/" && location.startsWith(tab.href));
             const Icon = tab.icon;
 
             return (
@@ -72,9 +94,7 @@ export default function BottomNav() {
                       )}
                     </AnimatePresence>
                   </div>
-                  <span
-                    className={`text-[10px] font-medium transition-colors duration-200 relative ${isActive ? "text-primary" : "text-muted-foreground/60"}`}
-                  >
+                  <span className={`text-[10px] font-medium transition-colors duration-200 relative ${isActive ? "text-primary" : "text-muted-foreground/60"}`}>
                     {tab.label}
                   </span>
                 </motion.button>

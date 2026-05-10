@@ -171,6 +171,18 @@ export interface Banner {
   sort_order: number;
 }
 
+export interface HomeSectionConfig {
+  id: string;
+  sort_order: number;
+  hidden?: boolean;
+}
+
+export interface NavItemConfig {
+  id: string;
+  sort_order: number;
+  hidden?: boolean;
+}
+
 export interface AppSettings {
   slogan_en: string;
   slogan_ar: string;
@@ -196,7 +208,32 @@ export interface AppSettings {
   image_quality?: number;
   border_style?: "none" | "subtle" | "strong";
   active_template?: string;
+  // Content control
+  home_sections_config?: HomeSectionConfig[];
+  nav_items_config?: NavItemConfig[];
+  restaurant_order?: string[];
+  home_columns?: number;
+  bestseller_style?: "scroll" | "grid";
 }
+
+// ── Shared metadata for home sections and nav items ──────────────────────────
+
+export const HOME_SECTION_META = [
+  { id: "banners",         label_en: "Hero Banner",         label_ar: "البانر الرئيسي",    icon: "🖼️", default_order: 0 },
+  { id: "restaurants",     label_en: "Restaurants",         label_ar: "المطاعم",            icon: "🍽️", default_order: 1 },
+  { id: "best_sellers",    label_en: "Best Sellers",        label_ar: "الأكثر مبيعاً",      icon: "🔥", default_order: 2 },
+  { id: "recommendations", label_en: "Recommendations",    label_ar: "التوصيات الذكية",     icon: "✨", default_order: 3 },
+  { id: "categories",      label_en: "Browse by Category", label_ar: "تصفح حسب الفئة",    icon: "🏷️", default_order: 4 },
+  { id: "offers_grid",     label_en: "Offers & Discounts", label_ar: "العروض والخصومات",   icon: "🎁", default_order: 5 },
+] as const;
+
+export const NAV_ITEM_META = [
+  { id: "home",      label_en: "Home",      label_ar: "الرئيسية", href: "/",          essential: true  },
+  { id: "cart",      label_en: "Cart",      label_ar: "السلة",    href: "/cart",       essential: true  },
+  { id: "offers",    label_en: "Offers",    label_ar: "العروض",   href: "/offers",     essential: false },
+  { id: "favorites", label_en: "Favorites", label_ar: "المفضلة", href: "/favorites",  essential: false },
+  { id: "profile",   label_en: "Profile",   label_ar: "حسابي",   href: "/profile",    essential: false },
+] as const;
 
 export interface BranchItemOverride {
   branch_id: string;
