@@ -6,8 +6,9 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { CartProvider } from "@/contexts/CartContext";
 import { initializeStore } from "@/lib/initStore";
-import { settingsStore } from "@/lib/store";
+import { settingsStore, dispatch } from "@/lib/store";
 import { applyTheme } from "@/lib/themeUtils";
+import { fetchAndApplyServerStore } from "@/lib/serverSync";
 import NavBar from "@/components/NavBar";
 import ClearCartDialog from "@/components/ClearCartDialog";
 import BottomNav from "@/components/BottomNav";
@@ -78,8 +79,18 @@ function AdminGuard({ children }: { children: React.ReactNode }) {
 
 function AppRoutes() {
   useEffect(() => {
+    // 1. Seed localStorage with defaults if this is a fresh device
     initializeStore();
     applyTheme(settingsStore.get());
+
+    // 2. Async: pull the latest catalog from the server and overwrite local
+    //    data so every device always sees the admin's latest changes.
+    fetchAndApplyServerStore().then((changed) => {
+      if (changed) {
+        dispatch();
+        applyTheme(settingsStore.get());
+      }
+    });
 
     const handler = () => applyTheme(settingsStore.get());
     window.addEventListener("store-updated", handler);
