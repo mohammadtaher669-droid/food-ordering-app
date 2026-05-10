@@ -253,15 +253,15 @@ export default function ItemDetailModal({ item, restaurantId, branchId, restaura
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 bg-black/70 z-40"
+            className="fixed inset-0 bg-black/70 z-[60]"
           />
           <motion.div
             initial={{ y: "100%", opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: "100%", opacity: 0 }}
             transition={{ type: "spring", damping: 28, stiffness: 300 }}
-            className="fixed bottom-0 left-0 right-0 z-50 max-h-[92vh] overflow-y-auto bg-[#1a1a1a] rounded-t-3xl"
-            style={{ direction: isRTL ? "rtl" : "ltr" }}
+            className="fixed bottom-0 left-0 right-0 z-[70] max-h-[92vh] overflow-y-auto bg-[#1a1a1a] rounded-t-3xl"
+            style={{ direction: isRTL ? "rtl" : "ltr", overscrollBehavior: "contain", WebkitOverflowScrolling: "touch" } as React.CSSProperties}
           >
             {/* Hero Image */}
             <div className="relative h-52 flex-shrink-0 overflow-hidden rounded-t-3xl" style={{ background: `${restaurantColor}15` }}>
@@ -277,7 +277,8 @@ export default function ItemDetailModal({ item, restaurantId, branchId, restaura
               <div className="absolute inset-0 bg-gradient-to-t from-[#1a1a1a] via-transparent to-transparent" />
               <button
                 onClick={onClose}
-                className="absolute top-4 right-4 w-9 h-9 rounded-full bg-black/60 flex items-center justify-center text-white/80 hover:text-white transition"
+                className="absolute top-4 right-4 w-11 h-11 rounded-full bg-black/60 flex items-center justify-center text-white/80 hover:text-white transition"
+                style={{ touchAction: "manipulation" }}
               >
                 <X size={18} />
               </button>
@@ -327,6 +328,7 @@ export default function ItemDetailModal({ item, restaurantId, branchId, restaura
                           <button
                             key={opt.id}
                             onClick={() => handleSelectOption(group, opt)}
+                            style={{ minHeight: 48, touchAction: "manipulation" }}
                             className={`w-full flex items-center justify-between p-3 rounded-xl border transition-all ${isSelected ? "border-primary/60 bg-primary/10" : "border-white/8 bg-white/4 hover:border-white/15"}`}
                           >
                             <div className="flex items-center gap-3">
@@ -358,7 +360,8 @@ export default function ItemDetailModal({ item, restaurantId, branchId, restaura
                         <button
                           key={addOn.id}
                           onClick={() => handleToggleAddOn(addOn)}
-                          className={`flex items-center gap-2 p-2.5 rounded-xl border transition-all text-left ${isSelected ? "border-primary/60 bg-primary/10" : "border-white/8 bg-white/4 hover:border-white/15"}`}
+                          style={{ minHeight: 52, touchAction: "manipulation" }}
+                          className={`flex items-center gap-2 p-3 rounded-xl border transition-all text-left ${isSelected ? "border-primary/60 bg-primary/10" : "border-white/8 bg-white/4 hover:border-white/15"}`}
                         >
                           {addOn.image && (
                             <img src={addOn.image} alt="" className="w-9 h-9 rounded-lg object-cover flex-shrink-0" />
@@ -408,23 +411,27 @@ export default function ItemDetailModal({ item, restaurantId, branchId, restaura
             </div>
 
             {/* Sticky bottom bar */}
-            <div className="fixed bottom-0 left-0 right-0 z-50 p-4 bg-[#1a1a1a]/95 backdrop-blur border-t border-white/8">
+            <div
+              className="fixed bottom-0 left-0 right-0 z-[70] bg-[#1a1a1a]/95 backdrop-blur border-t border-white/8"
+              style={{ paddingBottom: "max(env(safe-area-inset-bottom), 12px)", paddingTop: 12, paddingLeft: 16, paddingRight: 16 }}
+            >
               <div className="flex items-center gap-3 max-w-xl mx-auto">
                 {/* Quantity */}
-                <div className="flex items-center gap-2 bg-white/8 rounded-xl p-1">
+                <div className="flex items-center gap-1.5 bg-white/8 rounded-xl p-1">
                   <button
                     onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                    className="w-8 h-8 rounded-lg bg-white/8 hover:bg-white/15 flex items-center justify-center transition"
+                    className="w-11 h-11 rounded-lg bg-white/8 hover:bg-white/15 flex items-center justify-center transition active:scale-90"
+                    style={{ touchAction: "manipulation" }}
                   >
-                    <Minus size={14} />
+                    <Minus size={16} />
                   </button>
-                  <span className="w-6 text-center font-bold text-sm">{quantity}</span>
+                  <span className="w-8 text-center font-bold text-base">{quantity}</span>
                   <button
                     onClick={() => setQuantity((q) => q + 1)}
-                    className="w-8 h-8 rounded-lg flex items-center justify-center transition"
-                    style={{ background: restaurantColor }}
+                    className="w-11 h-11 rounded-lg flex items-center justify-center transition active:scale-90"
+                    style={{ background: restaurantColor, touchAction: "manipulation" }}
                   >
-                    <Plus size={14} className="text-white" />
+                    <Plus size={16} className="text-white" />
                   </button>
                 </div>
 
@@ -432,8 +439,8 @@ export default function ItemDetailModal({ item, restaurantId, branchId, restaura
                 <button
                   onClick={handleAddToCart}
                   disabled={!canAdd}
-                  className="flex-1 py-3 rounded-xl font-bold text-white text-sm flex items-center justify-between px-4 transition-all disabled:opacity-40"
-                  style={{ background: canAdd ? restaurantColor : "#555" }}
+                  className="flex-1 py-3.5 rounded-xl font-bold text-white text-sm flex items-center justify-between px-4 transition-all disabled:opacity-40 active:scale-[0.98]"
+                  style={{ background: canAdd ? restaurantColor : "#555", touchAction: "manipulation", minHeight: 48 }}
                 >
                   <ShoppingCart size={16} />
                   <span>{t("Add to Cart", "أضف للسلة")}</span>
@@ -441,7 +448,7 @@ export default function ItemDetailModal({ item, restaurantId, branchId, restaura
                 </button>
               </div>
               {unsatisfied.length > 0 && (
-                <p className="text-center text-xs text-destructive mt-1">
+                <p className="text-center text-xs text-destructive mt-2">
                   {t(`Please select: ${unsatisfied.map((g) => g.name_en).join(", ")}`,
                      `يرجى الاختيار: ${unsatisfied.map((g) => g.name_ar).join("، ")}`)}
                 </p>

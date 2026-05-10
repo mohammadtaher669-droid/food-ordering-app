@@ -245,10 +245,10 @@ export default function CartPage() {
                       <p className="text-sm text-primary font-bold mt-0.5">{unitPrice.toFixed(2).replace(/\.00$/, "")} ﷼</p>
                       <CartItemModifierSummary ci={ci} />
                     </div>
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                      <button onClick={() => updateQuantity(key, ci.quantity - 1)} className="w-7 h-7 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center transition" data-testid={`btn-decrease-${ci.item.id}`}><Minus size={12} /></button>
-                      <span className="text-sm font-bold w-5 text-center" data-testid={`qty-${ci.item.id}`}>{ci.quantity}</span>
-                      <button onClick={() => updateQuantity(key, ci.quantity + 1)} className="w-7 h-7 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center transition" data-testid={`btn-increase-${ci.item.id}`}><Plus size={12} /></button>
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                      <button onClick={() => updateQuantity(key, ci.quantity - 1)} className="w-9 h-9 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center transition active:scale-90" style={{ touchAction: "manipulation" }} data-testid={`btn-decrease-${ci.item.id}`}><Minus size={14} /></button>
+                      <span className="text-sm font-bold w-6 text-center" data-testid={`qty-${ci.item.id}`}>{ci.quantity}</span>
+                      <button onClick={() => updateQuantity(key, ci.quantity + 1)} className="w-9 h-9 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center transition active:scale-90" style={{ touchAction: "manipulation" }} data-testid={`btn-increase-${ci.item.id}`}><Plus size={14} /></button>
                     </div>
                     <div className="text-right min-w-[60px] flex-shrink-0">
                       <p className="text-sm font-bold text-foreground">{lineTotal.toFixed(0)} ﷼</p>

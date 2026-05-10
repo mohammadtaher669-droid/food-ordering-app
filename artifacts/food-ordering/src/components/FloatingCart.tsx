@@ -16,7 +16,7 @@ export default function FloatingCart() {
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: 80, opacity: 0 }}
           transition={{ type: "spring", damping: 20 }}
-          className="fixed bottom-5 left-4 right-4 z-50 max-w-md mx-auto"
+          className="fixed bottom-24 left-4 right-4 z-50 max-w-md mx-auto"
           data-testid="floating-cart"
         >
           <Link href="/cart">
