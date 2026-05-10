@@ -57,13 +57,14 @@ export default function DeliveryModeSelector({
       ? `https://maps.google.com/?q=${encodeURIComponent((branch.address_en || branch.address_ar || "").trim())}`
       : null;
 
-  const showTabs = canPickup || (!hasZoneConfig && canPickup);
+  const deliveryEnabled = branch.is_delivery_enabled !== false;
+  const showTabs = deliveryEnabled || canPickup;
   const deliveryUnavailable = hasZoneConfig && hasLocation && canDeliver === false;
 
   return (
     <div className="mt-3 space-y-2">
       {/* Delivery / Pickup Tabs */}
-      {(canPickup || (branch.is_delivery_enabled && canPickup)) && (
+      {showTabs && (
         <div className="flex gap-1 p-1 bg-black/20 rounded-xl border border-white/8">
           {(branch.is_delivery_enabled !== false) && (
             <button
