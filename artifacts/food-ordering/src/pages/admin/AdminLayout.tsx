@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { LayoutDashboard, UtensilsCrossed, MapPin, BookOpen, Tag, Star, LogOut, Menu, X, Percent, Settings, Navigation, Users, BarChart2, Image, Megaphone, Printer, Palette, ListOrdered, Store, SlidersHorizontal, Layers } from "lucide-react";
+import { LayoutDashboard, UtensilsCrossed, MapPin, BookOpen, Tag, Star, LogOut, Menu, X, Percent, Settings, Navigation, Users, BarChart2, Image, Megaphone, Printer, Palette, ListOrdered, Store, SlidersHorizontal, Layers, FileUp } from "lucide-react";
 import matAmiLogo from "@assets/لوجو_الموقع_مطعمي_1776635393637.png";
 
 const NAV = [
@@ -21,6 +21,7 @@ const NAV = [
   { path: "/admin/banners", label_en: "Banners", label_ar: "البانرات", icon: Megaphone },
   { path: "/admin/backgrounds", label_en: "Backgrounds", label_ar: "الخلفيات", icon: Image },
   { path: "/admin/content", label_en: "Content Control", label_ar: "التحكم بالمحتوى", icon: Layers },
+  { path: "/admin/import", label_en: "Excel Import", label_ar: "استيراد Excel", icon: FileUp },
   { path: "/admin/appearance", label_en: "Appearance", label_ar: "المظهر", icon: Palette },
   { path: "/admin/settings", label_en: "Settings", label_ar: "الإعدادات", icon: Settings },
 ];
