@@ -12,6 +12,7 @@ export default function AdminAuth({ onAuth }: { onAuth: () => void }) {
   const [password, setPassword] = useState("");
   const [showPw, setShowPw] = useState(false);
   const [error, setError] = useState(false);
+  const [resetDone, setResetDone] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -20,6 +21,15 @@ export default function AdminAuth({ onAuth }: { onAuth: () => void }) {
       onAuth();
     } else {
       setError(true);
+    }
+  };
+
+  const handleReset = () => {
+    if (confirm(t("Reset password to default (admin123)?", "إعادة كلمة المرور للافتراضية (admin123)؟"))) {
+      localStorage.removeItem("admin_password");
+      setPassword("");
+      setError(false);
+      setResetDone(true);
     }
   };
 
@@ -32,6 +42,11 @@ export default function AdminAuth({ onAuth }: { onAuth: () => void }) {
           <p className="text-muted-foreground text-sm mt-1">{t("Enter your password to continue", "أدخل كلمة المرور للمتابعة")}</p>
         </div>
         <form onSubmit={handleSubmit} className="bg-card border border-white/5 rounded-2xl p-6 space-y-4">
+          {resetDone && (
+            <div className="bg-green-500/10 border border-green-500/20 rounded-xl px-3 py-2 text-xs text-green-400">
+              {t("Password reset to: admin123", "تمت إعادة كلمة المرور إلى: admin123")}
+            </div>
+          )}
           <div>
             <div className="relative">
               <input
@@ -42,6 +57,7 @@ export default function AdminAuth({ onAuth }: { onAuth: () => void }) {
                 className="w-full bg-background border border-white/10 rounded-xl px-4 py-3 pr-11 text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
                 data-testid="input-admin-password"
                 autoComplete="current-password"
+                autoFocus
               />
               <button
                 type="button"
@@ -65,6 +81,15 @@ export default function AdminAuth({ onAuth }: { onAuth: () => void }) {
           >
             {t("Login", "دخول")}
           </button>
+          <div className="text-center">
+            <button
+              type="button"
+              onClick={handleReset}
+              className="text-xs text-muted-foreground/50 hover:text-muted-foreground transition"
+            >
+              {t("Forgot password? Reset to default", "نسيت كلمة المرور؟ إعادة للافتراضية")}
+            </button>
+          </div>
         </form>
       </div>
     </div>
