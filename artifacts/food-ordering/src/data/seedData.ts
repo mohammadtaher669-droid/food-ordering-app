@@ -63,6 +63,7 @@ export const seedBranches: Branch[] = [
     delivery_type: "radius",
     center_lat: 24.6977,
     center_lng: 46.6872,
+    google_maps_url: "https://maps.google.com/?q=24.697700,46.687200",
     delivery_radius_km: 8,
     delivery_fee_tiers: [
       { max_km: 3, fee: 10 },
@@ -89,6 +90,7 @@ export const seedBranches: Branch[] = [
     delivery_type: "radius",
     center_lat: 21.5433,
     center_lng: 39.1728,
+    google_maps_url: "https://maps.google.com/?q=21.543300,39.172800",
     delivery_radius_km: 7,
     delivery_fee_tiers: [
       { max_km: 3, fee: 8 },
@@ -114,6 +116,7 @@ export const seedBranches: Branch[] = [
     delivery_type: "radius",
     center_lat: 24.7937,
     center_lng: 46.6477,
+    google_maps_url: "https://maps.google.com/?q=24.793700,46.647700",
     delivery_radius_km: 6,
     delivery_fee_tiers: [
       { max_km: 2, fee: 7 },
@@ -140,6 +143,7 @@ export const seedBranches: Branch[] = [
     delivery_type: "radius",
     center_lat: 26.4207,
     center_lng: 50.0888,
+    google_maps_url: "https://maps.google.com/?q=26.420700,50.088800",
     delivery_radius_km: 10,
     delivery_fee_tiers: [
       { max_km: 4, fee: 12 },
@@ -166,6 +170,7 @@ export const seedBranches: Branch[] = [
     delivery_type: "radius",
     center_lat: 24.6872,
     center_lng: 46.7219,
+    google_maps_url: "https://maps.google.com/?q=24.687200,46.721900",
     delivery_radius_km: 5,
     delivery_fee_tiers: [
       { max_km: 2, fee: 5 },
@@ -192,6 +197,7 @@ export const seedBranches: Branch[] = [
     delivery_type: "radius",
     center_lat: 21.4858,
     center_lng: 39.1925,
+    google_maps_url: "https://maps.google.com/?q=21.485800,39.192500",
     delivery_radius_km: 6,
     delivery_fee_tiers: [
       { max_km: 2, fee: 6 },

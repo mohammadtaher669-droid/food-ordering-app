@@ -70,7 +70,10 @@ export default function BranchMapPicker({ lat, lng, onChange }: Props) {
     const initLng = lng ?? DEFAULT_LNG;
     const zoom = lat != null ? 15 : 10;
 
-    const map = L.map(containerRef.current, { zoomControl: true }).setView([initLat, initLng], zoom);
+    const map = L.map(containerRef.current, {
+      zoomControl: true,
+      scrollWheelZoom: false,
+    }).setView([initLat, initLng], zoom);
 
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       attribution: '© <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a>',

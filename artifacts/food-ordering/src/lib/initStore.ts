@@ -48,10 +48,29 @@ function migrateModifierGroupsToGlobal(): void {
   localStorage.setItem("matami_modifiers_migrated", "true");
 }
 
+function migrateGoogleMapsUrl(): void {
+  if (localStorage.getItem("matami_maps_url_migrated") === "true") return;
+  const branches = branchStore.getAll();
+  let changed = false;
+  const updated = branches.map((b) => {
+    if (!b.google_maps_url && b.center_lat != null && b.center_lng != null) {
+      changed = true;
+      return {
+        ...b,
+        google_maps_url: `https://maps.google.com/?q=${b.center_lat.toFixed(6)},${b.center_lng.toFixed(6)}`,
+      };
+    }
+    return b;
+  });
+  if (changed) branchStore.set(updated);
+  localStorage.setItem("matami_maps_url_migrated", "true");
+}
+
 export function initializeStore(): void {
   if (isInitialized()) {
     migrateBranches();
     migrateModifierGroupsToGlobal();
+    migrateGoogleMapsUrl();
     return;
   }
   restaurantStore.set(seedRestaurants);
