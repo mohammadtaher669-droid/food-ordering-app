@@ -4,6 +4,8 @@ import { restaurantStore, branchStore } from "@/lib/store";
 import type { Branch } from "@/lib/store";
 import { useStore } from "@/hooks/useStore";
 import WorkingHoursStatus from "@/components/WorkingHoursStatus";
+import BranchMapPicker from "@/components/BranchMapPicker";
+import type { MapAddress } from "@/components/BranchMapPicker";
 import {
   Phone, MapPin, DollarSign, Plus, Trash2, Edit2,
   Check, X, ExternalLink, AlertCircle, Navigation,
@@ -29,11 +31,6 @@ function isValidMapsUrl(url: string): boolean {
     url.includes("goo.gl/maps") ||
     url.includes("maps.app.goo.gl")
   );
-}
-
-function getOsmPreviewUrl(lat: number, lng: number): string {
-  const d = 0.006;
-  return `https://www.openstreetmap.org/export/embed.html?bbox=${lng - d}%2C${lat - d}%2C${lng + d}%2C${lat + d}&layer=mapnik&marker=${lat}%2C${lng}`;
 }
 
 function F({ label, value, onChange, ...p }: { label: string; value: string | number; onChange: (v: string) => void; [k: string]: any }) {
@@ -69,6 +66,17 @@ export default function AdminBranches() {
       ...f,
       google_maps_url: url,
       ...(coords ? { center_lat: coords.lat, center_lng: coords.lng } : {}),
+    }));
+  };
+
+  const handleMapChange = (lat: number, lng: number, address?: MapAddress) => {
+    setForm((f) => ({
+      ...f,
+      center_lat: lat,
+      center_lng: lng,
+      google_maps_url: `https://maps.google.com/?q=${lat.toFixed(6)},${lng.toFixed(6)}`,
+      ...(address?.en ? { address_en: address.en } : {}),
+      ...(address?.ar ? { address_ar: address.ar } : {}),
     }));
   };
 
@@ -112,7 +120,11 @@ export default function AdminBranches() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-foreground">{t("Branches", "الفروع")}</h1>
-        <button onClick={() => { setShowAdd(true); setEditingId(null); setForm({ ...emptyForm, restaurant_id: restaurants[0]?.id || "" }); }} className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-xl text-sm font-medium hover:bg-primary/90 transition" data-testid="btn-add-branch">
+        <button
+          onClick={() => { setShowAdd(true); setEditingId(null); setForm({ ...emptyForm, restaurant_id: restaurants[0]?.id || "" }); }}
+          className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-xl text-sm font-medium hover:bg-primary/90 transition"
+          data-testid="btn-add-branch"
+        >
           <Plus size={14} /> {t("Add Branch", "إضافة فرع")}
         </button>
       </div>
@@ -120,19 +132,27 @@ export default function AdminBranches() {
       {showAdd && (
         <form onSubmit={(e) => { e.preventDefault(); handleSave(); }} className="bg-card border border-white/10 rounded-2xl p-5 mb-6 space-y-4">
           <h3 className="font-semibold text-foreground">{editingId ? t("Edit Branch", "تعديل الفرع") : t("New Branch", "فرع جديد")}</h3>
+
           <div className="grid grid-cols-2 gap-3">
+            {/* Restaurant selector */}
             <div className="col-span-2">
               <label className="text-xs text-muted-foreground mb-1 block">{t("Restaurant", "المطعم")}</label>
-              <select value={form.restaurant_id || ""} onChange={(e) => setForm({ ...form, restaurant_id: e.target.value })} className="w-full bg-background border border-white/10 rounded-xl px-3 py-2 text-sm text-foreground focus:outline-none">
+              <select
+                value={form.restaurant_id || ""}
+                onChange={(e) => setForm({ ...form, restaurant_id: e.target.value })}
+                className="w-full bg-background border border-white/10 rounded-xl px-3 py-2 text-sm text-foreground focus:outline-none"
+              >
                 <option value="">{t("Select restaurant...", "اختر المطعم...")}</option>
                 {restaurants.map((r) => <option key={r.id} value={r.id}>{t(r.name_en, r.name_ar)}</option>)}
               </select>
             </div>
+
             <F label={t("Branch Name (EN)", "اسم الفرع (EN)")} value={form.name_en || ""} onChange={(v) => setForm({ ...form, name_en: v })} data-testid="input-branch-name-en" />
             <F label={t("Branch Name (AR)", "اسم الفرع (AR)")} value={form.name_ar || ""} onChange={(v) => setForm({ ...form, name_ar: v })} />
             <F label={t("WhatsApp Number", "رقم واتساب")} value={form.whatsapp || ""} onChange={(v) => setForm({ ...form, whatsapp: v })} placeholder="966XXXXXXXXX" />
             <F label={t("Delivery Fee (﷼)", "رسوم التوصيل (﷼)")} value={form.delivery_fee || ""} onChange={(v) => setForm({ ...form, delivery_fee: Number(v) })} type="number" min="0" />
             <F label={t("Delivery Time (min)", "وقت التوصيل (دقيقة)")} value={form.delivery_time || ""} onChange={(v) => setForm({ ...form, delivery_time: v ? Number(v) : undefined })} type="number" min="0" placeholder="e.g. 30" />
+
             <div>
               <label className="text-xs text-muted-foreground mb-1 block">{t("Opens At", "يفتح الساعة")}</label>
               <input type="time" value={form.open || "09:00"} onChange={(e) => setForm({ ...form, open: e.target.value })} className="w-full bg-background border border-white/10 rounded-xl px-3 py-2 text-sm text-foreground focus:outline-none" />
@@ -141,89 +161,70 @@ export default function AdminBranches() {
               <label className="text-xs text-muted-foreground mb-1 block">{t("Closes At", "يغلق الساعة")}</label>
               <input type="time" value={form.close || "00:00"} onChange={(e) => setForm({ ...form, close: e.target.value })} className="w-full bg-background border border-white/10 rounded-xl px-3 py-2 text-sm text-foreground focus:outline-none" />
             </div>
-            <F label={t("Address (EN)", "العنوان (EN)")} value={form.address_en || ""} onChange={(v) => setForm({ ...form, address_en: v })} />
-            <F label={t("Address (AR)", "العنوان (AR)")} value={form.address_ar || ""} onChange={(v) => setForm({ ...form, address_ar: v })} />
 
-            {/* ─── Google Maps URL ─── */}
-            <div className="col-span-2">
-              <label className="text-xs text-muted-foreground mb-1 block flex items-center gap-1">
-                <Navigation size={11} />
-                {t("Google Maps URL", "رابط Google Maps")}
-                <span className="text-muted-foreground/50 ml-1">{t("(optional)", "(اختياري)")}</span>
-              </label>
-              <div className="flex gap-2">
-                <input
-                  value={form.google_maps_url || ""}
-                  onChange={(e) => handleMapsUrlChange(e.target.value)}
-                  placeholder="https://maps.google.com/..."
-                  dir="ltr"
-                  className={`flex-1 bg-background border rounded-xl px-3 py-2 text-sm text-foreground focus:outline-none focus:border-primary/50 font-mono ${
-                    form.google_maps_url && !urlValid ? "border-red-500/50" : "border-white/10"
-                  }`}
-                />
-                {form.google_maps_url && urlValid && (
-                  <a
-                    href={form.google_maps_url} target="_blank" rel="noopener noreferrer"
-                    className="px-3 py-2 bg-blue-500/20 text-blue-400 rounded-xl hover:bg-blue-500/30 transition flex items-center gap-1.5 text-xs font-medium flex-shrink-0"
-                  >
-                    <ExternalLink size={12} /> {t("Test", "اختبر")}
-                  </a>
-                )}
-              </div>
-              {form.google_maps_url && !urlValid && (
-                <p className="text-xs text-red-400 mt-1.5 flex items-center gap-1">
-                  <AlertCircle size={11} />
-                  {t("Must be a valid Google Maps link (maps.google.com or goo.gl/maps)", "يجب أن يكون رابط Google Maps صحيحاً")}
-                </p>
-              )}
+            {/* Address — auto-filled from map, editable */}
+            <F label={t("Address (EN)", "العنوان (EN)")} value={form.address_en || ""} onChange={(v) => setForm({ ...form, address_en: v })} placeholder={t("Auto-filled from map", "يُملأ تلقائياً من الخريطة")} />
+            <F label={t("Address (AR)", "العنوان (AR)")} value={form.address_ar || ""} onChange={(v) => setForm({ ...form, address_ar: v })} placeholder={t("Auto-filled from map", "يُملأ تلقائياً من الخريطة")} />
+          </div>
+
+          {/* ─── Google Maps URL ─── */}
+          <div>
+            <label className="text-xs text-muted-foreground mb-1.5 block flex items-center gap-1">
+              <Navigation size={11} />
+              {t("Google Maps URL", "رابط Google Maps")}
+              <span className="text-muted-foreground/40 ml-1 text-[10px]">{t("(optional — paste or auto-generated from map)", "(اختياري — الصق أو يُولَّد تلقائياً)")}</span>
+            </label>
+            <div className="flex gap-2">
+              <input
+                value={form.google_maps_url || ""}
+                onChange={(e) => handleMapsUrlChange(e.target.value)}
+                placeholder="https://maps.google.com/..."
+                dir="ltr"
+                className={`flex-1 bg-background border rounded-xl px-3 py-2 text-xs text-foreground focus:outline-none focus:border-primary/50 font-mono ${
+                  form.google_maps_url && !urlValid ? "border-red-500/50" : "border-white/10"
+                }`}
+              />
               {form.google_maps_url && urlValid && (
-                <p className="text-xs text-muted-foreground/60 mt-1">
-                  {t("Paste the link from Google Maps → Share → Copy Link", "الصق الرابط من Google Maps ← مشاركة ← نسخ الرابط")}
-                </p>
+                <a
+                  href={form.google_maps_url} target="_blank" rel="noopener noreferrer"
+                  className="px-3 py-2 bg-blue-500/20 text-blue-400 rounded-xl hover:bg-blue-500/30 transition flex items-center gap-1.5 text-xs font-medium flex-shrink-0"
+                >
+                  <ExternalLink size={12} /> {t("Test", "اختبر")}
+                </a>
               )}
             </div>
-
-            {/* ─── Auto-extracted Coordinates ─── */}
-            {form.center_lat && form.center_lng ? (
-              <div className="col-span-2 flex items-center gap-2 px-3 py-2 bg-green-500/10 border border-green-500/20 rounded-xl">
-                <Check size={13} className="text-green-400 flex-shrink-0" />
-                <div className="text-xs text-green-400">
-                  {t("Coordinates extracted from URL:", "الإحداثيات مستخرجة من الرابط:")}
-                  {" "}<span dir="ltr" className="font-mono">{form.center_lat.toFixed(6)}, {form.center_lng.toFixed(6)}</span>
-                </div>
-              </div>
-            ) : (
-              <div className="col-span-2 grid grid-cols-2 gap-3">
-                <F label={t("Latitude (auto-filled from URL)", "خط العرض (يُملأ تلقائياً)")} value={form.center_lat || ""} onChange={(v) => setForm({ ...form, center_lat: v ? Number(v) : undefined })} type="number" step="any" placeholder="24.7136" />
-                <F label={t("Longitude (auto-filled from URL)", "خط الطول (يُملأ تلقائياً)")} value={form.center_lng || ""} onChange={(v) => setForm({ ...form, center_lng: v ? Number(v) : undefined })} type="number" step="any" placeholder="46.6753" />
-              </div>
-            )}
-
-            {/* ─── Map Preview ─── */}
-            {form.center_lat && form.center_lng && (
-              <div className="col-span-2">
-                <label className="text-xs text-muted-foreground mb-1.5 block">{t("Location Preview", "معاينة الموقع")}</label>
-                <div className="rounded-xl overflow-hidden border border-white/10 h-44 relative">
-                  <iframe
-                    src={getOsmPreviewUrl(form.center_lat, form.center_lng)}
-                    width="100%"
-                    height="100%"
-                    className="border-0"
-                    title="Map preview"
-                    loading="lazy"
-                  />
-                  {form.google_maps_url && urlValid && (
-                    <a
-                      href={form.google_maps_url} target="_blank" rel="noopener noreferrer"
-                      className="absolute bottom-2 right-2 flex items-center gap-1 px-2.5 py-1.5 bg-black/70 backdrop-blur-sm text-white text-xs rounded-lg hover:bg-black/90 transition"
-                    >
-                      <ExternalLink size={10} /> Google Maps
-                    </a>
-                  )}
-                </div>
-              </div>
+            {form.google_maps_url && !urlValid && (
+              <p className="text-xs text-red-400 mt-1.5 flex items-center gap-1">
+                <AlertCircle size={11} />
+                {t("Must be a valid Google Maps link", "يجب أن يكون رابط Google Maps صحيحاً")}
+              </p>
             )}
           </div>
+
+          {/* ─── Coordinates display ─── */}
+          {form.center_lat && form.center_lng && (
+            <div className="flex items-center gap-2 px-3 py-2 bg-green-500/10 border border-green-500/20 rounded-xl">
+              <Check size={13} className="text-green-400 flex-shrink-0" />
+              <span className="text-xs text-green-400 flex-1">
+                {t("Coordinates set:", "الإحداثيات:")}
+                {" "}<span dir="ltr" className="font-mono">{form.center_lat.toFixed(6)}, {form.center_lng.toFixed(6)}</span>
+              </span>
+              <button
+                type="button"
+                onClick={() => setForm((f) => ({ ...f, center_lat: undefined, center_lng: undefined, google_maps_url: "" }))}
+                className="text-muted-foreground/40 hover:text-muted-foreground transition"
+              >
+                <X size={11} />
+              </button>
+            </div>
+          )}
+
+          {/* ─── Interactive Map ─── */}
+          <BranchMapPicker
+            lat={form.center_lat}
+            lng={form.center_lng}
+            onChange={handleMapChange}
+          />
 
           <div className="flex gap-2">
             <button type="submit" className="px-4 py-2 bg-primary text-primary-foreground rounded-xl text-sm font-medium" data-testid="btn-save-branch">
@@ -236,6 +237,7 @@ export default function AdminBranches() {
         </form>
       )}
 
+      {/* ─── Branch List ─── */}
       <div className="space-y-6">
         {restaurants.map((restaurant) => {
           const restBranches = branches.filter((b) => b.restaurant_id === restaurant.id);
@@ -259,6 +261,11 @@ export default function AdminBranches() {
                     <div className="flex items-start justify-between mb-3">
                       <div>
                         <h3 className="font-semibold text-foreground">{t(branch.name_en, branch.name_ar)}</h3>
+                        {branch.center_lat && branch.center_lng && (
+                          <p className="text-[10px] text-muted-foreground/50 font-mono mt-0.5" dir="ltr">
+                            {branch.center_lat.toFixed(5)}, {branch.center_lng.toFixed(5)}
+                          </p>
+                        )}
                       </div>
                       <div className="flex items-center gap-2">
                         <WorkingHoursStatus branch={branch} />
@@ -279,10 +286,12 @@ export default function AdminBranches() {
                         <DollarSign size={13} />
                         <span>{branch.delivery_fee} ﷼</span>
                       </div>
-                      <div className="flex items-center gap-2 text-muted-foreground col-span-2">
-                        <MapPin size={13} />
-                        <span>{t(branch.address_en, branch.address_ar)}</span>
-                      </div>
+                      {(branch.address_en || branch.address_ar) && (
+                        <div className="flex items-center gap-2 text-muted-foreground col-span-2">
+                          <MapPin size={13} />
+                          <span className="text-xs">{t(branch.address_en, branch.address_ar)}</span>
+                        </div>
+                      )}
                     </div>
                     {branch.google_maps_url && (
                       <div className="mt-3 pt-3 border-t border-white/5">
