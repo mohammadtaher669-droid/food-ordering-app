@@ -46,8 +46,31 @@ import NotFound from "@/pages/not-found";
 const queryClient = new QueryClient();
 
 function AdminGuard({ children }: { children: React.ReactNode }) {
-  const [authed, setAuthed] = useState(() => sessionStorage.getItem("admin_auth") === "true");
-  if (!authed) return <AdminAuth onAuth={() => setAuthed(true)} />;
+  const storedToken = sessionStorage.getItem("admin_token") || "";
+  const [state, setState] = useState<"loading" | "authed" | "unauthed">(
+    storedToken ? "loading" : "unauthed"
+  );
+
+  useEffect(() => {
+    if (!storedToken) { setState("unauthed"); return; }
+    import("@/pages/admin/AdminAuth").then(({ verifyAdminToken }) => {
+      verifyAdminToken(storedToken).then((valid) => {
+        if (valid) setState("authed");
+        else { sessionStorage.removeItem("admin_token"); setState("unauthed"); }
+      });
+    });
+  }, []);
+
+  if (state === "loading") {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+  if (state === "unauthed") {
+    return <AdminAuth onAuth={(token) => { sessionStorage.setItem("admin_token", token); setState("authed"); }} />;
+  }
   return <AdminLayout>{children}</AdminLayout>;
 }
 

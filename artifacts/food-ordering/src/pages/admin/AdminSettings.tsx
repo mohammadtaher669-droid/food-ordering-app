@@ -7,10 +7,6 @@ import { useStore } from "@/hooks/useStore";
 import { getWhatsAppSettings, saveWhatsAppSettings, validateWhatsAppNumber, formatWhatsAppNumber } from "@/lib/whatsappSettings";
 import { useToast } from "@/hooks/use-toast";
 
-function getAdminPassword(): string {
-  return localStorage.getItem("admin_password") || "admin123";
-}
-
 function SectionCard({ title, icon, children }: { title: string; icon: React.ReactNode; children: React.ReactNode }) {
   return (
     <div className="bg-card border border-white/5 rounded-2xl overflow-hidden">
@@ -36,10 +32,9 @@ function ChangePasswordSection() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const errs: Record<string, string> = {};
     if (!current) errs.current = t("Required", "مطلوب");
-    else if (current !== getAdminPassword()) errs.current = t("Current password is incorrect", "كلمة المرور الحالية غير صحيحة");
     if (!next) errs.next = t("Required", "مطلوب");
     else if (next.length < 6) errs.next = t("Must be at least 6 characters", "يجب أن يكون 6 أحرف على الأقل");
     if (!confirm) errs.confirm = t("Required", "مطلوب");
@@ -47,9 +42,27 @@ function ChangePasswordSection() {
     setErrors(errs);
     if (Object.keys(errs).length > 0) return;
 
-    localStorage.setItem("admin_password", next);
-    setCurrent(""); setNext(""); setConfirm("");
-    toast({ title: t("Password changed successfully", "تم تغيير كلمة المرور بنجاح") });
+    const token = sessionStorage.getItem("admin_token") || "";
+    try {
+      const res = await fetch("/api/admin/change-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ currentPassword: current, newPassword: next }),
+      });
+      const data = await res.json() as { success?: boolean; error?: string };
+      if (!res.ok || !data.success) {
+        if (data.error?.toLowerCase().includes("current")) {
+          setErrors({ current: t("Current password is incorrect", "كلمة المرور الحالية غير صحيحة") });
+        } else {
+          toast({ title: data.error || t("Failed to change password", "فشل تغيير كلمة المرور"), variant: "destructive" });
+        }
+        return;
+      }
+      setCurrent(""); setNext(""); setConfirm("");
+      toast({ title: t("Password changed successfully", "تم تغيير كلمة المرور بنجاح") });
+    } catch {
+      toast({ title: t("Connection error", "خطأ في الاتصال"), variant: "destructive" });
+    }
   };
 
   const fields = [

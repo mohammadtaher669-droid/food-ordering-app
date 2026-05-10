@@ -1,35 +1,54 @@
 import { useState } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { Lock, Eye, EyeOff } from "lucide-react";
+import { Lock, Eye, EyeOff, Loader2 } from "lucide-react";
 import matAmiLogo from "@assets/لوجو_الموقع_مطعمي_1776635393637.png";
 
-function getAdminPassword(): string {
-  return localStorage.getItem("admin_password") || "admin123";
+export async function verifyAdminToken(token: string): Promise<boolean> {
+  try {
+    const res = await fetch("/api/admin/verify", {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) return false;
+    const data = await res.json() as { valid?: boolean };
+    return data.valid === true;
+  } catch {
+    return false;
+  }
 }
 
-export default function AdminAuth({ onAuth }: { onAuth: () => void }) {
+export default function AdminAuth({ onAuth }: { onAuth: (token: string) => void }) {
   const { t } = useLanguage();
   const [password, setPassword] = useState("");
   const [showPw, setShowPw] = useState(false);
-  const [error, setError] = useState(false);
-  const [resetDone, setResetDone] = useState(false);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (password === getAdminPassword()) {
-      sessionStorage.setItem("admin_auth", "true");
-      onAuth();
-    } else {
-      setError(true);
-    }
-  };
-
-  const handleReset = () => {
-    if (confirm(t("Reset password to default (admin123)?", "إعادة كلمة المرور للافتراضية (admin123)؟"))) {
-      localStorage.removeItem("admin_password");
-      setPassword("");
-      setError(false);
-      setResetDone(true);
+    if (!password.trim()) return;
+    setLoading(true);
+    setError("");
+    try {
+      const res = await fetch("/api/admin/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password }),
+      });
+      const data = await res.json() as { token?: string; error?: string };
+      if (!res.ok || !data.token) {
+        if (res.status === 429) {
+          setError(t("Too many attempts. Try again in 15 minutes.", "محاولات كثيرة جداً. حاول بعد 15 دقيقة."));
+        } else {
+          setError(t("Incorrect password.", "كلمة المرور غير صحيحة."));
+        }
+        return;
+      }
+      sessionStorage.setItem("admin_token", data.token);
+      onAuth(data.token);
+    } catch {
+      setError(t("Connection error. Make sure the server is running.", "خطأ في الاتصال."));
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -42,22 +61,18 @@ export default function AdminAuth({ onAuth }: { onAuth: () => void }) {
           <p className="text-muted-foreground text-sm mt-1">{t("Enter your password to continue", "أدخل كلمة المرور للمتابعة")}</p>
         </div>
         <form onSubmit={handleSubmit} className="bg-card border border-white/5 rounded-2xl p-6 space-y-4">
-          {resetDone && (
-            <div className="bg-green-500/10 border border-green-500/20 rounded-xl px-3 py-2 text-xs text-green-400">
-              {t("Password reset to: admin123", "تمت إعادة كلمة المرور إلى: admin123")}
-            </div>
-          )}
           <div>
             <div className="relative">
               <input
                 type={showPw ? "text" : "password"}
                 value={password}
-                onChange={(e) => { setPassword(e.target.value); setError(false); }}
+                onChange={(e) => { setPassword(e.target.value); setError(""); }}
                 placeholder={t("Enter your password", "أدخل كلمة المرور")}
                 className="w-full bg-background border border-white/10 rounded-xl px-4 py-3 pr-11 text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
                 data-testid="input-admin-password"
                 autoComplete="current-password"
                 autoFocus
+                disabled={loading}
               />
               <button
                 type="button"
@@ -70,26 +85,19 @@ export default function AdminAuth({ onAuth }: { onAuth: () => void }) {
             </div>
             {error && (
               <p className="text-xs text-destructive mt-1.5 flex items-center gap-1">
-                <Lock size={11} /> {t("Incorrect password. Please try again.", "كلمة المرور غير صحيحة. حاول مجدداً.")}
+                <Lock size={11} /> {error}
               </p>
             )}
           </div>
           <button
             type="submit"
-            className="w-full py-3 bg-primary text-primary-foreground rounded-xl font-semibold hover:bg-primary/90 transition"
+            disabled={loading || !password.trim()}
+            className="w-full py-3 bg-primary text-primary-foreground rounded-xl font-semibold hover:bg-primary/90 transition disabled:opacity-60 flex items-center justify-center gap-2"
             data-testid="btn-admin-login"
           >
+            {loading && <Loader2 size={16} className="animate-spin" />}
             {t("Login", "دخول")}
           </button>
-          <div className="text-center">
-            <button
-              type="button"
-              onClick={handleReset}
-              className="text-xs text-muted-foreground/50 hover:text-muted-foreground transition"
-            >
-              {t("Forgot password? Reset to default", "نسيت كلمة المرور؟ إعادة للافتراضية")}
-            </button>
-          </div>
         </form>
       </div>
     </div>

@@ -35,7 +35,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const pageTitle = currentPage ? t(currentPage.label_en, currentPage.label_ar) : t("Dashboard", "لوحة التحكم");
 
   const handleLogout = () => {
-    sessionStorage.removeItem("admin_auth");
+    sessionStorage.removeItem("admin_token");
     window.location.href = "/admin";
   };
 
