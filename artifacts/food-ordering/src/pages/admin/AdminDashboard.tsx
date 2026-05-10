@@ -1,14 +1,14 @@
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { restaurantStore, branchStore, menuStore, reviewStore, couponStore, modifierGroupStore, modifierOptionStore, addOnStore } from "@/lib/store";
 import { useStore } from "@/hooks/useStore";
-import { UtensilsCrossed, MapPin, BookOpen, Star, Tag, Download, Upload, RotateCcw } from "lucide-react";
+import { UtensilsCrossed, MapPin, BookOpen, Star, Tag, Download, Upload, RotateCcw, Wifi, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
 import { resetStore } from "@/lib/store";
-import { initializeStore, } from "@/lib/initStore";
+import { initializeStore } from "@/lib/initStore";
 import { useToast } from "@/hooks/use-toast";
 import { markInitialized } from "@/lib/store";
+import { pushToServer } from "@/lib/serverSync";
 
-// Override initializeStore to force re-seed
 function forceReseed() {
   localStorage.removeItem("store_initialized");
   initializeStore();
@@ -17,6 +17,9 @@ function forceReseed() {
 export default function AdminDashboard() {
   const { t } = useLanguage();
   const { toast } = useToast();
+  const [syncStatus, setSyncStatus] = useState<"idle" | "pushing" | "ok" | "error">("idle");
+  const [syncError, setSyncError] = useState("");
+  const [lastSyncTime, setLastSyncTime] = useState<string>("");
 
   const restaurants = useStore(useCallback(() => restaurantStore.getAll(), []));
   const branches = useStore(useCallback(() => branchStore.getAll(), []));
@@ -33,6 +36,31 @@ export default function AdminDashboard() {
     { label_en: "Pending Reviews", label_ar: "التقييمات المعلقة", value: pendingReviews, icon: Star, color: "#FF5722" },
     { label_en: "Coupons", label_ar: "الأكواد", value: coupons.length, icon: Tag, color: "#10B981" },
   ];
+
+  const handlePublish = async () => {
+    setSyncStatus("pushing");
+    setSyncError("");
+    const result = await pushToServer();
+    if (result.ok) {
+      setSyncStatus("ok");
+      const now = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+      setLastSyncTime(now);
+      toast({
+        title: t("Published successfully!", "تم النشر بنجاح!"),
+        description: t("All devices will now show the latest data.", "جميع الأجهزة ستعرض البيانات المحدثة الآن."),
+      });
+      setTimeout(() => setSyncStatus("idle"), 4000);
+    } else {
+      setSyncStatus("error");
+      setSyncError(result.error ?? "Unknown error");
+      toast({
+        title: t("Publish failed", "فشل النشر"),
+        description: result.error,
+        variant: "destructive",
+      });
+      setTimeout(() => setSyncStatus("idle"), 6000);
+    }
+  };
 
   const handleExport = () => {
     const data = {
@@ -111,6 +139,66 @@ export default function AdminDashboard() {
         </div>
       </div>
 
+      {/* ── Publish to all devices ─────────────────────────────────────── */}
+      <div className="mb-6 bg-card border border-white/8 rounded-2xl p-5">
+        <div className="flex items-start justify-between gap-4 flex-wrap">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-xl bg-green-500/15 flex items-center justify-center flex-shrink-0 mt-0.5">
+              <Wifi size={18} className="text-green-400" />
+            </div>
+            <div>
+              <h2 className="font-semibold text-foreground">
+                {t("Publish to all devices", "نشر التحديثات على جميع الأجهزة")}
+              </h2>
+              <p className="text-sm text-muted-foreground mt-0.5">
+                {t(
+                  "Send your latest changes to mobiles, tablets, and all browsers instantly.",
+                  "أرسل أحدث تغييراتك إلى الجوالات والأجهزة اللوحية وجميع المتصفحات فوراً."
+                )}
+              </p>
+              {syncStatus === "ok" && lastSyncTime && (
+                <p className="text-xs text-green-400 mt-1 flex items-center gap-1">
+                  <CheckCircle2 size={11} />
+                  {t(`Last published at ${lastSyncTime}`, `آخر نشر الساعة ${lastSyncTime}`)}
+                </p>
+              )}
+              {syncStatus === "error" && syncError && (
+                <p className="text-xs text-red-400 mt-1 flex items-center gap-1">
+                  <AlertCircle size={11} />
+                  {syncError}
+                </p>
+              )}
+            </div>
+          </div>
+
+          <button
+            onClick={handlePublish}
+            disabled={syncStatus === "pushing"}
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all flex-shrink-0 ${
+              syncStatus === "pushing"
+                ? "bg-white/5 text-muted-foreground cursor-not-allowed"
+                : syncStatus === "ok"
+                ? "bg-green-500/20 text-green-400 border border-green-500/30 hover:bg-green-500/30"
+                : syncStatus === "error"
+                ? "bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30"
+                : "bg-green-600 text-white hover:bg-green-700"
+            }`}
+            data-testid="btn-publish"
+          >
+            {syncStatus === "pushing" ? (
+              <><Loader2 size={14} className="animate-spin" /> {t("Publishing…", "جارٍ النشر…")}</>
+            ) : syncStatus === "ok" ? (
+              <><CheckCircle2 size={14} /> {t("Published!", "تم النشر!")}</>
+            ) : syncStatus === "error" ? (
+              <><AlertCircle size={14} /> {t("Retry Publish", "إعادة النشر")}</>
+            ) : (
+              <><Wifi size={14} /> {t("Publish Now", "انشر الآن")}</>
+            )}
+          </button>
+        </div>
+      </div>
+
+      {/* ── Stats ──────────────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
         {stats.map((stat) => {
           const Icon = stat.icon;
@@ -126,13 +214,14 @@ export default function AdminDashboard() {
         })}
       </div>
 
+      {/* ── Bottom cards ───────────────────────────────────────────────── */}
       <div className="grid md:grid-cols-2 gap-4">
         <div className="bg-card border border-white/5 rounded-2xl p-5">
           <h2 className="font-semibold text-foreground mb-4">{t("Quick Info", "معلومات سريعة")}</h2>
           <ul className="space-y-2 text-sm text-muted-foreground">
-            <li>• {t("Admin password: admin123", "كلمة مرور الإدارة: admin123")}</li>
             <li>• {t("Available coupons: SAVE10, FIRST20, FREESHIP", "الأكواد المتاحة: SAVE10, FIRST20, FREESHIP")}</li>
             <li>• {t("Auto discount: 10% for orders over 50 SAR", "خصم تلقائي: 10% للطلبات فوق 50 ريال")}</li>
+            <li>• {t("Changes auto-sync 2.5s after each edit", "التغييرات تُزامن تلقائياً بعد 2.5 ثانية من كل تعديل")}</li>
           </ul>
         </div>
         <div className="bg-card border border-white/5 rounded-2xl p-5">

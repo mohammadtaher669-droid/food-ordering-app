@@ -1,11 +1,15 @@
 import { Router } from "express";
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from "fs";
-import { join } from "path";
+import { join, dirname } from "path";
+import { fileURLToPath } from "url";
 import jwt from "jsonwebtoken";
 
 const router = Router();
 
-const DATA_DIR = join(process.cwd(), "data");
+// Use the compiled file's directory to locate data/ — works correctly in both
+// development (artifacts/api-server/dist) and production
+// (workspace root → artifacts/api-server/dist/index.mjs).
+const DATA_DIR = join(dirname(fileURLToPath(import.meta.url)), "..", "data");
 const SNAPSHOT_FILE = join(DATA_DIR, "store-snapshot.json");
 
 function ensureDataDir(): void {
@@ -33,7 +37,7 @@ function getJwtSecret(): string {
   return process.env["JWT_SECRET"] || "matami-insecure-dev-secret-set-in-production";
 }
 
-// GET /api/store — public, returns catalog snapshot for all devices
+// GET /api/store — public, no auth required; returns catalog snapshot
 router.get("/store", (req, res) => {
   const snapshot = readSnapshot();
   if (!snapshot) {
@@ -44,7 +48,7 @@ router.get("/store", (req, res) => {
   res.json(snapshot);
 });
 
-// POST /api/store — requires valid admin JWT; saves catalog snapshot
+// POST /api/store — admin JWT required; saves new catalog snapshot to disk
 router.post("/store", (req, res) => {
   const auth = req.headers["authorization"];
   if (!auth?.startsWith("Bearer ")) {
@@ -66,9 +70,10 @@ router.post("/store", (req, res) => {
 
   try {
     writeSnapshot(data);
+    req.log.info({ keys: Object.keys(data).length, file: SNAPSHOT_FILE }, "Store snapshot saved");
     res.json({ success: true, keys: Object.keys(data).length });
   } catch (err) {
-    req.log.error({ err }, "Failed to write store snapshot");
+    req.log.error({ err, file: SNAPSHOT_FILE }, "Failed to write store snapshot");
     res.status(500).json({ error: "Failed to save snapshot" });
   }
 });
