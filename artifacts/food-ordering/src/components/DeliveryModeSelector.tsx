@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Truck, Store, Navigation, MapPin, CheckCircle2, XCircle,
-  Loader2, AlertTriangle, ExternalLink, Clock, Phone,
+  Loader2, ExternalLink, Clock, Phone,
 } from "lucide-react";
 import type { Branch } from "@/lib/store";
 import { branchStore } from "@/lib/store";
@@ -314,33 +314,7 @@ export default function DeliveryModeSelector({
           </motion.div>
         )}
 
-        {/* Location denied */}
-        {!isChecking && (locationDenied || locationError) && hasZoneConfig && (
-          <motion.div
-            key="location-denied"
-            initial={{ opacity: 0, y: -4 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0 }}
-            className="flex items-center justify-between bg-amber-500/8 border border-amber-500/20 rounded-xl px-3 py-2"
-          >
-            <div className="flex items-center gap-2">
-              <AlertTriangle size={12} className="text-amber-400 flex-shrink-0" />
-              <span className="text-xs text-muted-foreground">
-                {locationDenied
-                  ? t("Location access denied. Enable it to check delivery.", "تم رفض الوصول للموقع. فعّله للتحقق من التوصيل.")
-                  : t("Could not get your location.", "تعذر الحصول على موقعك.")}
-              </span>
-            </div>
-            <button
-              onClick={requestLocation}
-              className="text-[11px] text-primary font-medium hover:text-primary/80 transition flex-shrink-0 ml-2"
-            >
-              {t("Retry", "إعادة المحاولة")}
-            </button>
-          </motion.div>
-        )}
-
-        {/* Idle — no zone config, prompt to check */}
+        {/* Idle — prompt to check delivery zone */}
         {!isChecking && !hasLocation && !locationDenied && !locationError && hasZoneConfig && (
           <motion.div
             key="idle-check"
@@ -354,7 +328,7 @@ export default function DeliveryModeSelector({
               data-testid="btn-detect-location"
             >
               <Navigation size={12} />
-              {t("Detect my location for delivery", "تحديد موقعي للتوصيل")}
+              {t("Detect my location for accurate delivery fee", "تحديد موقعي لحساب رسوم التوصيل")}
             </button>
           </motion.div>
         )}

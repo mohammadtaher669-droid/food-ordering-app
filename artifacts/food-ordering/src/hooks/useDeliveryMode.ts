@@ -12,37 +12,37 @@ export function useDeliveryMode(branch: Branch | undefined) {
   const hasZoneConfig = !!(branch?.is_delivery_enabled && branch?.delivery_type);
   const pickupEnabled = branch?.pickup_enabled ?? false;
 
-  // Auto-request location when the branch has a delivery zone configured
   useEffect(() => {
     if (hasZoneConfig && status === "idle") {
       request();
     }
   }, [hasZoneConfig, status, request]);
 
-  // Compute distance if we have coords + branch center
   const distance: number | null =
     coords && branch?.center_lat != null && branch?.center_lng != null
       ? haversineDistance(coords.lat, coords.lng, branch.center_lat, branch.center_lng)
       : null;
 
-  // canDeliver: null = unknown, true = yes, false = no
+  // canDeliver: null = unknown/allowed, true = confirmed yes, false = confirmed no
   let canDeliver: boolean | null = null;
   if (!hasZoneConfig) {
-    canDeliver = true; // No zone restriction configured
+    // No zone restriction — delivery always allowed
+    canDeliver = true;
+  } else if (status === "denied" || status === "error") {
+    // Can't verify location — allow delivery, charge flat fee
+    canDeliver = null;
   } else if (coords && branch) {
     const inside = isInsideZone(coords.lat, coords.lng, branch);
-    // Also check fee tiers: if -1 (beyond all tiers), treat as outside
     const fee = distance != null ? getDeliveryFee(branch, distance) : 0;
     canDeliver = inside && fee !== -1;
   }
 
-  // Compute delivery fee for current distance
   const deliveryFee: number =
     branch && distance != null
       ? Math.max(0, getDeliveryFee(branch, distance))
       : (branch?.delivery_fee ?? 0);
 
-  // Auto-switch to pickup when delivery is unavailable
+  // Auto-switch to pickup only when delivery is confirmed unavailable
   useEffect(() => {
     if (canDeliver === false && pickupEnabled && mode === "delivery") {
       setModeState("pickup");
@@ -61,7 +61,7 @@ export function useDeliveryMode(branch: Branch | undefined) {
   return {
     mode,
     setMode,
-    canDeliver,       // null = still checking, true = yes, false = no
+    canDeliver,
     canPickup: pickupEnabled,
     distance,
     deliveryFee,
