@@ -1,8 +1,7 @@
 import { useState, useCallback, useRef } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { restaurantStore, categoryStore, menuStore } from "@/lib/store";
+import { restaurantStore, categoryStore, menuStore, modifierGroupStore, modifierOptionStore, itemModifierLinkStore } from "@/lib/store";
 import type { Category, MenuItem } from "@/lib/store";
-import ModifierGroupsPanel from "@/components/ModifierGroupsPanel";
 import { useStore } from "@/hooks/useStore";
 import { useImageQueue } from "@/hooks/useImageQueue";
 import { generateImageForItem } from "@/lib/aiImageUtils";
@@ -10,6 +9,7 @@ import { useTranslate } from "@/hooks/useTranslate";
 import {
   Plus, Trash2, Edit2, Check, X, FolderPlus, GripVertical, Star, Sparkles, Eye, EyeOff,
   Wand2, RefreshCw, Lock, Unlock, Link, Image as ImageIcon, Loader2, Zap, StopCircle, Languages,
+  Settings2, ChevronDown, ChevronUp,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import ImageUploader from "@/components/ImageUploader";
@@ -21,6 +21,84 @@ function F({ label, value, onChange, ...p }: { label: string; value: string | nu
     <div>
       <label className="text-xs text-muted-foreground mb-1 block">{label}</label>
       <input value={value} onChange={(e) => onChange(e.target.value)} className="w-full bg-background border border-white/10 rounded-xl px-3 py-2 text-sm text-foreground focus:outline-none focus:border-primary/50" {...p} />
+    </div>
+  );
+}
+
+function ItemModifierLinker({ itemId }: { itemId: string }) {
+  const { t } = useLanguage();
+  const allGroups = useStore(useCallback(() => modifierGroupStore.getAll().filter((g) => g.is_active), []));
+  const linkedIds = useStore(useCallback(
+    () => itemModifierLinkStore.getByItem(itemId).map((l) => l.group_id),
+    [itemId]
+  ));
+  const [open, setOpen] = useState(false);
+
+  const toggle = (groupId: string) => {
+    if (linkedIds.includes(groupId)) {
+      itemModifierLinkStore.unlink(itemId, groupId);
+    } else {
+      itemModifierLinkStore.link(itemId, groupId);
+    }
+  };
+
+  const linkedCount = linkedIds.length;
+
+  return (
+    <div className={`mt-1 border-t transition-colors ${linkedCount > 0 ? "border-primary/20" : "border-white/5"}`}>
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className={`w-full flex items-center justify-between px-3 py-2 text-xs transition ${linkedCount > 0 ? "text-primary hover:text-primary/80" : "text-muted-foreground hover:text-foreground"}`}
+      >
+        <span className="flex items-center gap-1.5">
+          <Settings2 size={11} />
+          <span>{t("Modifier Groups", "مجموعات الخيارات")}</span>
+          {linkedCount > 0 ? (
+            <span className="bg-primary text-primary-foreground text-[9px] px-1.5 py-0.5 rounded-full font-bold leading-none">{linkedCount}</span>
+          ) : allGroups.length > 0 ? (
+            <span className="text-muted-foreground/40 text-[10px]">{t("none linked", "لا يوجد ربط")}</span>
+          ) : (
+            <span className="text-muted-foreground/40 text-[10px]">{t("create groups first", "أنشئ مجموعات أولاً")}</span>
+          )}
+        </span>
+        {open ? <ChevronUp size={11} /> : <ChevronDown size={11} />}
+      </button>
+
+      {open && (
+        <div className="px-3 pb-3">
+          {allGroups.length === 0 ? (
+            <p className="text-xs text-muted-foreground/60">
+              {t("No modifier groups yet. ", "لا توجد مجموعات بعد. ")}
+              <a href="/admin/modifiers" className="text-primary hover:underline">{t("Create groups →", "أنشئ مجموعات ←")}</a>
+            </p>
+          ) : (
+            <div className="flex flex-wrap gap-1.5">
+              {allGroups.map((group) => {
+                const linked = linkedIds.includes(group.id);
+                const opts = modifierOptionStore.getByGroup(group.id);
+                return (
+                  <button
+                    key={group.id}
+                    onClick={() => toggle(group.id)}
+                    className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs transition border ${
+                      linked
+                        ? "bg-primary/20 text-primary border-primary/30 font-medium"
+                        : "bg-white/5 text-muted-foreground border-white/10 hover:border-white/25 hover:text-foreground"
+                    }`}
+                  >
+                    {linked && <Check size={9} />}
+                    <span>{t(group.name_en, group.name_ar)}</span>
+                    <span className="opacity-40 text-[10px]">({opts.length})</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+          <a href="/admin/modifiers" className="inline-block mt-2 text-[10px] text-primary/70 hover:text-primary transition">
+            + {t("Manage modifier groups", "إدارة مجموعات الخيارات")}
+          </a>
+        </div>
+      )}
     </div>
   );
 }
@@ -607,11 +685,7 @@ export default function AdminMenu() {
                         <button onClick={() => deleteItem(item.id)} className="p-1 rounded text-destructive/60 hover:text-destructive transition" data-testid={`btn-delete-item-${item.id}`}><Trash2 size={13} /></button>
                       </div>
                     </div>
-                    <ModifierGroupsPanel
-                      menuItem={item}
-                      restaurantId={selectedRestaurant}
-                      color={restaurant?.color || "#FF7A00"}
-                    />
+                    <ItemModifierLinker itemId={item.id} />
                     </div>
                   );
                 })}

@@ -1,8 +1,9 @@
 import {
   restaurantStore, branchStore, categoryStore, menuStore,
   offerStore, couponStore, modifierGroupStore, modifierOptionStore, addOnStore,
-  isInitialized, markInitialized,
+  itemModifierLinkStore, isInitialized, markInitialized,
 } from "./store";
+import type { ModifierGroup } from "./store";
 import {
   seedRestaurants, seedBranches, seedCategories,
   seedMenuItems, seedOffers, seedCoupons,
@@ -35,9 +36,22 @@ function migrateBranches(): void {
   branchStore.set(migrated);
 }
 
+function migrateModifierGroupsToGlobal(): void {
+  if (localStorage.getItem("matami_modifiers_migrated") === "true") return;
+  const groups = modifierGroupStore.getAll();
+  for (const group of groups) {
+    if (group.menu_item_id) {
+      itemModifierLinkStore.link(group.menu_item_id, group.id);
+      modifierGroupStore.save({ ...group, menu_item_id: undefined } as ModifierGroup);
+    }
+  }
+  localStorage.setItem("matami_modifiers_migrated", "true");
+}
+
 export function initializeStore(): void {
   if (isInitialized()) {
     migrateBranches();
+    migrateModifierGroupsToGlobal();
     return;
   }
   restaurantStore.set(seedRestaurants);

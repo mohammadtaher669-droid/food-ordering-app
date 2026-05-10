@@ -227,7 +227,7 @@ export interface UserBehavior {
 
 export interface ModifierGroup {
   id: string;
-  menu_item_id: string;
+  menu_item_id?: string;
   name_en: string;
   name_ar: string;
   type: "single" | "multi";
@@ -261,6 +261,13 @@ export interface AddOn {
   sort_order: number;
 }
 
+export interface ItemModifierLink {
+  id: string;
+  item_id: string;
+  group_id: string;
+  sort_order: number;
+}
+
 // ============================================================
 // KEYS
 // ============================================================
@@ -284,6 +291,7 @@ const KEYS = {
   modifierGroups: "store_modifier_groups",
   modifierOptions: "store_modifier_options",
   addOns: "store_add_ons",
+  itemModifierLinks: "store_item_modifier_links",
 };
 
 // ============================================================
@@ -782,11 +790,19 @@ export const branchCategoryOverrideStore = {
 // MODIFIER GROUPS
 // ============================================================
 export const modifierGroupStore = {
-  getAll: (): ModifierGroup[] => read<ModifierGroup>(KEYS.modifierGroups),
-  getByItem: (menuItemId: string): ModifierGroup[] =>
-    read<ModifierGroup>(KEYS.modifierGroups)
-      .filter((g) => g.menu_item_id === menuItemId)
-      .sort((a, b) => a.sort_order - b.sort_order),
+  getAll: (): ModifierGroup[] => read<ModifierGroup>(KEYS.modifierGroups).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0)),
+  getByItem: (menuItemId: string): ModifierGroup[] => {
+    const allGroups = read<ModifierGroup>(KEYS.modifierGroups);
+    const legacyGroups = allGroups.filter((g) => g.menu_item_id === menuItemId);
+    const legacyIds = new Set(legacyGroups.map((g) => g.id));
+    const links = read<ItemModifierLink>(KEYS.itemModifierLinks)
+      .filter((l) => l.item_id === menuItemId)
+      .sort((a, b) => a.sort_order - b.sort_order);
+    const linkedGroups = links
+      .map((l) => allGroups.find((g) => g.id === l.group_id))
+      .filter((g): g is ModifierGroup => !!g && !legacyIds.has(g.id));
+    return [...linkedGroups, ...legacyGroups];
+  },
   getById: (id: string): ModifierGroup | undefined =>
     read<ModifierGroup>(KEYS.modifierGroups).find((g) => g.id === id),
   save: (group: ModifierGroup): void => {
@@ -799,6 +815,7 @@ export const modifierGroupStore = {
   delete: (id: string): void => {
     write(KEYS.modifierGroups, read<ModifierGroup>(KEYS.modifierGroups).filter((g) => g.id !== id));
     write(KEYS.modifierOptions, read<ModifierOption>(KEYS.modifierOptions).filter((o) => o.group_id !== id));
+    write(KEYS.itemModifierLinks, read<ItemModifierLink>(KEYS.itemModifierLinks).filter((l) => l.group_id !== id));
     dispatch();
   },
   set: (groups: ModifierGroup[]): void => { write(KEYS.modifierGroups, groups); dispatch(); },
@@ -855,6 +872,40 @@ export const addOnStore = {
 };
 
 // ============================================================
+// ITEM MODIFIER LINKS
+// ============================================================
+export const itemModifierLinkStore = {
+  getAll: (): ItemModifierLink[] => read<ItemModifierLink>(KEYS.itemModifierLinks),
+  getByItem: (itemId: string): ItemModifierLink[] =>
+    read<ItemModifierLink>(KEYS.itemModifierLinks)
+      .filter((l) => l.item_id === itemId)
+      .sort((a, b) => a.sort_order - b.sort_order),
+  getByGroup: (groupId: string): ItemModifierLink[] =>
+    read<ItemModifierLink>(KEYS.itemModifierLinks).filter((l) => l.group_id === groupId),
+  link: (itemId: string, groupId: string): void => {
+    const all = read<ItemModifierLink>(KEYS.itemModifierLinks);
+    if (all.find((l) => l.item_id === itemId && l.group_id === groupId)) return;
+    const itemLinks = all.filter((l) => l.item_id === itemId);
+    all.push({ id: `iml-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, item_id: itemId, group_id: groupId, sort_order: itemLinks.length });
+    write(KEYS.itemModifierLinks, all);
+    dispatch();
+  },
+  unlink: (itemId: string, groupId: string): void => {
+    write(KEYS.itemModifierLinks, read<ItemModifierLink>(KEYS.itemModifierLinks).filter((l) => !(l.item_id === itemId && l.group_id === groupId)));
+    dispatch();
+  },
+  reorder: (itemId: string, orderedGroupIds: string[]): void => {
+    const all = read<ItemModifierLink>(KEYS.itemModifierLinks);
+    orderedGroupIds.forEach((gid, i) => {
+      const link = all.find((l) => l.item_id === itemId && l.group_id === gid);
+      if (link) link.sort_order = i;
+    });
+    write(KEYS.itemModifierLinks, all);
+    dispatch();
+  },
+};
+
+// ============================================================
 // INITIALIZATION
 // ============================================================
 export function isInitialized(): boolean {
@@ -867,5 +918,6 @@ export function markInitialized(): void {
 
 export function resetStore(): void {
   Object.values(KEYS).forEach((k) => localStorage.removeItem(k));
+  localStorage.removeItem("matami_modifiers_migrated");
   dispatch();
 }

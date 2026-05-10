@@ -39,6 +39,7 @@ import AdminBackgrounds from "@/pages/admin/AdminBackgrounds";
 import AdminAppearance from "@/pages/admin/AdminAppearance";
 import AdminMenuSorting from "@/pages/admin/AdminMenuSorting";
 import AdminBranchMenu from "@/pages/admin/AdminBranchMenu";
+import AdminModifiers from "@/pages/admin/AdminModifiers";
 import OffersPage from "@/pages/OffersPage";
 import NotFound from "@/pages/not-found";
 
@@ -110,6 +111,9 @@ function AppRoutes() {
         </Route>
         <Route path="/admin/branch-menu">
           <AdminGuard><AdminBranchMenu /></AdminGuard>
+        </Route>
+        <Route path="/admin/modifiers">
+          <AdminGuard><AdminModifiers /></AdminGuard>
         </Route>
 
         <Route>
