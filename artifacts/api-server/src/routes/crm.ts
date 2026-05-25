@@ -14,6 +14,14 @@ const router = Router();
 
 const q = db as any;
 
+// ── Reviews ────────────────────────────────────────────────────────────────────
+// Reviews are client-side only (localStorage). This endpoint exists for API
+// completeness and returns an empty array; the admin panel reads from localStorage.
+
+router.get("/reviews", requireAdmin, asyncHandler(async (_req, res) => {
+  res.json([]);
+}));
+
 // ── Orders ─────────────────────────────────────────────────────────────────────
 
 router.get("/orders", requireAdmin, asyncHandler(async (_req, res) => {

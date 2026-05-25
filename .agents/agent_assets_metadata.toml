@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "t5JY4x8J5YcschLaD8-aa"
+uri = "file://screenshots/homepage-final.jpg"
+type = "image"
+title = "Homepage — Mat'ami"

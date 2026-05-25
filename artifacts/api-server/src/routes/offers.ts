@@ -64,6 +64,18 @@ router.get("/coupons/:code/validate", asyncHandler(async (req, res) => {
   res.json({ valid: true, coupon: row });
 }));
 
+router.post("/coupons/validate", asyncHandler(async (req, res) => {
+  const code = String((req.body as any)?.code ?? "").toUpperCase();
+  if (!code) { res.status(400).json({ valid: false, error: "code is required" }); return; }
+  const rows = await q.select().from(couponsTable).where(eq(couponsTable.code, code));
+  const row = rows[0];
+  if (!row || !row.active) {
+    res.status(404).json({ valid: false, error: "Coupon not found or inactive" });
+    return;
+  }
+  res.json({ valid: true, coupon: row });
+}));
+
 router.post("/coupons", requireAdmin, validateBody(insertCouponSchema), asyncHandler(async (req, res) => {
   const body = { ...(req.body as any), code: String((req.body as any).code ?? "").toUpperCase() };
   let row;
