@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { schedulePushToServer } from "@/lib/serverSync";
-import { LayoutDashboard, UtensilsCrossed, MapPin, BookOpen, Tag, Star, LogOut, Menu, X, Percent, Settings, Navigation, Users, BarChart2, Image, Megaphone, Printer, Palette, ListOrdered, Store, SlidersHorizontal, Layers, FileUp } from "lucide-react";
+import { LayoutDashboard, UtensilsCrossed, MapPin, BookOpen, Tag, Star, LogOut, Menu, X, Percent, Settings, Navigation, Users, BarChart2, Image, Megaphone, Printer, Palette, ListOrdered, Store, SlidersHorizontal, Layers, FileUp, AlertTriangle, ExternalLink } from "lucide-react";
 import matAmiLogo from "@assets/لوجو_الموقع_مطعمي_1776635393637.png";
 
 const NAV = [
@@ -27,14 +27,17 @@ const NAV = [
   { path: "/admin/settings", label_en: "Settings", label_ar: "الإعدادات", icon: Settings },
 ];
 
+// Detect if we are running in the Replit development preview (not the live published site)
+const isDevEnvironment = import.meta.env.DEV || window.location.hostname.includes("replit.dev");
+
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const { t } = useLanguage();
   const [location] = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [devBannerDismissed, setDevBannerDismissed] = useState(
+    () => sessionStorage.getItem("dev_banner_dismissed") === "1"
+  );
 
-  // On mount: push current catalog to server immediately so any data
-  // already in localStorage is synced without needing a fresh change.
-  // On every subsequent store mutation: debounced auto-push.
   useEffect(() => {
     schedulePushToServer();
     const handleStoreUpdate = () => schedulePushToServer();
@@ -52,11 +55,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     window.location.href = "/admin";
   };
 
+  const dismissDevBanner = () => {
+    sessionStorage.setItem("dev_banner_dismissed", "1");
+    setDevBannerDismissed(true);
+  };
+
   return (
     <div className="min-h-screen bg-background flex">
       {mobileOpen && <div className="fixed inset-0 bg-black/50 z-40 md:hidden print:hidden" onClick={() => setMobileOpen(false)} />}
 
-      {/* Sidebar — hidden when printing */}
+      {/* Sidebar */}
       <aside className={`fixed left-0 top-0 h-full w-60 bg-sidebar border-r border-sidebar-border z-50 transition-transform md:translate-x-0 flex flex-col print:hidden ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`}>
         <div className="p-4 border-b border-white/5 flex-shrink-0">
           <div className="flex items-center justify-between">
@@ -65,6 +73,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <span className="font-bold text-primary text-base">{t("Admin", "الإدارة")}</span>
             </div>
             <button onClick={() => setMobileOpen(false)} className="md:hidden text-muted-foreground"><X size={18} /></button>
+          </div>
+          {/* Environment badge in sidebar */}
+          <div className={`mt-2 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-semibold ${isDevEnvironment ? "bg-amber-500/15 text-amber-400" : "bg-green-500/15 text-green-400"}`}>
+            <div className={`w-1.5 h-1.5 rounded-full ${isDevEnvironment ? "bg-amber-400" : "bg-green-400"}`} />
+            {isDevEnvironment ? t("Development Preview", "معاينة التطوير") : t("Live Site", "الموقع المنشور")}
           </div>
         </div>
         <nav className="p-3 space-y-1 flex-1 overflow-y-auto">
@@ -97,7 +110,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       </aside>
 
       <div className="flex-1 md:ml-60 print:ml-0">
-        {/* Top bar — hidden when printing */}
+        {/* Top bar */}
         <header className="sticky top-0 bg-[#0F0F0F]/95 backdrop-blur border-b border-white/5 px-4 h-14 flex items-center gap-3 z-30 print:hidden">
           <button onClick={() => setMobileOpen(true)} className="md:hidden text-muted-foreground"><Menu size={20} /></button>
           <span className="text-sm text-muted-foreground flex-1">{t("Mat'ami Admin Panel", "لوحة إدارة مطعمي")}</span>
@@ -112,7 +125,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </button>
         </header>
 
-        {/* Print-only header — shows date, page title, and branding */}
+        {/* Print-only header */}
         <div className="hidden print:block print-header px-8 pt-6 pb-4 border-b border-gray-300 mb-2">
           <div className="flex items-start justify-between">
             <div>
@@ -125,6 +138,48 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </div>
           </div>
         </div>
+
+        {/* ⚠️ Dev environment warning banner */}
+        {isDevEnvironment && !devBannerDismissed && (
+          <div className="print:hidden mx-6 mt-4 rounded-2xl border border-amber-500/30 bg-amber-500/8 p-4">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-start gap-3">
+                <AlertTriangle size={18} className="text-amber-400 flex-shrink-0 mt-0.5" />
+                <div className="space-y-1.5">
+                  <p className="text-sm font-semibold text-amber-300">
+                    {t("You are in Development Preview — changes here are NOT visible on the live site", "أنت في وضع التطوير — التغييرات هنا لا تظهر على الموقع المنشور")}
+                  </p>
+                  <p className="text-xs text-amber-400/80 leading-relaxed">
+                    {t(
+                      "To publish your menu, images, and offers to all customers: Export your data → open the live URL /admin → Import → click Publish Now.",
+                      "لنشر قائمتك وصورك وعروضك لجميع العملاء: صدّر البيانات ← افتح رابط الموقع المنشور /admin ← استورد ← اضغط انشر الآن."
+                    )}
+                  </p>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    <a
+                      href="https://replit.com/@/my-repls"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 rounded-xl text-xs font-medium text-amber-300 transition"
+                    >
+                      <ExternalLink size={11} />
+                      {t("Open deployed site", "افتح الموقع المنشور")}
+                    </a>
+                    <button
+                      onClick={dismissDevBanner}
+                      className="px-3 py-1.5 rounded-xl text-xs text-amber-500/60 hover:text-amber-400 transition"
+                    >
+                      {t("Got it, dismiss", "فهمت، أغلق")}
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <button onClick={dismissDevBanner} className="text-amber-500/50 hover:text-amber-400 flex-shrink-0 mt-0.5 transition">
+                <X size={16} />
+              </button>
+            </div>
+          </div>
+        )}
 
         <main className="p-6 print:px-8 print:py-2">{children}</main>
       </div>

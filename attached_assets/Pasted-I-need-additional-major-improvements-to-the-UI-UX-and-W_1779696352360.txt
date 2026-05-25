@@ -1,0 +1,90 @@
+I need additional major improvements to the UI/UX and WhatsApp order system.
+
+First:
+When the customer sends the order through WhatsApp, I want the order message to appear as a professional invoice format, not plain text.
+
+Requirements for WhatsApp order message:
+
+* Product names must appear in BOTH Arabic and English
+* Organized invoice layout
+* Include:
+
+  * Restaurant name
+  * Order number
+  * Date & time
+  * Customer name
+  * Phone number
+  * Delivery/Pickup type
+  * Full item list
+  * Quantity
+  * Price per item
+  * Subtotal
+  * Discounts
+  * Delivery fee
+  * VAT
+  * Final total
+  * Notes section
+* Make it clean and easy to read on WhatsApp
+* Add emojis/icons lightly for better readability
+* Support RTL Arabic formatting properly
+
+Second:
+I want a complete redesign of the interface to look modern, smooth, attractive, and very easy for customers.
+
+Use the attached reference images as inspiration for:
+
+* Colors
+* Layout
+* Category sections
+* Discounts/offers cards
+* Product cards
+* Restaurant page structure
+* Navigation
+* Overall modern food ordering experience
+
+UI/UX Requirements:
+
+* Modern food delivery app style
+* Smooth and fast experience
+* Clear category sections
+* Large attractive food images
+* Discount banners and offer sliders
+* Sticky cart button
+* Clean typography
+* Mobile-first responsive design
+* Easy navigation for customers
+* Better spacing and alignment
+* Professional animations/transitions
+* Clear call-to-action buttons
+
+Important:
+
+1. The menu page should look similar to the second reference image:
+
+   * modern offer cards
+   * highlighted discounts
+   * category filters
+   * easy scrolling products
+
+2. The restaurant internal page structure should look similar to the third reference image:
+
+   * organized sections
+   * food categories with icons/images
+   * modern mobile app feeling
+   * simple and user-friendly
+
+3. The dashboard/UI style should feel similar to the first reference image:
+
+   * clean modern layout
+   * better spacing
+   * premium look
+   * modern cards and sections
+
+Also fix:
+
+* Deployment caching problems
+* Images disappearing after publish
+* Updates not syncing everywhere
+* Ensure all changes appear instantly after deployment
+
+I need the project production-ready and visually professional because I want to launch the menu live immediately.
