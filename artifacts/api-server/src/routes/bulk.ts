@@ -17,6 +17,25 @@ import { eq } from "drizzle-orm";
 
 const router = Router();
 
+/**
+ * Convert any string / number date values in known timestamp columns to Date
+ * objects before handing the row to Drizzle.  Drizzle's timestamp column
+ * serializer calls .toISOString() internally — if it receives a plain string
+ * that call throws "value.toISOString is not a function".
+ *
+ * We also strip created_at from inserts (the DB default handles it) and
+ * always set updated_at to the current server time so client clocks don't matter.
+ */
+function sanitizeRow(row: Record<string, unknown>): Record<string, unknown> {
+  const out = { ...row };
+  // created_at: let the DB default (defaultNow()) apply; never trust the client value
+  delete out["created_at"];
+  // updated_at: always use server time — prevents both stale client timestamps
+  // and the string-vs-Date type mismatch that causes the toISOString crash
+  out["updated_at"] = new Date();
+  return out;
+}
+
 /** Public: fetch all catalog + settings data in one roundtrip */
 router.get("/data", asyncHandler(async (_req, res) => {
   const [
@@ -72,8 +91,9 @@ router.post("/data", requireAdmin, asyncHandler(async (req, res) => {
   async function upsertAll(table: any, rows: any[], pk: string) {
     if (!rows.length) return;
     for (const row of rows) {
-      await db.insert(table).values(row)
-        .onConflictDoUpdate({ target: table[pk], set: row })
+      const clean = sanitizeRow(row as Record<string, unknown>);
+      await db.insert(table).values(clean)
+        .onConflictDoUpdate({ target: table[pk], set: clean })
         .catch(() => {}); // skip rows with missing required fields
     }
   }

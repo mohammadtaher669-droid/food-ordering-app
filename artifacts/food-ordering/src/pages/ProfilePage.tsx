@@ -8,21 +8,17 @@ import { orderStore, customerStore, menuStore } from "@/lib/store";
 import type { Order } from "@/lib/store";
 import type { CartItem } from "@/contexts/CartContext";
 
-function formatDate(iso: string, lang: string): string {
+function formatDate(iso: string | null | undefined, lang: string): string {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return String(iso).slice(0, 10) || "—";
   try {
-    const d = new Date(iso);
     const locale = lang === "ar" ? "ar-SA" : "en-US";
-    const datePart = d.toLocaleDateString(locale, {
-      month: "short",
-      day: "numeric",
-    });
-    const timePart = d.toLocaleTimeString(locale, {
-      hour: "numeric",
-      minute: "2-digit",
-    });
+    const datePart = d.toLocaleDateString(locale, { month: "short", day: "numeric" });
+    const timePart = d.toLocaleTimeString(locale, { hour: "numeric", minute: "2-digit" });
     return `${datePart} · ${timePart}`;
   } catch {
-    return iso.slice(0, 10);
+    return String(iso).slice(0, 10);
   }
 }
 

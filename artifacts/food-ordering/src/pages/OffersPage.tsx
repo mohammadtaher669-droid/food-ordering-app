@@ -13,7 +13,8 @@ function CountdownTimer({ expiry }: { expiry: string }) {
 
   useEffect(() => {
     const calc = () => {
-      const diff = new Date(expiry).getTime() - Date.now();
+      const expiryTime = expiry ? new Date(expiry).getTime() : NaN;
+      const diff = isNaN(expiryTime) ? -1 : expiryTime - Date.now();
       if (diff <= 0) { setTimeLeft(null); return; }
       const h = Math.floor(diff / 3_600_000);
       const m = Math.floor((diff % 3_600_000) / 60_000);
@@ -40,7 +41,8 @@ function CountdownTimer({ expiry }: { expiry: string }) {
 
 function OfferCard({ offer, restaurantColor }: { offer: Offer; restaurantColor: string }) {
   const { t } = useLanguage();
-  const isExpiringSoon = offer.expiry_date && (new Date(offer.expiry_date).getTime() - Date.now()) < 3 * 3_600_000;
+  const expiryMs = offer.expiry_date ? new Date(offer.expiry_date).getTime() : NaN;
+  const isExpiringSoon = !isNaN(expiryMs) && (expiryMs - Date.now()) < 3 * 3_600_000;
 
   return (
     <motion.div
@@ -120,7 +122,10 @@ export default function OffersPage() {
 
   const activeOffers = allOffers.filter((o) => {
     if (!o.active) return false;
-    if (o.expiry_date && new Date(o.expiry_date).getTime() < Date.now()) return false;
+    if (o.expiry_date) {
+      const t = new Date(o.expiry_date).getTime();
+      if (!isNaN(t) && t < Date.now()) return false;
+    }
     return true;
   });
 

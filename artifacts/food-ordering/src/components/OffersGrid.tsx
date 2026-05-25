@@ -12,7 +12,8 @@ function useCountdown(expiryDate?: string) {
   useEffect(() => {
     if (!expiryDate) return;
     const compute = () => {
-      const diff = new Date(expiryDate).getTime() - Date.now();
+      const expiryMs = new Date(expiryDate).getTime();
+      const diff = isNaN(expiryMs) ? -1 : expiryMs - Date.now();
       if (diff <= 0) { setLabel("expired"); return; }
       const d = Math.floor(diff / 86400000);
       const h = Math.floor((diff % 86400000) / 3600000);

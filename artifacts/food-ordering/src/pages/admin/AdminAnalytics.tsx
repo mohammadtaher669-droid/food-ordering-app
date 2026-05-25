@@ -6,6 +6,7 @@ import { analyticsStore, menuStore, restaurantStore, customerStore, orderStore }
 import { useStore } from "@/hooks/useStore";
 import { useToast } from "@/hooks/use-toast";
 import ImageWithFallback from "@/components/ImageWithFallback";
+import { safeLocalDateTime } from "@/lib/dateUtils";
 
 function StatCard({ icon: Icon, label, value, color }: { icon: any; label: string; value: string | number; color: string }) {
   return (
@@ -201,7 +202,7 @@ export default function AdminAnalytics() {
                     <span className="text-xs font-mono text-primary">{order.id}</span>
                     <span className="text-xs text-muted-foreground">{order.restaurant_name}</span>
                   </div>
-                  <p className="text-xs text-muted-foreground">{new Date(order.date).toLocaleString()}</p>
+                  <p className="text-xs text-muted-foreground">{safeLocalDateTime((order as any).date ?? (order as any).created_at)}</p>
                 </div>
                 <span className="text-sm font-bold text-foreground">{order.total} ﷼</span>
               </div>

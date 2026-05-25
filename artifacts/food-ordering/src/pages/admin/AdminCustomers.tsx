@@ -5,6 +5,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { customerStore, orderStore } from "@/lib/store";
 import { useStore } from "@/hooks/useStore";
 import { useToast } from "@/hooks/use-toast";
+import { safeGetTime, safeLocalDate } from "@/lib/dateUtils";
 
 type SortKey = "total_orders" | "last_order_date" | "name";
 
@@ -25,7 +26,7 @@ export default function AdminCustomers() {
     })
     .sort((a, b) => {
       if (sort === "total_orders") return b.total_orders - a.total_orders;
-      if (sort === "last_order_date") return new Date(b.last_order_date).getTime() - new Date(a.last_order_date).getTime();
+      if (sort === "last_order_date") return safeGetTime(b.last_order_date) - safeGetTime(a.last_order_date);
       return a.name.localeCompare(b.name);
     });
 
@@ -113,7 +114,7 @@ export default function AdminCustomers() {
                       </div>
                       {customer.last_order_date && (
                         <p className="text-xs text-muted-foreground mt-0.5">
-                          {t("Last order:", "آخر طلب:")} {new Date(customer.last_order_date).toLocaleDateString()}
+                          {t("Last order:", "آخر طلب:")} {safeLocalDate(customer.last_order_date)}
                         </p>
                       )}
                       {customer.notes && (
@@ -189,7 +190,7 @@ export default function AdminCustomers() {
                             <div key={order.id} className="bg-background rounded-xl p-3 border border-white/5">
                               <div className="flex items-center justify-between mb-1">
                                 <span className="text-xs font-mono text-primary">{order.id}</span>
-                                <span className="text-xs text-muted-foreground">{new Date(order.date).toLocaleDateString()}</span>
+                                <span className="text-xs text-muted-foreground">{safeLocalDate((order as any).date ?? (order as any).created_at)}</span>
                               </div>
                               <p className="text-xs text-muted-foreground">{order.restaurant_name} · {order.branch_name}</p>
                               <p className="text-xs text-foreground mt-1">{order.items.map((i) => `${i.name_en} ×${i.quantity}`).join(", ")}</p>

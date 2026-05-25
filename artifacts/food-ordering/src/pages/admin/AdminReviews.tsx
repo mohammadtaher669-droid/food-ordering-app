@@ -4,6 +4,7 @@ import { reviewStore } from "@/lib/store";
 import { useStore } from "@/hooks/useStore";
 import StarRating from "@/components/StarRating";
 import { CheckCircle, Trash2 } from "lucide-react";
+import { safeLocalDate } from "@/lib/dateUtils";
 
 export default function AdminReviews() {
   const { t } = useLanguage();
@@ -27,7 +28,7 @@ export default function AdminReviews() {
               <div className="flex items-start justify-between mb-2">
                 <div>
                   <p className="font-semibold text-foreground">{review.name}</p>
-                  <p className="text-xs text-muted-foreground">{new Date(review.timestamp).toLocaleDateString()}</p>
+                  <p className="text-xs text-muted-foreground">{safeLocalDate(review.timestamp)}</p>
                 </div>
                 <div className="flex items-center gap-2">
                   {review.approved ? (
