@@ -640,26 +640,46 @@ export default function Home() {
       </AnimatePresence>
 
       {/* Search header */}
-      <div className="px-4 pt-20 pb-3 relative z-10">
-        <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} className="mb-4">
-          <p className="text-muted-foreground text-sm">{t("👋 Hello, Guest!", "👋 مرحباً، زائر!")}</p>
-          <h1 className="text-xl font-bold text-foreground">{t("What do you want today?", "ماذا تريد اليوم؟")}</h1>
+      <div className="px-4 pt-20 pb-4 relative z-10">
+        {/* Radial glow behind header */}
+        <div className="absolute left-1/2 top-14 -translate-x-1/2 w-80 h-40 pointer-events-none"
+          style={{ background: "radial-gradient(ellipse at center, rgba(255,122,0,0.08) 0%, transparent 70%)" }} />
+
+        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="mb-5">
+          <p className="text-muted-foreground/70 text-sm mb-1">
+            {t("👋 Welcome to", "👋 مرحباً بك في")}
+            {" "}
+            <span className="text-primary font-semibold">{t(settings.platform_name_en || "Mat'ami", settings.platform_name_ar || "مطعمي")}</span>
+          </p>
+          <h1 className="text-2xl font-extrabold text-foreground leading-tight">
+            {t(settings.slogan_en || "What would you like today?",
+               settings.slogan_ar || "ماذا تشتهي اليوم؟")}
+          </h1>
         </motion.div>
-        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
-          className="flex items-center gap-3 rounded-2xl px-4 py-3"
-          style={{ background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.07)" }}>
-          <Search size={15} className="text-muted-foreground flex-shrink-0" />
+
+        <motion.div
+          initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.07, duration: 0.35 }}
+          className="relative flex items-center gap-3 rounded-2xl px-4 py-3.5 transition-all duration-200 focus-within:border-primary/40"
+          style={{
+            background: "rgba(26,26,26,0.95)",
+            border: "1px solid rgba(255,255,255,0.08)",
+            boxShadow: "0 2px 20px rgba(0,0,0,0.3)",
+          }}
+        >
+          <Search size={16} className="text-primary/60 flex-shrink-0" />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder={t("Search restaurants, food...", "ابحث عن مطاعم، طعام...")}
-            className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none"
+            placeholder={t("Search restaurants, food, categories…", "ابحث عن مطاعم، طعام، فئات…")}
+            className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none"
             data-testid="input-search"
           />
           <AnimatePresence>
             {search && (
-              <motion.button initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }} onClick={() => setSearch("")} className="text-muted-foreground hover:text-foreground transition">
-                <X size={14} />
+              <motion.button initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0, opacity: 0 }}
+                onClick={() => setSearch("")}
+                className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-white/20 transition flex-shrink-0">
+                <X size={12} />
               </motion.button>
             )}
           </AnimatePresence>
