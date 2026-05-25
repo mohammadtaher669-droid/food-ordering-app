@@ -1,5 +1,6 @@
 import app from "./app";
 import { logger } from "./lib/logger";
+import { autoSeedIfEmpty } from "./lib/auto-seed";
 
 const rawPort = process.env["PORT"];
 
@@ -22,4 +23,6 @@ app.listen(port, (err) => {
   }
 
   logger.info({ port }, "Server listening");
+  // Populate database from default seed data if it's empty (safe to run every boot)
+  autoSeedIfEmpty().catch((err) => logger.error({ err }, "auto-seed failed"));
 });

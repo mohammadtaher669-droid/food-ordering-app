@@ -375,6 +375,43 @@ function queueSync(): void {
   _syncTimer = setTimeout(() => void _pushToApi(), 4000);
 }
 
+/**
+ * Admin-facing publish: push all in-memory catalog to /api/data.
+ * Returns { ok, error } so callers can show success/failure UI.
+ */
+export async function publishCatalog(): Promise<{ ok: boolean; error?: string }> {
+  const token = getAdminToken();
+  if (!token) return { ok: false, error: "Not logged in as admin" };
+  try {
+    const snapshot = {
+      restaurants:               _mem["store_restaurants"]          ?? [],
+      branches:                  _mem["store_branches"]             ?? [],
+      categories:                _mem["store_categories"]           ?? [],
+      menu_items:                _mem["store_menu_items"]           ?? [],
+      offers:                    _mem["store_offers"]               ?? [],
+      coupons:                   _mem["store_coupons"]              ?? [],
+      banners:                   _mem["store_banners"]              ?? [],
+      modifier_groups:           _mem["store_modifier_groups"]      ?? [],
+      modifier_options:          _mem["store_modifier_options"]     ?? [],
+      add_ons:                   _mem["store_add_ons"]              ?? [],
+      item_modifier_links:       _mem["store_item_modifier_links"]  ?? [],
+      branch_item_overrides:     _mem["store_branch_item_overrides"]    ?? [],
+      branch_category_overrides: _mem["store_branch_cat_overrides"] ?? [],
+      settings:                  _memOne["store_app_settings"] ?? undefined,
+    };
+    const res = await fetch("/api/data", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify(snapshot),
+    });
+    if (res.ok) return { ok: true };
+    const body = await res.json().catch(() => ({})) as { error?: string };
+    return { ok: false, error: body.error ?? `Server error ${res.status}` };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "Network error" };
+  }
+}
+
 export async function _pushToApi(): Promise<void> {
   const token = getAdminToken();
   if (!token) return;
@@ -511,9 +548,12 @@ export async function hydrateStore(): Promise<void> {
     }
   } catch { /* fall through to seed */ }
 
-  // DB empty or unreachable — run seed, then push once admin logs in
+  // DB empty or unreachable — force re-seed into _mem, bypassing the stale
+  // localStorage "store_initialized" flag that would skip seeding.
+  localStorage.removeItem(KEYS.initialized);
   const { initializeStore } = await import("./initStore");
   initializeStore();
+  dispatch(); // ensure components see the seeded data immediately
   // Attempt immediate push in case admin token already exists
   setTimeout(() => void _pushToApi(), 1500);
 }

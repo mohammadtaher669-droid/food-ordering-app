@@ -2,7 +2,7 @@ import { useCallback, useState, useEffect } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import {
   restaurantStore, branchStore, menuStore, reviewStore, couponStore,
-  modifierGroupStore, modifierOptionStore, addOnStore, markInitialized, resetStore,
+  resetStore,
 } from "@/lib/store";
 import { useStore } from "@/hooks/useStore";
 import {
@@ -11,24 +11,15 @@ import {
   AlertCircle, Loader2, AlertTriangle, ExternalLink,
   ArrowRight, Globe,
 } from "lucide-react";
-import { initializeStore } from "@/lib/initStore";
 import { useToast } from "@/hooks/use-toast";
-import { pushToServer, fetchAndApplyServerStore } from "@/lib/serverSync";
+import { publishCatalog, getStoreSnapshot, loadStoreSnapshot } from "@/lib/store";
 
 const isDevEnvironment = import.meta.env.DEV || window.location.hostname.includes("replit.dev");
 
 function forceReseed() {
   localStorage.removeItem("store_initialized");
-  initializeStore();
+  window.location.reload();
 }
-
-// All localStorage keys that hold catalog data (including images stored as Base64 inside these objects)
-const ALL_EXPORT_KEYS = [
-  "store_restaurants", "store_branches", "store_categories", "store_menu_items",
-  "store_offers", "store_coupons", "store_banners", "store_app_settings",
-  "store_modifier_groups", "store_modifier_options", "store_add_ons",
-  "store_item_modifier_links", "store_branch_item_overrides", "store_branch_cat_overrides",
-];
 
 export default function AdminDashboard() {
   const { t } = useLanguage();
@@ -46,14 +37,15 @@ export default function AdminDashboard() {
 
   const pendingReviews = reviews.filter((r) => !r.approved).length;
 
-  // Check whether the deployed server already has a snapshot
+  // Check whether the server already has catalog data
   useEffect(() => {
-    fetchAndApplyServerStore().then((changed) => {
-      setServerHasData(changed !== false);
-    }).catch(() => setServerHasData(false));
-
-    fetch(`${window.location.origin}/api/store`, { cache: "no-store" })
-      .then((r) => setServerHasData(r.ok))
+    fetch(`${window.location.origin}/api/data`, { cache: "no-store" })
+      .then(async (r) => {
+        if (!r.ok) { setServerHasData(false); return; }
+        const d = await r.json() as Record<string, unknown[]>;
+        const hasData = Object.values(d).some((v) => Array.isArray(v) && v.length > 0);
+        setServerHasData(hasData);
+      })
       .catch(() => setServerHasData(false));
   }, []);
 
@@ -69,7 +61,7 @@ export default function AdminDashboard() {
   const handlePublish = async () => {
     setSyncStatus("pushing");
     setSyncError("");
-    const result = await pushToServer();
+    const result = await publishCatalog();
     if (result.ok) {
       setSyncStatus("ok");
       setServerHasData(true);
@@ -92,13 +84,9 @@ export default function AdminDashboard() {
     }
   };
 
-  /* ─── Export (all catalog data + images embedded as Base64) ──────── */
+  /* ─── Export (all catalog data from in-memory store) ──────── */
   const handleExport = () => {
-    const data: Record<string, unknown> = {};
-    for (const key of ALL_EXPORT_KEYS) {
-      const raw = localStorage.getItem(key);
-      data[key] = raw ? (JSON.parse(raw) as unknown) : [];
-    }
+    const data = getStoreSnapshot();
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
     const url  = URL.createObjectURL(blob);
     const a    = document.createElement("a");
@@ -127,26 +115,24 @@ export default function AdminDashboard() {
       reader.onload = (ev) => {
         try {
           const data = JSON.parse(ev.target?.result as string) as Record<string, unknown>;
-          // Support both old-style (named keys) and new flat export format
-          const flat = data["store_restaurants"] !== undefined;
-          if (flat) {
-            for (const key of ALL_EXPORT_KEYS) {
-              if (data[key] !== undefined) localStorage.setItem(key, JSON.stringify(data[key]));
-            }
+          // Support both new format (store_* keys) and legacy format (plain entity names)
+          const isNewFormat = data["store_restaurants"] !== undefined;
+          if (isNewFormat) {
+            loadStoreSnapshot(data as Record<string, any>);
           } else {
-            // Legacy format from older Export button
-            if (data["restaurants"]) restaurantStore.set(data["restaurants"] as Parameters<typeof restaurantStore.set>[0]);
-            if (data["branches"])    branchStore.set(data["branches"] as Parameters<typeof branchStore.set>[0]);
-            if (data["categories"])  localStorage.setItem("store_categories", JSON.stringify(data["categories"]));
-            if (data["menuItems"])   menuStore.set(data["menuItems"] as Parameters<typeof menuStore.set>[0]);
-            if (data["offers"])      localStorage.setItem("store_offers", JSON.stringify(data["offers"]));
-            if (data["coupons"])     couponStore.set(data["coupons"] as Parameters<typeof couponStore.set>[0]);
-            if (data["modifierGroups"])   modifierGroupStore.set(data["modifierGroups"] as Parameters<typeof modifierGroupStore.set>[0]);
-            if (data["modifierOptions"])  modifierOptionStore.set(data["modifierOptions"] as Parameters<typeof modifierOptionStore.set>[0]);
-            if (data["addOns"])      addOnStore.set(data["addOns"] as Parameters<typeof addOnStore.set>[0]);
+            // Legacy format — map old keys to new store format
+            const mapped: Record<string, any> = {};
+            if (data["restaurants"]) mapped["store_restaurants"] = data["restaurants"];
+            if (data["branches"])    mapped["store_branches"]    = data["branches"];
+            if (data["categories"])  mapped["store_categories"]  = data["categories"];
+            if (data["menuItems"])   mapped["store_menu_items"]  = data["menuItems"];
+            if (data["offers"])      mapped["store_offers"]      = data["offers"];
+            if (data["coupons"])     mapped["store_coupons"]     = data["coupons"];
+            if (data["modifierGroups"])  mapped["store_modifier_groups"]  = data["modifierGroups"];
+            if (data["modifierOptions"]) mapped["store_modifier_options"] = data["modifierOptions"];
+            if (data["addOns"])      mapped["store_add_ons"]     = data["addOns"];
+            loadStoreSnapshot(mapped);
           }
-          markInitialized();
-          window.dispatchEvent(new Event("store-updated"));
           toast({
             title: t("Imported!", "تم الاستيراد!"),
             description: t(
