@@ -341,50 +341,181 @@ const KEYS = {
 };
 
 // ============================================================
-// HELPERS
+// HELPERS — in-memory store backed by REST API
 // ============================================================
-function read<T>(key: string): T[] {
+
+/** Mutable in-memory arrays keyed by KEYS values */
+const _mem: Record<string, any[]> = {};
+/** Mutable in-memory singletons (e.g. settings) */
+const _memOne: Record<string, any> = {};
+
+/** Admin JWT — sessionStorage persists across navigations within a tab */
+export function getAdminToken(): string | null {
+  return sessionStorage.getItem("admin_token");
+}
+export function setAdminToken(token: string | null): void {
+  if (token) sessionStorage.setItem("admin_token", token);
+  else sessionStorage.removeItem("admin_token");
+}
+
+/** Store keys that are backed by the PostgreSQL REST API */
+const API_KEYS = new Set<string>([
+  "store_restaurants", "store_branches", "store_categories", "store_menu_items",
+  "store_offers", "store_coupons", "store_banners", "store_app_settings",
+  "store_branch_item_overrides", "store_branch_cat_overrides",
+  "store_modifier_groups", "store_modifier_options", "store_add_ons",
+  "store_item_modifier_links",
+]);
+
+/** Debounce handle for bulk API sync */
+let _syncTimer: ReturnType<typeof setTimeout> | null = null;
+
+function queueSync(): void {
+  if (_syncTimer) clearTimeout(_syncTimer);
+  _syncTimer = setTimeout(() => void _pushToApi(), 4000);
+}
+
+export async function _pushToApi(): Promise<void> {
+  const token = getAdminToken();
+  if (!token) return;
+  const snapshot = {
+    restaurants:               _mem["store_restaurants"]          ?? [],
+    branches:                  _mem["store_branches"]             ?? [],
+    categories:                _mem["store_categories"]           ?? [],
+    menu_items:                _mem["store_menu_items"]           ?? [],
+    offers:                    _mem["store_offers"]               ?? [],
+    coupons:                   _mem["store_coupons"]              ?? [],
+    banners:                   _mem["store_banners"]              ?? [],
+    modifier_groups:           _mem["store_modifier_groups"]      ?? [],
+    modifier_options:          _mem["store_modifier_options"]     ?? [],
+    add_ons:                   _mem["store_add_ons"]              ?? [],
+    item_modifier_links:       _mem["store_item_modifier_links"]  ?? [],
+    branch_item_overrides:     _mem["store_branch_item_overrides"]    ?? [],
+    branch_category_overrides: _mem["store_branch_cat_overrides"] ?? [],
+    settings:                  _memOne["store_app_settings"] ?? undefined,
+  };
   try {
-    return JSON.parse(localStorage.getItem(key) || "[]") as T[];
-  } catch {
-    return [];
-  }
+    await fetch("/api/data", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify(snapshot),
+    });
+  } catch { /* silent — local state is still intact */ }
+}
+
+function read<T>(key: string): T[] {
+  if (API_KEYS.has(key)) return (_mem[key] ?? []) as T[];
+  try { return JSON.parse(localStorage.getItem(key) ?? "[]") as T[]; } catch { return []; }
 }
 
 function readOne<T>(key: string, fallback: T): T {
+  if (_memOne[key] !== undefined) return _memOne[key] as T;
   try {
     const raw = localStorage.getItem(key);
-    if (!raw) return fallback;
-    return JSON.parse(raw) as T;
-  } catch {
-    return fallback;
-  }
+    if (raw) return JSON.parse(raw) as T;
+  } catch {}
+  return fallback;
 }
 
 function write<T>(key: string, data: T[]): void {
-  try {
-    localStorage.setItem(key, JSON.stringify(data));
-  } catch (e) {
-    if (e instanceof DOMException) {
-      throw new Error("Storage full. Delete some item images to free space.");
-    }
-    throw e;
-  }
+  if (API_KEYS.has(key)) { _mem[key] = data; queueSync(); return; }
+  try { localStorage.setItem(key, JSON.stringify(data)); } catch {}
 }
 
 function writeOne<T>(key: string, data: T): void {
-  try {
-    localStorage.setItem(key, JSON.stringify(data));
-  } catch (e) {
-    if (e instanceof DOMException) {
-      throw new Error("Storage full. Delete some item images to free space.");
-    }
-    throw e;
-  }
+  _memOne[key] = data;
+  if (key === "store_app_settings") queueSync();
+  try { localStorage.setItem(key, JSON.stringify(data)); } catch {}
 }
 
-export function dispatch() {
+export function dispatch(): void {
   window.dispatchEvent(new Event("store-updated"));
+}
+
+/**
+ * Hydrates the in-memory store from the API on app startup.
+ * Falls back to seeding from initStore.ts if the DB is empty or unreachable.
+ */
+/** Returns the full in-memory catalog snapshot (used by Admin export / Publish). */
+export function getStoreSnapshot(): Record<string, any> {
+  return {
+    store_restaurants:           _mem["store_restaurants"]          ?? [],
+    store_branches:              _mem["store_branches"]             ?? [],
+    store_categories:            _mem["store_categories"]           ?? [],
+    store_menu_items:            _mem["store_menu_items"]           ?? [],
+    store_offers:                _mem["store_offers"]               ?? [],
+    store_coupons:               _mem["store_coupons"]              ?? [],
+    store_banners:               _mem["store_banners"]              ?? [],
+    store_modifier_groups:       _mem["store_modifier_groups"]      ?? [],
+    store_modifier_options:      _mem["store_modifier_options"]     ?? [],
+    store_add_ons:               _mem["store_add_ons"]              ?? [],
+    store_item_modifier_links:   _mem["store_item_modifier_links"]  ?? [],
+    store_branch_item_overrides: _mem["store_branch_item_overrides"]    ?? [],
+    store_branch_cat_overrides:  _mem["store_branch_cat_overrides"] ?? [],
+    store_app_settings:          _memOne["store_app_settings"] ?? null,
+  };
+}
+
+/**
+ * Loads a full catalog snapshot (from JSON import or reset) into in-memory store.
+ * Key names match the KEYS constants (store_restaurants, etc.).
+ */
+export function loadStoreSnapshot(snapshot: Record<string, any>): void {
+  const arrayKeys = [
+    "store_restaurants", "store_branches", "store_categories", "store_menu_items",
+    "store_offers", "store_coupons", "store_banners", "store_modifier_groups",
+    "store_modifier_options", "store_add_ons", "store_item_modifier_links",
+    "store_branch_item_overrides", "store_branch_cat_overrides",
+  ];
+  for (const key of arrayKeys) {
+    if (Array.isArray(snapshot[key])) _mem[key] = snapshot[key];
+  }
+  if (snapshot["store_app_settings"] && typeof snapshot["store_app_settings"] === "object") {
+    _memOne["store_app_settings"] = snapshot["store_app_settings"];
+  }
+  dispatch();
+}
+
+export async function hydrateStore(): Promise<void> {
+  try {
+    const res = await fetch("/api/data");
+    if (res.ok) {
+      const d = (await res.json()) as Record<string, any>;
+      const keyMap: Record<string, string> = {
+        restaurants:               "store_restaurants",
+        branches:                  "store_branches",
+        categories:                "store_categories",
+        menu_items:                "store_menu_items",
+        offers:                    "store_offers",
+        coupons:                   "store_coupons",
+        banners:                   "store_banners",
+        modifier_groups:           "store_modifier_groups",
+        modifier_options:          "store_modifier_options",
+        add_ons:                   "store_add_ons",
+        item_modifier_links:       "store_item_modifier_links",
+        branch_item_overrides:     "store_branch_item_overrides",
+        branch_category_overrides: "store_branch_cat_overrides",
+      };
+      let hasData = false;
+      for (const [apiKey, storeKey] of Object.entries(keyMap)) {
+        if (Array.isArray(d[apiKey])) {
+          _mem[storeKey] = d[apiKey];
+          if (d[apiKey].length > 0) hasData = true;
+        }
+      }
+      if (d.settings && typeof d.settings === "object") {
+        _memOne["store_app_settings"] = d.settings;
+        hasData = true;
+      }
+      if (hasData) { dispatch(); return; }
+    }
+  } catch { /* fall through to seed */ }
+
+  // DB empty or unreachable — run seed, then push once admin logs in
+  const { initializeStore } = await import("./initStore");
+  initializeStore();
+  // Attempt immediate push in case admin token already exists
+  setTimeout(() => void _pushToApi(), 1500);
 }
 
 // ============================================================
@@ -616,6 +747,12 @@ export const orderStore = {
     all.push(fullOrder);
     write(KEYS.orders, all);
     dispatch();
+    // Persist to API (public endpoint — no token needed)
+    fetch("/api/orders", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...fullOrder, customer_name: name, customer_phone: phone, customer_address: location }),
+    }).catch(() => {});
   },
 };
 
@@ -963,6 +1100,10 @@ export function markInitialized(): void {
 }
 
 export function resetStore(): void {
+  // Clear in-memory state
+  for (const key of Object.keys(_mem)) delete _mem[key];
+  for (const key of Object.keys(_memOne)) delete _memOne[key];
+  // Clear localStorage fallbacks (analytics, behavior, etc.)
   Object.values(KEYS).forEach((k) => localStorage.removeItem(k));
   localStorage.removeItem("matami_modifiers_migrated");
   dispatch();

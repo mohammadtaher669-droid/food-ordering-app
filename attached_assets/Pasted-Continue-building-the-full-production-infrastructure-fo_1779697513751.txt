@@ -1,0 +1,190 @@
+Continue building the full production infrastructure for this project.
+
+I want you to now focus ONLY on completing the backend architecture, database structure, deployment readiness, scalability, and production stability.
+
+========================
+PHASE: INFRASTRUCTURE COMPLETION
+================================
+
+Complete all remaining infrastructure tasks professionally.
+
+========================
+
+1. REMOVE ALL LOCALSTORAGE
+   ========================
+   Completely remove any dependency on:
+
+* localStorage
+* sessionStorage
+* temporary browser storage
+
+All data must come from real backend APIs and database.
+
+========================
+2. CREATE FULL BACKEND SYSTEM
+=============================
+
+Build a complete backend using:
+
+* Node.js
+* Express
+
+Implement:
+
+* REST API architecture
+* Modular structure
+* Controllers
+* Routes
+* Middleware
+* Validation
+* Error handling
+* Logging
+* Authentication system
+* Secure admin routes
+
+========================
+3. DATABASE IMPLEMENTATION
+==========================
+
+Implement a real database:
+
+* PostgreSQL preferred
+
+Create full schemas/tables for:
+
+* Restaurants
+* Categories
+* Products
+* Product options/addons
+* Orders
+* Customers
+* Offers
+* Banners
+* Settings
+* Users/Admins
+* WhatsApp configurations
+
+Ensure:
+
+* Persistent storage
+* Global synchronization
+* Stable production data handling
+
+========================
+4. IMAGE STORAGE SYSTEM
+=======================
+
+Integrate Cloudinary professionally.
+
+Requirements:
+
+* External image hosting
+* CDN delivery
+* Optimized uploads
+* Image compression
+* Stable permanent image URLs
+* Prevent disappearing banners/images
+
+========================
+5. ADMIN PANEL INFRASTRUCTURE
+=============================
+
+Create real admin dashboard infrastructure.
+
+Admin features:
+
+* Add/Edit/Delete restaurants
+* Product management
+* Category management
+* Banner management
+* Discount management
+* Order management
+* Visibility toggles
+* Upload images
+* Settings management
+
+========================
+6. WHATSAPP ORDER ENGINE
+========================
+
+Build professional WhatsApp invoice formatting.
+
+Requirements:
+
+* Arabic + English product names
+* Organized invoice layout
+* VAT
+* Discounts
+* Delivery fee
+* Final totals
+* Notes
+* Customer details
+* Readable mobile formatting
+
+========================
+7. DEPLOYMENT STABILITY
+=======================
+
+Fix all deployment-related issues:
+
+* Images disappearing
+* Cache problems
+* Old versions showing
+* Incomplete publishing
+* Build inconsistencies
+
+Implement:
+
+* Cache busting
+* Stable production builds
+* Asset versioning
+* Global synchronization
+* Proper environment configs
+
+========================
+8. PERFORMANCE OPTIMIZATION
+===========================
+
+Optimize:
+
+* API performance
+* Image loading
+* Lazy loading
+* Mobile performance
+* Compression
+* Build optimization
+* SEO basics
+
+========================
+9. SECURITY
+===========
+
+Implement:
+
+* JWT authentication
+* Protected admin routes
+* Input validation
+* Rate limiting basics
+* Secure environment variables
+* Basic production security practices
+
+========================
+10. FINAL PREPARATION
+=====================
+
+Prepare the project for external hosting outside Replit.
+
+Requirements:
+
+* GitHub-ready structure
+* Production-ready codebase
+* Clean folder organization
+* .env.example
+* README setup instructions
+* Deployment instructions
+* VPS compatibility
+* Hostinger compatibility
+* Vercel compatibility
+* DigitalOcean compatibility
+
+I want the app to become a real scalable restaurant ordering platform, not a demo project.
