@@ -1,12 +1,16 @@
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import { Switch, Route, Router as WouterRouter } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { CartProvider } from "@/contexts/CartContext";
-import { settingsStore, dispatch, hydrateStore } from "@/lib/store";
+import { settingsStore, hydrateStore } from "@/lib/store";
 import { applyTheme } from "@/lib/themeUtils";
+import { verifyAdminToken } from "@/lib/adminAuth";
+import { useState } from "react";
+
+// ── Customer-facing pages (critical path — statically imported) ───────────────
 import NavBar from "@/components/NavBar";
 import ClearCartDialog from "@/components/ClearCartDialog";
 import BottomNav from "@/components/BottomNav";
@@ -20,31 +24,43 @@ import ConfirmationPage from "@/pages/ConfirmationPage";
 import ReviewPage from "@/pages/ReviewPage";
 import FavoritesPage from "@/pages/FavoritesPage";
 import ProfilePage from "@/pages/ProfilePage";
-import AdminLayout from "@/pages/admin/AdminLayout";
-import AdminAuth from "@/pages/admin/AdminAuth";
-import AdminDashboard from "@/pages/admin/AdminDashboard";
-import AdminRestaurants from "@/pages/admin/AdminRestaurants";
-import AdminBranches from "@/pages/admin/AdminBranches";
-import AdminMenu from "@/pages/admin/AdminMenu";
-import AdminCoupons from "@/pages/admin/AdminCoupons";
-import AdminReviews from "@/pages/admin/AdminReviews";
-import AdminOffers from "@/pages/admin/AdminOffers";
-import AdminSettings from "@/pages/admin/AdminSettings";
-import AdminDeliveryZones from "@/pages/admin/AdminDeliveryZones";
-import AdminCustomers from "@/pages/admin/AdminCustomers";
-import AdminAnalytics from "@/pages/admin/AdminAnalytics";
-import AdminBanners from "@/pages/admin/AdminBanners";
-import AdminBackgrounds from "@/pages/admin/AdminBackgrounds";
-import AdminAppearance from "@/pages/admin/AdminAppearance";
-import AdminMenuSorting from "@/pages/admin/AdminMenuSorting";
-import AdminBranchMenu from "@/pages/admin/AdminBranchMenu";
-import AdminModifiers from "@/pages/admin/AdminModifiers";
-import AdminContentControl from "@/pages/admin/AdminContentControl";
-import AdminMenuImport from "@/pages/admin/AdminMenuImport";
 import OffersPage from "@/pages/OffersPage";
 import NotFound from "@/pages/not-found";
 
+// ── Admin pages (lazy — only loaded when /admin is visited) ───────────────────
+const AdminAuth         = lazy(() => import("@/pages/admin/AdminAuth"));
+const AdminLayout       = lazy(() => import("@/pages/admin/AdminLayout"));
+const AdminDashboard    = lazy(() => import("@/pages/admin/AdminDashboard"));
+const AdminRestaurants  = lazy(() => import("@/pages/admin/AdminRestaurants"));
+const AdminBranches     = lazy(() => import("@/pages/admin/AdminBranches"));
+const AdminMenu         = lazy(() => import("@/pages/admin/AdminMenu"));
+const AdminCoupons      = lazy(() => import("@/pages/admin/AdminCoupons"));
+const AdminReviews      = lazy(() => import("@/pages/admin/AdminReviews"));
+const AdminOffers       = lazy(() => import("@/pages/admin/AdminOffers"));
+const AdminSettings     = lazy(() => import("@/pages/admin/AdminSettings"));
+const AdminDeliveryZones= lazy(() => import("@/pages/admin/AdminDeliveryZones"));
+const AdminCustomers    = lazy(() => import("@/pages/admin/AdminCustomers"));
+const AdminAnalytics    = lazy(() => import("@/pages/admin/AdminAnalytics"));
+const AdminBanners      = lazy(() => import("@/pages/admin/AdminBanners"));
+const AdminBackgrounds  = lazy(() => import("@/pages/admin/AdminBackgrounds"));
+const AdminAppearance   = lazy(() => import("@/pages/admin/AdminAppearance"));
+const AdminMenuSorting  = lazy(() => import("@/pages/admin/AdminMenuSorting"));
+const AdminBranchMenu   = lazy(() => import("@/pages/admin/AdminBranchMenu"));
+const AdminModifiers    = lazy(() => import("@/pages/admin/AdminModifiers"));
+const AdminContentControl = lazy(() => import("@/pages/admin/AdminContentControl"));
+const AdminMenuImport   = lazy(() => import("@/pages/admin/AdminMenuImport"));
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 const queryClient = new QueryClient();
+
+function Spinner() {
+  return (
+    <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
+}
 
 function AdminGuard({ children }: { children: React.ReactNode }) {
   const storedToken = sessionStorage.getItem("admin_token") || "";
@@ -54,34 +70,34 @@ function AdminGuard({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!storedToken) { setState("unauthed"); return; }
-    import("@/pages/admin/AdminAuth").then(({ verifyAdminToken }) => {
-      verifyAdminToken(storedToken).then((valid) => {
-        if (valid) setState("authed");
-        else { sessionStorage.removeItem("admin_token"); setState("unauthed"); }
-      });
+    verifyAdminToken(storedToken).then((valid) => {
+      if (valid) setState("authed");
+      else { sessionStorage.removeItem("admin_token"); setState("unauthed"); }
     });
   }, []);
 
-  if (state === "loading") {
+  if (state === "loading") return <Spinner />;
+
+  if (state === "unauthed") {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-      </div>
+      <Suspense fallback={<Spinner />}>
+        <AdminAuth onAuth={(token) => { sessionStorage.setItem("admin_token", token); setState("authed"); }} />
+      </Suspense>
     );
   }
-  if (state === "unauthed") {
-    return <AdminAuth onAuth={(token) => { sessionStorage.setItem("admin_token", token); setState("authed"); }} />;
-  }
-  return <AdminLayout>{children}</AdminLayout>;
+
+  return (
+    <Suspense fallback={<Spinner />}>
+      <AdminLayout>{children}</AdminLayout>
+    </Suspense>
+  );
 }
 
 function AppRoutes() {
   useEffect(() => {
-    // Hydrate in-memory store from API; falls back to seed data if DB is empty
     hydrateStore().then(() => {
       applyTheme(settingsStore.get());
     });
-
     const handler = () => applyTheme(settingsStore.get());
     window.addEventListener("store-updated", handler);
     return () => window.removeEventListener("store-updated", handler);
@@ -90,6 +106,7 @@ function AppRoutes() {
   return (
     <>
       <Switch>
+        {/* ── Admin routes ─────────────────────────────────────── */}
         <Route path="/admin">
           <AdminGuard><AdminDashboard /></AdminGuard>
         </Route>
@@ -148,6 +165,7 @@ function AppRoutes() {
           <AdminGuard><AdminMenuImport /></AdminGuard>
         </Route>
 
+        {/* ── Customer routes ──────────────────────────────────── */}
         <Route>
           <NavBar />
           <Switch>

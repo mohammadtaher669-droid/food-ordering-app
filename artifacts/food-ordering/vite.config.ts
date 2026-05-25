@@ -7,9 +7,7 @@ import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
 const rawPort = process.env.PORT;
 
 if (!rawPort) {
-  throw new Error(
-    "PORT environment variable is required but was not provided.",
-  );
+  throw new Error("PORT environment variable is required but was not provided.");
 }
 
 const port = Number(rawPort);
@@ -21,9 +19,7 @@ if (Number.isNaN(port) || port <= 0) {
 const basePath = process.env.BASE_PATH;
 
 if (!basePath) {
-  throw new Error(
-    "BASE_PATH environment variable is required but was not provided.",
-  );
+  throw new Error("BASE_PATH environment variable is required but was not provided.");
 }
 
 export default defineConfig({
@@ -36,9 +32,7 @@ export default defineConfig({
     process.env.REPL_ID !== undefined
       ? [
           await import("@replit/vite-plugin-cartographer").then((m) =>
-            m.cartographer({
-              root: path.resolve(import.meta.dirname, ".."),
-            }),
+            m.cartographer({ root: path.resolve(import.meta.dirname, "..") }),
           ),
           await import("@replit/vite-plugin-dev-banner").then((m) =>
             m.devBanner(),
@@ -57,6 +51,49 @@ export default defineConfig({
   build: {
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
+    chunkSizeWarningLimit: 600,
+    rollupOptions: {
+      output: {
+        manualChunks: (id) => {
+          // React core
+          if (id.includes("node_modules/react/") || id.includes("node_modules/react-dom/") || id.includes("node_modules/scheduler/")) {
+            return "vendor-react";
+          }
+          // Framer Motion (large animation lib)
+          if (id.includes("node_modules/framer-motion/")) {
+            return "vendor-motion";
+          }
+          // Recharts + D3 (charting)
+          if (id.includes("node_modules/recharts/") || id.includes("node_modules/d3") || id.includes("node_modules/victory-vendor/")) {
+            return "vendor-charts";
+          }
+          // DnD Kit
+          if (id.includes("node_modules/@dnd-kit/")) {
+            return "vendor-dnd";
+          }
+          // Radix UI
+          if (id.includes("node_modules/@radix-ui/")) {
+            return "vendor-radix";
+          }
+          // XLSX (heavy excel lib — isolated because it's ~420KB)
+          if (id.includes("node_modules/xlsx/")) {
+            return "vendor-xlsx";
+          }
+          // Tanstack Query
+          if (id.includes("node_modules/@tanstack/")) {
+            return "vendor-query";
+          }
+          // Lucide icons (large)
+          if (id.includes("node_modules/lucide-react/")) {
+            return "vendor-icons";
+          }
+          // Other node_modules (including leaflet — merging avoids circular chunk)
+          if (id.includes("node_modules/")) {
+            return "vendor-misc";
+          }
+        },
+      },
+    },
   },
   server: {
     port,
