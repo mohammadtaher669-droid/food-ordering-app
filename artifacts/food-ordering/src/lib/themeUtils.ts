@@ -106,6 +106,13 @@ const BORDER_MAP: Record<string, string> = {
   strong: "0 0% 100% / 0.18",
 };
 
+const SHADOW_MAP: Record<string, string> = {
+  none:   "none",
+  soft:   "0 2px 8px rgba(0,0,0,0.25)",
+  medium: "0 4px 16px rgba(0,0,0,0.40)",
+  strong: "0 8px 32px rgba(0,0,0,0.60)",
+};
+
 export function applyTheme(settings: AppSettings): void {
   const root = document.documentElement;
 
@@ -155,4 +162,11 @@ export function applyTheme(settings: AppSettings): void {
 
   const border = settings.border_style ?? "subtle";
   root.style.setProperty("--border", BORDER_MAP[border] ?? BORDER_MAP.subtle);
+
+  const shadow = settings.shadow_level ?? "soft";
+  const shadowVal = SHADOW_MAP[shadow] ?? SHADOW_MAP.soft;
+  root.style.setProperty("--shadow-sm",  shadow === "none" ? "none" : shadowVal);
+  root.style.setProperty("--shadow",     shadow === "none" ? "none" : shadowVal);
+  root.style.setProperty("--shadow-md",  shadow === "none" ? "none" : shadowVal);
+  root.style.setProperty("--shadow-lg",  shadow === "none" ? "none" : shadowVal);
 }

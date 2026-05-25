@@ -214,6 +214,7 @@ export interface AppSettings {
   restaurant_order?: string[];
   home_columns?: number;
   bestseller_style?: "scroll" | "grid";
+  shadow_level?: "none" | "soft" | "medium" | "strong";
 }
 
 // ── Shared metadata for home sections and nav items ──────────────────────────
