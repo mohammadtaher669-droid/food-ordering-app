@@ -2,29 +2,29 @@
   "name": "workspace",
   "version": "0.0.0",
   "license": "MIT",
+  "private": true,
+  "workspaces": [
+    "artifacts/*",
+    "lib/*",
+    "scripts"
+  ],
   "engines": {
-    "node": ">=20",
-    "pnpm": ">=10"
+    "node": ">=20"
   },
   "scripts": {
-    "preinstall": "sh -c 'rm -f package-lock.json yarn.lock; case \"$npm_config_user_agent\" in pnpm/*) ;; *) echo \"Use pnpm instead\" >&2; exit 1 ;; esac'",
-    "build": "pnpm run typecheck && pnpm -r --if-present run build",
-    "build:railway": "pnpm --filter @workspace/food-ordering run build && pnpm --filter @workspace/api-server run build",
+    "build": "npm run typecheck && npm run build -ws --if-present",
+    "build:railway": "npm run build -w artifacts/food-ordering && npm run build -w artifacts/api-server",
     "start": "node artifacts/api-server/dist/index.mjs",
     "typecheck:libs": "tsc --build",
-    "typecheck": "pnpm run typecheck:libs && pnpm -r --filter \"./artifacts/**\" --filter \"./scripts\" --if-present run typecheck"
+    "typecheck": "npm run typecheck:libs && npm run typecheck -w artifacts/food-ordering && npm run typecheck -w artifacts/api-server && npm run typecheck -w scripts"
   },
-  "private": true,
   "devDependencies": {
     "typescript": "~5.9.2",
     "prettier": "^3.8.1"
   },
-  "pnpm": {
-    "overrides": {
-      "lodash": "4.18.0",
-      "path-to-regexp": "8.4.0",
-      "picomatch@^2": "2.3.2",
-      "picomatch@^4": "4.0.4"
-    }
+  "overrides": {
+    "lodash": "4.18.0",
+    "path-to-regexp": "8.4.0",
+    "picomatch": "2.3.2"
   }
 }

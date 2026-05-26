@@ -1,18 +1,14 @@
 # Nixpacks build configuration for Railway
-# Ensures pnpm 10 is available (matches pnpm-lock.yaml lockfile version)
+# Uses npm workspaces — no pnpm required
 
 [phases.setup]
-# Use Node 20 LTS — stable and widely supported
 nixPkgs = ["nodejs_20"]
 
 [phases.install]
-cmds = [
-  "npm install -g pnpm@10 --prefer-offline 2>/dev/null || npm install -g pnpm@10",
-  "pnpm install --frozen-lockfile"
-]
+cmds = ["npm install"]
 
 [phases.build]
-cmds = ["pnpm run build:railway"]
+cmds = ["npm run build:railway"]
 
 [start]
 cmd = "node artifacts/api-server/dist/index.mjs"
