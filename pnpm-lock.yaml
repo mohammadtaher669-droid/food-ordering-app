@@ -106,9 +106,6 @@ importers:
       '@workspace/db':
         specifier: file:../../lib/db
         version: link:../../lib/db
-      '@workspace/integrations-openai-ai-server':
-        specifier: file:../../lib/integrations-openai-ai-server
-        version: file:lib/integrations-openai-ai-server(zod@3.25.76)
       cookie-parser:
         specifier: ^1.4.7
         version: 1.4.7
@@ -1734,9 +1731,6 @@ packages:
     engines: {node: ^20.19.0 || >=22.12.0}
     peerDependencies:
       vite: ^4.2.0 || ^5.0.0 || ^6.0.0 || ^7.0.0
-
-  '@workspace/integrations-openai-ai-server@file:lib/integrations-openai-ai-server':
-    resolution: {directory: lib/integrations-openai-ai-server, type: directory}
 
   accepts@2.0.0:
     resolution: {integrity: sha512-5cvg6CtKwfgdmVqY1WIiXKc3Q1bkRqGLi+2W/6ao+6Y7gu/RCwRuAhGEzh5B4KlszSuTLgZYuqFqo5bImjNKng==}
@@ -4596,15 +4590,6 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@workspace/integrations-openai-ai-server@file:lib/integrations-openai-ai-server(zod@3.25.76)':
-    dependencies:
-      openai: 6.37.0(zod@3.25.76)
-      p-limit: 7.3.0
-      p-retry: 7.1.1
-    transitivePeerDependencies:
-      - ws
-      - zod
-
   accepts@2.0.0:
     dependencies:
       mime-types: 3.0.2
@@ -5338,10 +5323,6 @@ snapshots:
   once@1.4.0:
     dependencies:
       wrappy: 1.0.2
-
-  openai@6.37.0(zod@3.25.76):
-    optionalDependencies:
-      zod: 3.25.76
 
   openai@6.37.0(zod@4.3.6):
     optionalDependencies:

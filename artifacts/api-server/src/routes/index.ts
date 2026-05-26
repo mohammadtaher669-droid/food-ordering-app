@@ -1,7 +1,5 @@
 import { Router, type IRouter, type Request, type Response, type NextFunction } from "express";
 import healthRouter from "./health";
-import generateImageRouter from "./generateImage";
-import translateRouter from "./translate";
 import adminAuthRouter from "./adminAuth";
 import storeSyncRouter from "./storeSync";
 import catalogRouter from "./catalog";
@@ -15,10 +13,8 @@ import seedRouter from "./seed";
 
 const router: IRouter = Router();
 
-// Legacy sync endpoints
+// Core endpoints
 router.use(healthRouter);
-router.use(generateImageRouter);
-router.use(translateRouter);
 router.use(adminAuthRouter);
 router.use(storeSyncRouter);
 
