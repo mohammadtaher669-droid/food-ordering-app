@@ -1,6 +1,11 @@
 import type { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 
+/**
+ * Centralized JWT secret retrieval.
+ * CRITICAL: All JWT operations (sign, verify) must use this function
+ * to ensure consistent secret across login, verification, and middleware.
+ */
 export function getJwtSecret(): string {
   const secret = process.env["JWT_SECRET"];
   if (!secret) {
@@ -38,3 +43,4 @@ export function requireAdmin(req: Request, res: Response, next: NextFunction): v
     res.status(401).json({ error: expired ? "Session expired. Please log in again." : "Invalid token." });
   }
 }
+
