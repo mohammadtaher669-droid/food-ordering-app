@@ -15,7 +15,7 @@
   },
   "dependencies": {
     "drizzle-orm": "^0.45.2",
-    "drizzle-zod": "^0.8.3",
+    "drizzle-zod": "^0.5.1",
     "pg": "^8.20.0",
     "zod": "3.25.76"
   },
@@ -25,3 +25,4 @@
     "drizzle-kit": "^0.31.9"
   }
 }
+
