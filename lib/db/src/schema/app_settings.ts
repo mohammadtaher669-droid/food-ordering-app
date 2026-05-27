@@ -1,4 +1,6 @@
 import { pgTable, text, real, boolean, jsonb, integer, timestamp } from "drizzle-orm/pg-core";
+import { createInsertSchema } from "drizzle-zod";
+import { z } from "zod";
 
 export const appSettingsTable = pgTable("app_settings", {
   id: integer("id").primaryKey().default(1),
@@ -24,4 +26,6 @@ export const appSettingsTable = pgTable("app_settings", {
   updated_at: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+export const insertAppSettingsSchema = createInsertSchema(appSettingsTable);
+export type InsertAppSettings = z.infer<typeof insertAppSettingsSchema>;
 export type AppSettings = typeof appSettingsTable.$inferSelect;

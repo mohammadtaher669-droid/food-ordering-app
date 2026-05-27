@@ -1,4 +1,6 @@
 import { pgTable, text, boolean, integer, timestamp } from "drizzle-orm/pg-core";
+import { createInsertSchema } from "drizzle-zod";
+import { z } from "zod";
 
 export const bannersTable = pgTable("banners", {
   id: text("id").primaryKey(),
@@ -20,4 +22,6 @@ export const bannersTable = pgTable("banners", {
   updated_at: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+export const insertBannerSchema = createInsertSchema(bannersTable).omit({ created_at: true, updated_at: true });
+export type InsertBanner = z.infer<typeof insertBannerSchema>;
 export type Banner = typeof bannersTable.$inferSelect;

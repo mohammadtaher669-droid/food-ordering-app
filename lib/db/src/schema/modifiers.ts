@@ -1,4 +1,6 @@
 import { pgTable, text, real, boolean, integer, timestamp } from "drizzle-orm/pg-core";
+import { createInsertSchema } from "drizzle-zod";
+import { z } from "zod";
 
 export const modifierGroupsTable = pgTable("modifier_groups", {
   id: text("id").primaryKey(),
@@ -58,6 +60,12 @@ export const branchCategoryOverridesTable = pgTable("branch_category_overrides",
   created_at: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+export const insertModifierGroupSchema = createInsertSchema(modifierGroupsTable).omit({ created_at: true });
+export const insertModifierOptionSchema = createInsertSchema(modifierOptionsTable).omit({ created_at: true });
+export const insertAddOnSchema = createInsertSchema(addOnsTable).omit({ created_at: true });
+export const insertItemModifierLinkSchema = createInsertSchema(itemModifierLinksTable);
+export const insertBranchItemOverrideSchema = createInsertSchema(branchItemOverridesTable).omit({ created_at: true });
+export const insertBranchCategoryOverrideSchema = createInsertSchema(branchCategoryOverridesTable).omit({ created_at: true });
 
 export type ModifierGroup = typeof modifierGroupsTable.$inferSelect;
 export type ModifierOption = typeof modifierOptionsTable.$inferSelect;
@@ -66,3 +74,6 @@ export type ItemModifierLink = typeof itemModifierLinksTable.$inferSelect;
 export type BranchItemOverride = typeof branchItemOverridesTable.$inferSelect;
 export type BranchCategoryOverride = typeof branchCategoryOverridesTable.$inferSelect;
 
+export type InsertModifierGroup = z.infer<typeof insertModifierGroupSchema>;
+export type InsertModifierOption = z.infer<typeof insertModifierOptionSchema>;
+export type InsertAddOn = z.infer<typeof insertAddOnSchema>;
