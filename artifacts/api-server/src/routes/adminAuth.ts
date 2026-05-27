@@ -1,6 +1,7 @@
 import { Router } from "express";
 import jwt from "jsonwebtoken";
 import { timingSafeEqual } from "crypto";
+import { getJwtSecret } from "../lib/auth";
 
 const router = Router();
 
@@ -34,10 +35,6 @@ function checkAndRecordAttempt(ip: string): { allowed: boolean; remaining: numbe
 
 function clearAttempts(ip: string) {
   loginAttempts.delete(ip);
-}
-
-function getJwtSecret(): string {
-  return process.env["JWT_SECRET"] || "matami-insecure-dev-secret-set-in-production";
 }
 
 function getAdminPassword(): string {
@@ -137,3 +134,4 @@ router.post("/admin/change-password", (req, res) => {
 });
 
 export default router;
+
