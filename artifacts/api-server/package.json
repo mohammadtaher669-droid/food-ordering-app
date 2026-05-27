@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "export NODE_ENV=development && npm run build && npm run start",
     "build": "node ./build.mjs",
-    "start": "npm run push -w lib/db && node --enable-source-maps ./dist/index.mjs",
+    "start": "echo '[start] Running drizzle-kit push...' && npm run push -w lib/db && echo '[start] Push completed, starting server...' && node --enable-source-maps ./dist/index.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
