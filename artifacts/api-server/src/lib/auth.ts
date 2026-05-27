@@ -24,17 +24,42 @@ export interface AdminTokenPayload {
  */
 export function requireAdmin(req: Request, res: Response, next: NextFunction): void {
   const auth = req.headers["authorization"];
+  const secret = getJwtSecret();
+  
+  // DETAILED LOGGING FOR DEBUGGING
+  console.log("[requireAdmin] Authorization header received:", auth ? "YES" : "NO");
+  if (auth) {
+    console.log("[requireAdmin] Auth header value:", auth.substring(0, 20) + "...");
+  }
+  console.log("[requireAdmin] JWT_SECRET length:", secret.length);
+  console.log("[requireAdmin] JWT_SECRET value:", secret);
+  
   if (!auth?.startsWith("Bearer ")) {
+    console.log("[requireAdmin] FAILED: Missing or invalid Authorization header");
     res.status(401).json({ error: "Missing or invalid Authorization header" });
     return;
   }
+  
   const token = auth.slice(7);
+  console.log("[requireAdmin] Token extracted, length:", token.length);
+  console.log("[requireAdmin] Token value:", token.substring(0, 50) + "...");
+  
   try {
-    const payload = jwt.verify(token, getJwtSecret()) as AdminTokenPayload;
+    console.log("[requireAdmin] Attempting JWT verification...");
+    const payload = jwt.verify(token, secret) as AdminTokenPayload;
+    console.log("[requireAdmin] JWT verification SUCCESS");
     (req as any).adminToken = payload;
     next();
   } catch (err: any) {
+    console.log("[requireAdmin] JWT verification FAILED");
+    console.log("[requireAdmin] Error name:", err?.name);
+    console.log("[requireAdmin] Error message:", err?.message);
+    console.log("[requireAdmin] Full error:", JSON.stringify(err, null, 2));
+    
     const expired = err?.name === "TokenExpiredError";
-    res.status(401).json({ error: expired ? "Session expired. Please log in again." : "Invalid token." });
+    const errorMsg = expired ? "Session expired. Please log in again." : "Invalid token.";
+    console.log("[requireAdmin] Returning 401 with error:", errorMsg);
+    res.status(401).json({ error: errorMsg });
   }
 }
+
