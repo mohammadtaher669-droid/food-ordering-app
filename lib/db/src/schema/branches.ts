@@ -1,6 +1,4 @@
 import { pgTable, text, real, boolean, integer, timestamp, jsonb } from "drizzle-orm/pg-core";
-import { createInsertSchema } from "drizzle-zod";
-import { z } from "zod";
 
 export const branchesTable = pgTable("branches", {
   id: text("id").primaryKey(),
@@ -30,6 +28,4 @@ export const branchesTable = pgTable("branches", {
   updated_at: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
-export const insertBranchSchema = createInsertSchema(branchesTable).omit({ created_at: true, updated_at: true });
-export type InsertBranch = z.infer<typeof insertBranchSchema>;
 export type Branch = typeof branchesTable.$inferSelect;

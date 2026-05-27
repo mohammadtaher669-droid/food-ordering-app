@@ -1,6 +1,4 @@
 import { pgTable, text, real, boolean, integer, timestamp } from "drizzle-orm/pg-core";
-import { createInsertSchema } from "drizzle-zod";
-import { z } from "zod";
 
 export const restaurantsTable = pgTable("restaurants", {
   id: text("id").primaryKey(),
@@ -23,6 +21,4 @@ export const restaurantsTable = pgTable("restaurants", {
   updated_at: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
-export const insertRestaurantSchema = createInsertSchema(restaurantsTable).omit({ created_at: true, updated_at: true });
-export type InsertRestaurant = z.infer<typeof insertRestaurantSchema>;
 export type Restaurant = typeof restaurantsTable.$inferSelect;

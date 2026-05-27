@@ -1,6 +1,4 @@
 import { pgTable, text, real, boolean, integer, timestamp } from "drizzle-orm/pg-core";
-import { createInsertSchema } from "drizzle-zod";
-import { z } from "zod";
 
 export const menuItemsTable = pgTable("menu_items", {
   id: text("id").primaryKey(),
@@ -28,6 +26,4 @@ export const menuItemsTable = pgTable("menu_items", {
   updated_at: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
-export const insertMenuItemSchema = createInsertSchema(menuItemsTable).omit({ created_at: true, updated_at: true });
-export type InsertMenuItem = z.infer<typeof insertMenuItemSchema>;
 export type MenuItem = typeof menuItemsTable.$inferSelect;
