@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "export NODE_ENV=development && npm run build && npm run start",
     "build": "node ./build.mjs",
-    "start": "npm run migrate -w lib/db && node --enable-source-maps ./dist/index.mjs",
+    "start": "npm run push -w lib/db && node --enable-source-maps ./dist/index.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
@@ -32,3 +32,4 @@
     "thread-stream": "3.1.0"
   }
 }
+
