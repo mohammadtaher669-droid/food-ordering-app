@@ -1,7 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { schedulePushToServer } from "@/lib/serverSync";
 import { LayoutDashboard, UtensilsCrossed, MapPin, BookOpen, Tag, Star, LogOut, Menu, X, Percent, Settings, Navigation, Users, BarChart2, Image, Megaphone, Printer, Palette, ListOrdered, Store, SlidersHorizontal, Layers, FileUp, AlertTriangle, ExternalLink } from "lucide-react";
 import matAmiLogo from "@assets/لوجو_الموقع_مطعمي_1776635393637.png";
 
@@ -37,13 +36,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [devBannerDismissed, setDevBannerDismissed] = useState(
     () => sessionStorage.getItem("dev_banner_dismissed") === "1"
   );
-
-  useEffect(() => {
-    schedulePushToServer();
-    const handleStoreUpdate = () => schedulePushToServer();
-    window.addEventListener("store-updated", handleStoreUpdate);
-    return () => window.removeEventListener("store-updated", handleStoreUpdate);
-  }, []);
 
   const currentPage = NAV.find((item) =>
     item.exact ? location === item.path : location.startsWith(item.path) && item.path !== "/admin"
