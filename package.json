@@ -13,7 +13,7 @@
   },
   "scripts": {
     "build": "npm run typecheck && npm run build -ws --if-present",
-    "build:railway": "pnpm run build --filter artifacts/food-ordering && pnpm run build --filter artifacts/api-server",
+    "build:railway": "pnpm --filter @workspace/food-ordering run build && pnpm --filter @workspace/api-server run build",
     "start": "node artifacts/api-server/dist/index.mjs",
     "typecheck:libs": "tsc --build",
     "typecheck": "npm run typecheck:libs && npm run typecheck -w artifacts/food-ordering && npm run typecheck -w artifacts/api-server && npm run typecheck -w scripts"
