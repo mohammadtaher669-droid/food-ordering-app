@@ -26,14 +26,6 @@ export function requireAdmin(req: Request, res: Response, next: NextFunction): v
   const auth = req.headers["authorization"];
   const secret = getJwtSecret();
   
-  // DETAILED LOGGING FOR DEBUGGING
-  console.log("[requireAdmin] Authorization header received:", auth ? "YES" : "NO");
-  if (auth) {
-    console.log("[requireAdmin] Auth header value:", auth.substring(0, 20) + "...");
-  }
-  console.log("[requireAdmin] JWT_SECRET length:", secret.length);
-  console.log("[requireAdmin] JWT_SECRET value:", secret);
-  
   if (!auth?.startsWith("Bearer ")) {
     console.log("[requireAdmin] FAILED: Missing or invalid Authorization header");
     res.status(401).json({ error: "Missing or invalid Authorization header" });
@@ -41,9 +33,21 @@ export function requireAdmin(req: Request, res: Response, next: NextFunction): v
   }
   
   const token = auth.slice(7);
-  console.log("[requireAdmin] Token extracted, length:", token.length);
-  console.log("[requireAdmin] Token value:", token.substring(0, 50) + "...");
   
+  // DETAILED LOGGING BEFORE JWT VERIFICATION
+  console.log("TOKEN_LENGTH", token.length);
+  console.log("TOKEN_PREFIX", token.substring(0, 20));
+  console.log("SECRET_LENGTH", secret.length);
+  
+  // Log decoded header
+  try {
+    const decoded = jwt.decode(token, { complete: true });
+    console.log("JWT_HEADER", JSON.stringify(decoded?.header));
+  } catch (decodeErr: any) {
+    console.log("JWT_DECODE_ERROR", decodeErr?.name, decodeErr?.message);
+  }
+  
+  // ATTEMPT JWT VERIFICATION WITH DETAILED ERROR LOGGING
   try {
     console.log("[requireAdmin] Attempting JWT verification...");
     const payload = jwt.verify(token, secret) as AdminTokenPayload;
@@ -51,10 +55,7 @@ export function requireAdmin(req: Request, res: Response, next: NextFunction): v
     (req as any).adminToken = payload;
     next();
   } catch (err: any) {
-    console.log("[requireAdmin] JWT verification FAILED");
-    console.log("[requireAdmin] Error name:", err?.name);
-    console.log("[requireAdmin] Error message:", err?.message);
-    console.log("[requireAdmin] Full error:", JSON.stringify(err, null, 2));
+    console.error("JWT_VERIFY_ERROR", err?.name, err?.message);
     
     const expired = err?.name === "TokenExpiredError";
     const errorMsg = expired ? "Session expired. Please log in again." : "Invalid token.";
