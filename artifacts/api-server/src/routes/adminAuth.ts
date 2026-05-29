@@ -1,7 +1,7 @@
 import { Router } from "express";
 import jwt from "jsonwebtoken";
 import { timingSafeEqual } from "crypto";
-import { getJwtSecret } from "../lib/auth";
+import { getJwtSecret, requireAdmin } from "../lib/auth";
 
 const router = Router();
 
@@ -83,18 +83,8 @@ router.post("/admin/login", (req, res) => {
 });
 
 // GET /api/admin/verify
-router.get("/admin/verify", (req, res) => {
-  const auth = req.headers["authorization"];
-  if (!auth?.startsWith("Bearer ")) {
-    res.status(401).json({ valid: false });
-    return;
-  }
-  try {
-    jwt.verify(auth.slice(7), getJwtSecret());
-    res.json({ valid: true });
-  } catch {
-    res.status(401).json({ valid: false });
-  }
+router.get("/admin/verify", requireAdmin, (_req, res) => {
+  res.json({ valid: true });
 });
 
 // POST /api/admin/change-password
