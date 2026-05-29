@@ -3,6 +3,7 @@ import { readFileSync, writeFileSync, mkdirSync, existsSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 import jwt from "jsonwebtoken";
+import { getJwtSecret } from "../lib/auth";
 
 const router = Router();
 
@@ -31,10 +32,6 @@ function readSnapshot(): Record<string, unknown> | null {
 function writeSnapshot(data: Record<string, unknown>): void {
   ensureDataDir();
   writeFileSync(SNAPSHOT_FILE, JSON.stringify(data), "utf-8");
-}
-
-function getJwtSecret(): string {
-  return process.env["JWT_SECRET"] || "matami-insecure-dev-secret-set-in-production";
 }
 
 // GET /api/store — public, no auth required; returns catalog snapshot
